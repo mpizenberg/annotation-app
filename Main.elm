@@ -6,15 +6,13 @@
 port module Main exposing (..)
 
 import Button exposing (Button)
-import Color
 import Device exposing (Device)
 import Element exposing (Element, below, el, empty, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
 import Icons
 import Pointer
-import Style exposing (StyleSheet)
-import Style.Color as Color
+import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Tool exposing (Tool)
 
@@ -102,7 +100,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     responsiveLayout model
-        |> Element.layout stylesheet
+        |> Element.layout Style.sheet
 
 
 responsiveLayout : Model -> Element Style variation Msg
@@ -123,7 +121,7 @@ responsiveLayout model =
                 actionBar =
                     phoneActionBar model.device.orientation model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
             in
-            Element.column NoStyle
+            Element.column Style.None
                 [ Attributes.height fill ]
                 [ actionBar
                 , imageViewer ( viewerWidth, viewerHeight )
@@ -150,7 +148,7 @@ phoneActionBar : Device.Orientation -> Tool -> Tool -> Bool -> ( Float, Float ) 
 phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( width, height ) =
     let
         filler =
-            el NoStyle [ Attributes.width fill, Attributes.height (px height) ] empty
+            el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
 
         mainActions =
             [ toolButton height currentTool Tool.Move
@@ -171,11 +169,11 @@ phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( wi
     in
     case orientation of
         Device.Portrait ->
-            Element.row NoStyle [] mainActions
-                |> below [ Element.row NoStyle [] zoomActions ]
+            Element.row Style.None [] mainActions
+                |> below [ Element.row Style.None [] zoomActions ]
 
         Device.Landscape ->
-            Element.row NoStyle [] (mainActions ++ zoomActions)
+            Element.row Style.None [] (mainActions ++ zoomActions)
 
 
 actionButton : Float -> Bool -> Msg -> List (Svg Msg) -> Element Style v Msg
@@ -188,9 +186,9 @@ actionButton size clickable sendMsg innerSvg =
                 Button.Disabled
         , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
         , innerElement = Element.html (Icons.sized (0.6 * size) innerSvg)
-        , innerStyle = NoStyle
+        , innerStyle = Style.None
         , size = ( size, size )
-        , outerStyle = StyleActionIcon (not clickable)
+        , outerStyle = Style.Button (not clickable)
         , otherAttributes = [ Attributes.attribute "elm-pep" "true" ]
         }
 
@@ -202,10 +200,10 @@ toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
             Tool.allAnnotationTools
                 |> List.filter ((/=) currentDropdownTool)
                 |> List.map (toolButton size currentTool)
-                |> Element.column NoStyle []
+                |> Element.column Style.None []
                 |> List.singleton
     in
-    el NoStyle [] (toolButton size currentTool currentDropdownTool)
+    el Style.None [] (toolButton size currentTool currentDropdownTool)
         |> below
             (if toolDropdownOpen then
                 downTools
@@ -226,58 +224,17 @@ toolButton size currentTool tool =
                 )
         , action = Pointer.onDown (always <| SelectTool tool) |> Attributes.toAttr
         , innerElement = Tool.svgElement (0.6 * size) tool
-        , innerStyle = NoStyle
+        , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle =
             if tool == currentTool then
-                StyleCurrentToolIcon
+                Style.CurrentTool
             else
-                StyleActionIcon False
+                Style.Button False
         , otherAttributes = [ Attributes.attribute "elm-pep" "true" ]
         }
 
 
 imageViewer : ( Float, Float ) -> Element Style variation msg
 imageViewer ( width, height ) =
-    el NoStyle [ Attributes.height fill ] empty
-
-
-
--- STYLESHEET ########################################################
-
-
-stylesheet : StyleSheet Style variation
-stylesheet =
-    Style.styleSheet
-        [ Style.style NoStyle []
-        , Style.style StyleCurrentToolIcon <|
-            [ Color.background Color.grey
-            , Style.prop "touch-action" "none"
-            ]
-                ++ noUserSelect
-        , Style.style (StyleActionIcon False) <|
-            [ Style.hover [ Color.background Color.lightGrey, Style.cursor "pointer" ]
-            , Style.prop "touch-action" "none"
-            ]
-                ++ noUserSelect
-        , Style.style (StyleActionIcon True) <|
-            [ Color.text Color.lightGrey
-            , Style.prop "touch-action" "none"
-            ]
-                ++ noUserSelect
-        ]
-
-
-noUserSelect : List (Style.Property class variation)
-noUserSelect =
-    [ Style.prop "user-select" "none"
-    , Style.prop "-webkit-user-select" "none"
-    , Style.prop "-moz-user-select" "none"
-    , Style.prop "-ms-user-select" "none"
-    ]
-
-
-type Style
-    = NoStyle
-    | StyleCurrentToolIcon
-    | StyleActionIcon Bool
+    el Style.None [ Attributes.height fill ] empty

@@ -9,7 +9,7 @@ import Button exposing (Button)
 import Color
 import Device exposing (Device)
 import Element exposing (Element, below, el, empty, span)
-import Element.Attributes as Attributes exposing (Length, center, fill, px, verticalCenter)
+import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
 import Icons
 import Pointer
@@ -123,8 +123,20 @@ responsiveLayout model =
             Element.column NoStyle
                 [ Attributes.height fill ]
                 [ phoneActionBar model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
+                    |> below [ zoomBar actionBarHeight ]
                 , imageViewer ( viewerWidth, viewerHeight )
                 ]
+
+
+zoomBar : Float -> Element Style variation Msg
+zoomBar height =
+    Element.row NoStyle
+        []
+        [ el NoStyle [ Attributes.width fill ] empty
+        , actionButton height True NoOp Icons.zoomIn
+        , actionButton height True NoOp Icons.zoomOut
+        , actionButton height True NoOp Icons.maximize2
+        ]
 
 
 phoneActionBarHeight : Int -> Int

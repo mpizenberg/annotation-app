@@ -107,55 +107,75 @@ view model =
 
 responsiveLayout : Model -> Element Style variation Msg
 responsiveLayout model =
-    case model.device.kind of
-        _ ->
+    case ( model.device.kind, model.device.orientation ) of
+        ( Device.Phone, _ ) ->
             let
                 ( actionBarWidth, actionBarHeight ) =
                     ( model.device.size.width |> toFloat
-                    , phoneActionBarHeight model.device.size.width |> toFloat
+                    , deviceActionBarHeight model.device |> toFloat
                     )
 
                 ( viewerWidth, viewerHeight ) =
                     ( model.device.size.width |> toFloat
                     , max 0 (toFloat model.device.size.height - actionBarHeight)
                     )
+
+                actionBar =
+                    phoneActionBar model.device.orientation model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
             in
             Element.column NoStyle
                 [ Attributes.height fill ]
-                [ phoneActionBar model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
-                    |> below [ zoomBar actionBarHeight ]
+                [ actionBar
                 , imageViewer ( viewerWidth, viewerHeight )
                 ]
 
-
-zoomBar : Float -> Element Style variation Msg
-zoomBar height =
-    Element.row NoStyle
-        []
-        [ el NoStyle [ Attributes.width fill ] empty
-        , actionButton height True NoOp Icons.zoomIn
-        , actionButton height True NoOp Icons.zoomOut
-        , actionButton height True NoOp Icons.maximize2
-        ]
+        _ ->
+            Element.text "TODO"
 
 
-phoneActionBarHeight : Int -> Int
-phoneActionBarHeight width =
-    width // 7
+deviceActionBarHeight : Device -> Int
+deviceActionBarHeight device =
+    case ( device.kind, device.orientation ) of
+        ( Device.Phone, Device.Portrait ) ->
+            device.size.width // 7
+
+        ( Device.Phone, Device.Landscape ) ->
+            device.size.width // 13
+
+        _ ->
+            device.size.width // 7
 
 
-phoneActionBar : Tool -> Tool -> Bool -> ( Float, Float ) -> Element Style variation Msg
-phoneActionBar currentTool currentDropdownTool toolDropdownOpen ( width, height ) =
-    Element.row NoStyle
-        []
-        [ toolButton height currentTool Tool.Move
-        , toolDropdown height currentTool currentDropdownTool toolDropdownOpen
-        , actionButton height True ToggleToolDropdown Icons.moreVertical
-        , el NoStyle [ Attributes.width fill, Attributes.height (px height) ] empty
-        , actionButton height False NoOp Icons.rotateCcw
-        , actionButton height True NoOp Icons.trash2
-        , actionButton height True NoOp Icons.image
-        ]
+phoneActionBar : Device.Orientation -> Tool -> Tool -> Bool -> ( Float, Float ) -> Element Style variation Msg
+phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( width, height ) =
+    let
+        filler =
+            el NoStyle [ Attributes.width fill, Attributes.height (px height) ] empty
+
+        mainActions =
+            [ toolButton height currentTool Tool.Move
+            , toolDropdown height currentTool currentDropdownTool toolDropdownOpen
+            , actionButton height True ToggleToolDropdown Icons.moreVertical
+            , filler
+            , actionButton height False NoOp Icons.rotateCcw
+            , actionButton height True NoOp Icons.trash2
+            , actionButton height True NoOp Icons.image
+            ]
+
+        zoomActions =
+            [ filler
+            , actionButton height True NoOp Icons.zoomIn
+            , actionButton height True NoOp Icons.zoomOut
+            , actionButton height True NoOp Icons.maximize2
+            ]
+    in
+    case orientation of
+        Device.Portrait ->
+            Element.row NoStyle [] mainActions
+                |> below [ Element.row NoStyle [] zoomActions ]
+
+        Device.Landscape ->
+            Element.row NoStyle [] (mainActions ++ zoomActions)
 
 
 actionButton : Float -> Bool -> Msg -> List (Svg Msg) -> Element Style v Msg

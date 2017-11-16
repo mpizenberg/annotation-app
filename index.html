@@ -9,6 +9,13 @@
 	<script src="elm-pep.js"></script>
 </head>
 <body>
-	<script charset="utf-8">const app = Elm.Main.fullscreen()</script>
+	<script charset="utf-8">
+		const layoutViewportSize = () => ({
+			width: document.documentElement.clientWidth,
+			height: document.documentElement.clientHeight
+		})
+		const app = Elm.Main.fullscreen( layoutViewportSize() )
+		window.addEventListener( 'resize', () => app.ports.resizes.send( layoutViewportSize() ) )
+	</script>
 </body>
 </html>

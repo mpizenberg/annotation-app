@@ -9,7 +9,12 @@ module Device exposing (..)
 type alias Device =
     { kind : Kind
     , orientation : Orientation
-    , width : Int
+    , size : Size
+    }
+
+
+type alias Size =
+    { width : Int
     , height : Int
     }
 
@@ -18,8 +23,7 @@ default : Device
 default =
     { kind = Phone
     , orientation = Portrait
-    , width = 360
-    , height = 480
+    , size = Size 360 480
     }
 
 
@@ -35,7 +39,7 @@ type Orientation
     | Landscape
 
 
-classify : { width : Int, height : Int } -> Device
+classify : Size -> Device
 classify { width, height } =
     let
         deviceOrientation =
@@ -62,6 +66,5 @@ classify { width, height } =
     in
     { kind = deviceKind
     , orientation = deviceOrientation
-    , width = width
-    , height = height
+    , size = Size width height
     }

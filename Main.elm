@@ -3,7 +3,7 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Main exposing (..)
+port module Main exposing (..)
 
 import Button exposing (Button)
 import Color
@@ -17,12 +17,11 @@ import Style exposing (StyleSheet)
 import Style.Color as Color
 import Svg exposing (Svg)
 import Tool exposing (Tool)
-import Window
 
 
-main : Program Never Model Msg
+main : Program Device.Size Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , update = update
         , view = view
@@ -34,6 +33,9 @@ main =
 -- MODEL #############################################################
 
 
+port resizes : (Device.Size -> msg) -> Sub msg
+
+
 type alias Model =
     { device : Device
     , tool : Tool
@@ -42,9 +44,9 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( Model Device.default Tool.Move False Tool.Contour, Cmd.none )
+init : Device.Size -> ( Model, Cmd Msg )
+init sizeFlag =
+    ( Model (Device.classify sizeFlag) Tool.Move False Tool.Contour, Cmd.none )
 
 
 
@@ -53,7 +55,7 @@ init =
 
 type Msg
     = NoOp
-    | WindowResizesMsg Window.Size
+    | WindowResizesMsg Device.Size
     | SelectTool Tool
     | ToggleToolDropdown
 
@@ -90,7 +92,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Window.resizes WindowResizesMsg
+    resizes WindowResizesMsg
 
 
 
@@ -109,13 +111,13 @@ responsiveLayout model =
         _ ->
             let
                 ( actionBarWidth, actionBarHeight ) =
-                    ( model.device.width |> toFloat
-                    , phoneActionBarHeight model.device.width |> toFloat
+                    ( model.device.size.width |> toFloat
+                    , phoneActionBarHeight model.device.size.width |> toFloat
                     )
 
                 ( viewerWidth, viewerHeight ) =
-                    ( model.device.width |> toFloat
-                    , max 0 (toFloat model.device.height - actionBarHeight)
+                    ( model.device.size.width |> toFloat
+                    , max 0 (toFloat model.device.size.height - actionBarHeight)
                     )
             in
             Element.column NoStyle

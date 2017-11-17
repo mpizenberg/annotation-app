@@ -103,13 +103,16 @@ updateWithPointer pointerMsg model =
             { model | dragState = NoDrag }
 
         ( PointerDownAt pos, Tool.BBox, _ ) ->
-            { model | dragState = DraggingFrom pos, bbox = Nothing }
+            { model
+                | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)
+                , bbox = Nothing
+            }
 
         ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
             let
                 ( startPoint, point ) =
                     ( Point.fromCoordinates startPos
-                    , Point.fromCoordinates pos
+                    , Point.fromCoordinates (Viewer.positionIn model.viewer pos)
                     )
             in
             { model | bbox = Just (BBox.fromPair ( startPoint, point )) }

@@ -7,7 +7,8 @@
 
 module Icons
     exposing
-        ( defaultAttributes
+        ( boundingBox
+        , defaultAttributes
         , download
         , image
         , maximize2
@@ -18,6 +19,7 @@ module Icons
         , save
         , sized
         , trash2
+        , zoomFit
         , zoomIn
         , zoomOut
         )
@@ -130,4 +132,18 @@ zoomOut =
     [ Svg.circle [ cx "11", cy "11", r "8" ] []
     , Svg.line [ x1 "21", y1 "21", x2 "16.65", y2 "16.65" ] []
     , Svg.line [ x1 "8", y1 "11", x2 "14", y2 "11" ] []
+    ]
+
+
+zoomFit : List (Svg msg)
+zoomFit =
+    [ Svg.circle [ cx "11", cy "11", r "8" ] []
+    , Svg.line [ x1 "21", y1 "21", x2 "16.65", y2 "16.65" ] []
+    , Svg.path [ d "M 6 8 v 6 h 10 v -6 h -10" ] []
+    ]
+
+
+boundingBox : List (Svg msg)
+boundingBox =
+    [ Svg.path [ d "M 23 17 h -6 m -3 0 H 4 V 7 H 20 V 11 m 0 3 v 6" ] []
     ]

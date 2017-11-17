@@ -33,7 +33,7 @@ svgElement size tool =
                     Icons.octagon
 
                 BBox ->
-                    Icons.maximize2
+                    Icons.boundingBox
 
                 Outline ->
                     Icons.download

@@ -164,7 +164,7 @@ phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( wi
             [ filler
             , actionButton height True NoOp Icons.zoomIn
             , actionButton height True NoOp Icons.zoomOut
-            , actionButton height True NoOp Icons.maximize2
+            , actionButton height True NoOp Icons.zoomFit
             ]
     in
     case orientation of

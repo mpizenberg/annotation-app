@@ -6,6 +6,7 @@
 module Tool exposing (..)
 
 import Element exposing (Element)
+import Html.Lazy exposing (lazy2)
 import Icons
 
 
@@ -38,5 +39,5 @@ svgElement size tool =
                 Outline ->
                     Icons.download
     in
-    Icons.sized size svgIcon
+    lazy2 Icons.sized size svgIcon
         |> Element.html

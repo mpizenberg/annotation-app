@@ -5,6 +5,7 @@ import Device exposing (Device)
 import Element exposing (Element, below, el, empty, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
+import Html.Lazy exposing (lazy2)
 import Icons
 import Pointer
 import StyleSheet as Style exposing (Style)
@@ -104,7 +105,7 @@ actionButton size clickable sendMsg innerSvg =
             else
                 Button.Disabled
         , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
-        , innerElement = Element.html (Icons.sized (0.6 * size) innerSvg)
+        , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle = Style.Button (not clickable)

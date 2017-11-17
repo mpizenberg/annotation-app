@@ -22,30 +22,25 @@ view model =
 
 responsiveLayout : Model -> Element Style variation Msg
 responsiveLayout model =
-    case ( model.device.kind, model.device.orientation ) of
-        ( Device.Phone, _ ) ->
-            let
-                ( actionBarWidth, actionBarHeight ) =
-                    ( model.device.size.width |> toFloat
-                    , deviceActionBarHeight model.device |> toFloat
-                    )
+    let
+        ( actionBarWidth, actionBarHeight ) =
+            ( model.device.size.width |> toFloat
+            , deviceActionBarHeight model.device |> toFloat
+            )
 
-                ( viewerWidth, viewerHeight ) =
-                    ( model.device.size.width |> toFloat
-                    , max 0 (toFloat model.device.size.height - actionBarHeight)
-                    )
+        ( viewerWidth, viewerHeight ) =
+            ( model.device.size.width |> toFloat
+            , max 0 (toFloat model.device.size.height - actionBarHeight)
+            )
 
-                actionBar =
-                    phoneActionBar model.device.orientation model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
-            in
-            Element.column Style.None
-                [ Attributes.height fill ]
-                [ actionBar
-                , imageViewer ( viewerWidth, viewerHeight )
-                ]
-
-        _ ->
-            Element.text "TODO"
+        actionBar =
+            deviceActionBar model.device model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
+    in
+    Element.column Style.None
+        [ Attributes.height fill ]
+        [ actionBar
+        , imageViewer ( viewerWidth, viewerHeight )
+        ]
 
 
 deviceActionBarHeight : Device -> Int
@@ -57,21 +52,33 @@ deviceActionBarHeight device =
         ( Device.Phone, Device.Landscape ) ->
             device.size.width // 13
 
+        ( Device.Tablet, Device.Portrait ) ->
+            device.size.width // 10
+
+        ( Device.Tablet, Device.Landscape ) ->
+            device.size.width // 16
+
         _ ->
-            device.size.width // 7
+            min 72 (device.size.width // 16)
 
 
-phoneActionBar : Device.Orientation -> Tool -> Tool -> Bool -> ( Float, Float ) -> Element Style variation Msg
-phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( width, height ) =
+deviceActionBar : Device -> Tool -> Tool -> Bool -> ( Float, Float ) -> Element Style variation Msg
+deviceActionBar device currentTool currentDropdownTool toolDropdownOpen ( width, height ) =
     let
         filler =
             el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
 
         toolButtons =
-            [ toolButton height currentTool Tool.Move
-            , toolDropdown height currentTool currentDropdownTool toolDropdownOpen
-            , actionButton height True ToggleToolDropdown Icons.moreVertical
-            ]
+            case device.kind of
+                Device.Phone ->
+                    [ toolButton height currentTool Tool.Move
+                    , toolDropdown height currentTool currentDropdownTool toolDropdownOpen
+                    , actionButton height True ToggleToolDropdown Icons.moreVertical
+                    ]
+
+                _ ->
+                    (Tool.Move :: Tool.allAnnotationTools)
+                        |> List.map (toolButton height currentTool)
 
         actionButtons =
             [ actionButton height False NoOp Icons.rotateCcw
@@ -85,13 +92,18 @@ phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( wi
             , actionButton height True NoOp Icons.zoomFit
             ]
     in
-    case orientation of
-        Device.Portrait ->
+    case ( device.kind, device.orientation ) of
+        ( Device.Phone, Device.Portrait ) ->
             (toolButtons ++ filler :: actionButtons)
                 |> Element.row Style.None []
                 |> below [ el Style.None [ alignRight ] (Element.row Style.None [] zoomActions) ]
 
-        Device.Landscape ->
+        ( Device.Tablet, Device.Portrait ) ->
+            (toolButtons ++ filler :: actionButtons)
+                |> Element.row Style.None []
+                |> below [ el Style.None [ alignRight ] (Element.row Style.None [] zoomActions) ]
+
+        _ ->
             (toolButtons ++ filler :: actionButtons ++ filler :: zoomActions)
                 |> Element.row Style.None []
 

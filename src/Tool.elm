@@ -15,11 +15,13 @@ type Tool
     | Contour
     | BBox
     | Outline
+    | Stroke
+    | Point
 
 
 allAnnotationTools : List Tool
 allAnnotationTools =
-    [ Contour, BBox, Outline ]
+    [ Contour, BBox, Outline, Stroke, Point ]
 
 
 svgElement : Float -> Tool -> Element style variation msg
@@ -38,6 +40,12 @@ svgElement size tool =
 
                 Outline ->
                     Icons.outline
+
+                Stroke ->
+                    Icons.stroke
+
+                Point ->
+                    Icons.point
     in
     lazy2 Icons.sized size svgIcon
         |> Element.html

@@ -17,9 +17,11 @@ module Icons
         , move
         , octagon
         , outline
+        , point
         , rotateCcw
         , save
         , sized
+        , stroke
         , trash2
         , zoomFit
         , zoomIn
@@ -39,7 +41,7 @@ sized size =
 defaultAttributes : List (Svg.Attribute msg)
 defaultAttributes =
     [ fill "none"
-    , stroke "currentColor"
+    , Svg.Attributes.stroke "currentColor"
     , strokeLinecap "round"
     , strokeLinejoin "round"
     , strokeWidth "2"
@@ -168,3 +170,13 @@ outline =
     [ Svg.path [ d "M12,22 Q1,15 4,6 t6,0 t6,0 t6,0 T12,22" ] [] ]
         |> Svg.g [ transform "rotate(90 12 12)" ]
         |> List.singleton
+
+
+stroke : List (Svg msg)
+stroke =
+    [ Svg.path [ d "M1,12 Q6,5 12,12 t11,0" ] [] ]
+
+
+point : List (Svg msg)
+point =
+    [ Svg.circle [ cx "12", cy "12", r "3", fill "currentColor" ] [] ]

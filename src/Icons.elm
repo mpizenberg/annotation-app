@@ -153,7 +153,14 @@ boundingBox =
 
 contour : List (Svg msg)
 contour =
-    [ Svg.polygon [ points "12 22, 2 11, 7 2, 12 9, 17 2, 22 11" ] [] ]
+    [ Svg.polygon [ points "12 22, 2 11, 7 2, 12 9, 17 2, 22 11" ] []
+    , Svg.circle [ cx "12", cy "22", r "1" ] []
+    , Svg.circle [ cx "2", cy "11", r "1" ] []
+    , Svg.circle [ cx "7", cy "2", r "1" ] []
+    , Svg.circle [ cx "12", cy "9", r "1" ] []
+    , Svg.circle [ cx "17", cy "2", r "1" ] []
+    , Svg.circle [ cx "22", cy "11", r "1" ] []
+    ]
 
 
 outline : List (Svg msg)

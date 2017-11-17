@@ -5,10 +5,12 @@
 
 port module Main exposing (..)
 
+import Annotation.Geometry.BoundingBox as BBox
+import Annotation.Geometry.Point as Point
 import Device exposing (Device)
 import Html exposing (Html)
 import Tool exposing (Tool)
-import Types exposing (Model, Msg(..))
+import Types exposing (DragState(..), Model, Msg(..), PointerMsg(..), Position)
 import View
 
 
@@ -31,7 +33,7 @@ port resizes : (Device.Size -> msg) -> Sub msg
 
 init : Device.Size -> ( Model, Cmd Msg )
 init sizeFlag =
-    ( Model (Device.classify sizeFlag) Tool.Move False Tool.BBox, Cmd.none )
+    ( Types.init sizeFlag, Cmd.none )
 
 
 
@@ -66,6 +68,31 @@ update msg model =
             ( { model | toolDropdownOpen = not model.toolDropdownOpen }
             , Cmd.none
             )
+
+        PointerMsg pointerMsg ->
+            ( updateWithPointer pointerMsg model, Cmd.none )
+
+
+updateWithPointer : PointerMsg -> Model -> Model
+updateWithPointer pointerMsg model =
+    case ( pointerMsg, model.tool, model.dragState ) of
+        ( PointerDownAt pos, Tool.BBox, _ ) ->
+            { model | dragState = DraggingFrom pos, bbox = Nothing }
+
+        ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
+            let
+                ( startPoint, point ) =
+                    ( Point.fromCoordinates startPos
+                    , Point.fromCoordinates pos
+                    )
+            in
+            { model | bbox = Just (BBox.fromPair ( startPoint, point )) }
+
+        ( PointerUpAt _, Tool.BBox, _ ) ->
+            { model | dragState = NoDrag }
+
+        _ ->
+            model
 
 
 subscriptions : Model -> Sub Msg

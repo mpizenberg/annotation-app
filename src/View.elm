@@ -1,17 +1,21 @@
 module View exposing (view)
 
+import Annotation.Geometry.Types exposing (BoundingBox)
+import Annotation.Svg as Svg
+import Annotation.Viewer as Viewer exposing (Viewer)
 import Button exposing (Button)
 import Device exposing (Device)
 import Element exposing (Element, below, el, empty, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
+import Html.Attributes
 import Html.Lazy exposing (lazy2)
 import Icons
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Tool exposing (Tool)
-import Types exposing (Model, Msg(..))
+import Types exposing (Model, Msg(..), PointerMsg(..), Position)
 
 
 view : Model -> Html Msg
@@ -39,7 +43,7 @@ responsiveLayout model =
     Element.column Style.None
         [ Attributes.height fill ]
         [ actionBar
-        , imageViewer ( viewerWidth, viewerHeight )
+        , imageViewer model.viewer model.bbox
         ]
 
 
@@ -167,6 +171,24 @@ toolButton size currentTool tool =
         }
 
 
-imageViewer : ( Float, Float ) -> Element Style variation msg
-imageViewer ( width, height ) =
-    el Style.None [ Attributes.height fill ] empty
+imageViewer : Viewer -> Maybe BoundingBox -> Element Style variation Msg
+imageViewer viewer maybeBBox =
+    let
+        attributes =
+            [ Html.Attributes.style [ ( "height", "100%" ) ]
+            , Html.Attributes.attribute "elm-pep" "true"
+            , Pointer.onDown (.pointer >> .offsetPos >> PointerDownAt >> PointerMsg)
+            , Pointer.onMove (.pointer >> .offsetPos >> PointerMoveAt >> PointerMsg)
+            , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
+            ]
+    in
+    Viewer.viewInWithDetails attributes viewer (viewBBox maybeBBox)
+        |> Element.html
+        |> el Style.Viewer [ Attributes.height fill ]
+
+
+viewBBox : Maybe BoundingBox -> Svg msg
+viewBBox maybeBBox =
+    maybeBBox
+        |> Maybe.map Svg.boundingBox
+        |> Maybe.withDefault (Svg.text "No bounding box")

@@ -9,6 +9,7 @@ type Style
     = None
     | CurrentTool
     | Button Bool
+    | Viewer
 
 
 sheet : StyleSheet Style variation
@@ -30,6 +31,9 @@ sheet =
             , Style.prop "touch-action" "none"
             ]
                 ++ noUserSelect
+        , Style.style Viewer <|
+            Style.prop "touch-action" "none"
+                :: noUserSelect
         ]
 
 

@@ -150,30 +150,33 @@ phoneActionBar orientation currentTool currentDropdownTool toolDropdownOpen ( wi
         filler =
             el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
 
-        mainActions =
+        toolButtons =
             [ toolButton height currentTool Tool.Move
             , toolDropdown height currentTool currentDropdownTool toolDropdownOpen
             , actionButton height True ToggleToolDropdown Icons.moreVertical
-            , filler
-            , actionButton height False NoOp Icons.rotateCcw
+            ]
+
+        actionButtons =
+            [ actionButton height False NoOp Icons.rotateCcw
             , actionButton height True NoOp Icons.trash2
             , actionButton height True NoOp Icons.image
             ]
 
         zoomActions =
-            [ filler
-            , actionButton height True NoOp Icons.zoomIn
+            [ actionButton height True NoOp Icons.zoomIn
             , actionButton height True NoOp Icons.zoomOut
             , actionButton height True NoOp Icons.zoomFit
             ]
     in
     case orientation of
         Device.Portrait ->
-            Element.row Style.None [] mainActions
-                |> below [ Element.row Style.None [] zoomActions ]
+            (toolButtons ++ filler :: actionButtons)
+                |> Element.row Style.None []
+                |> below [ el Style.None [ alignRight ] (Element.row Style.None [] zoomActions) ]
 
         Device.Landscape ->
-            Element.row Style.None [] (mainActions ++ zoomActions)
+            (toolButtons ++ filler :: actionButtons ++ filler :: zoomActions)
+                |> Element.row Style.None []
 
 
 actionButton : Float -> Bool -> Msg -> List (Svg Msg) -> Element Style v Msg

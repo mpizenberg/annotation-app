@@ -38,15 +38,21 @@ init sizeFlag =
     let
         device =
             Device.classify sizeFlag
+
+        layout =
+            pageLayout device
+
+        viewer =
+            Viewer.setSize layout.viewerSize Viewer.default
     in
     { device = device
-    , layout = pageLayout device
+    , layout = layout
     , tool = Tool.Move
     , toolDropdownOpen = False
     , currentDropdownTool = Tool.BBox
     , bbox = Nothing
     , dragState = NoDrag
-    , viewer = Viewer.default
+    , viewer = viewer
     }
 
 
@@ -93,9 +99,16 @@ type Msg
     | SelectTool Tool
     | ToggleToolDropdown
     | PointerMsg PointerMsg
+    | ZoomMsg ZoomMsg
 
 
 type PointerMsg
     = PointerDownAt Position
     | PointerMoveAt Position
     | PointerUpAt Position
+
+
+type ZoomMsg
+    = ZoomIn
+    | ZoomOut
+    | ZoomFit

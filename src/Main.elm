@@ -11,7 +11,7 @@ import Annotation.Viewer as Viewer
 import Device exposing (Device)
 import Html exposing (Html)
 import Tool exposing (Tool)
-import Types exposing (DragState(..), Model, Msg(..), PointerMsg(..), Position)
+import Types exposing (DragState(..), Model, Msg(..), PointerMsg(..), Position, ZoomMsg(..))
 import View
 
 
@@ -83,6 +83,9 @@ update msg model =
         PointerMsg pointerMsg ->
             ( updateWithPointer pointerMsg model, Cmd.none )
 
+        ZoomMsg zoomMsg ->
+            ( updateZoom zoomMsg model, Cmd.none )
+
 
 updateWithPointer : PointerMsg -> Model -> Model
 updateWithPointer pointerMsg model =
@@ -113,6 +116,19 @@ updateWithPointer pointerMsg model =
 
         ( PointerUpAt _, Tool.BBox, _ ) ->
             { model | dragState = NoDrag }
+
+        _ ->
+            model
+
+
+updateZoom : ZoomMsg -> Model -> Model
+updateZoom zoomMsg model =
+    case zoomMsg of
+        ZoomIn ->
+            { model | viewer = Viewer.setZoomCentered (1.5625 * model.viewer.zoom) model.viewer }
+
+        ZoomOut ->
+            { model | viewer = Viewer.setZoomCentered (0.64 * model.viewer.zoom) model.viewer }
 
         _ ->
             model

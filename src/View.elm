@@ -15,7 +15,7 @@ import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Tool exposing (Tool)
-import Types exposing (Model, Msg(..), PointerMsg(..), Position)
+import Types exposing (Model, Msg(..), PointerMsg(..), Position, ZoomMsg(..))
 
 
 view : Model -> Html Msg
@@ -58,9 +58,9 @@ deviceActionBar device currentTool currentDropdownTool toolDropdownOpen ( width,
             ]
 
         zoomActions =
-            [ actionButton height True NoOp Icons.zoomIn
-            , actionButton height True NoOp Icons.zoomOut
-            , actionButton height True NoOp Icons.zoomFit
+            [ actionButton height True (ZoomMsg ZoomIn) Icons.zoomIn
+            , actionButton height True (ZoomMsg ZoomOut) Icons.zoomOut
+            , actionButton height True (ZoomMsg ZoomFit) Icons.zoomFit
             ]
     in
     case ( device.kind, device.orientation ) of

@@ -165,4 +165,4 @@ contour =
 
 outline : List (Svg msg)
 outline =
-    [ Svg.path [ d "M12,22 Q1,15 4,10 t6,0 t6,0 t6,0 T12,22" ] [] ]
+    [ Svg.path [ d "M12,22 Q1,15 4,6 t6,0 t6,0 t6,0 T12,22" ] [] ]

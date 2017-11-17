@@ -22,12 +22,14 @@ sheet =
             ]
                 ++ noUserSelect
         , Style.style (Button False) <|
-            [ Style.hover [ Color.background Color.lightGrey, Style.cursor "pointer" ]
+            [ Color.background (Color.rgba 255 255 255 0.8)
+            , Style.hover [ Color.background Color.lightGrey, Style.cursor "pointer" ]
             , Style.prop "touch-action" "none"
             ]
                 ++ noUserSelect
         , Style.style (Button True) <|
-            [ Color.text Color.lightGrey
+            [ Color.background (Color.rgba 255 255 255 0.8)
+            , Color.text Color.lightGrey
             , Style.prop "touch-action" "none"
             ]
                 ++ noUserSelect

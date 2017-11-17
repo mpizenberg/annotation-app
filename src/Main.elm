@@ -87,6 +87,18 @@ update msg model =
 updateWithPointer : PointerMsg -> Model -> Model
 updateWithPointer pointerMsg model =
     case ( pointerMsg, model.tool, model.dragState ) of
+        ( PointerDownAt pos, Tool.Move, _ ) ->
+            { model | dragState = DraggingFrom pos }
+
+        ( PointerMoveAt ( x, y ), Tool.Move, DraggingFrom ( ox, oy ) ) ->
+            { model
+                | dragState = DraggingFrom ( x, y )
+                , viewer = Viewer.grabMove ( x - ox, y - oy ) model.viewer
+            }
+
+        ( PointerUpAt _, Tool.Move, _ ) ->
+            { model | dragState = NoDrag }
+
         ( PointerDownAt pos, Tool.BBox, _ ) ->
             { model | dragState = DraggingFrom pos, bbox = Nothing }
 

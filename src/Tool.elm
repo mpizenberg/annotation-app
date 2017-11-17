@@ -37,7 +37,7 @@ svgElement size tool =
                     Icons.boundingBox
 
                 Outline ->
-                    Icons.download
+                    Icons.outline
     in
     lazy2 Icons.sized size svgIcon
         |> Element.html

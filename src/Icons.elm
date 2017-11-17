@@ -16,6 +16,7 @@ module Icons
         , moreVertical
         , move
         , octagon
+        , outline
         , rotateCcw
         , save
         , sized
@@ -153,3 +154,8 @@ boundingBox =
 contour : List (Svg msg)
 contour =
     [ Svg.polygon [ points "12 22, 2 11, 7 2, 12 9, 17 2, 22 11" ] [] ]
+
+
+outline : List (Svg msg)
+outline =
+    [ Svg.path [ d "M12,22 Q1,15 4,10 t6,0 t6,0 t6,0 T12,22" ] [] ]

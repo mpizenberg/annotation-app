@@ -1,9 +1,11 @@
 module View exposing (view)
 
 import Annotation.Geometry.Types exposing (BoundingBox)
+import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Button exposing (Button)
+import Color
 import Device exposing (Device)
 import Element exposing (Element, below, el, empty, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
@@ -149,13 +151,17 @@ imageViewer viewer maybeBBox =
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
     in
-    Viewer.viewInWithDetails attributes viewer (viewBBox maybeBBox)
+    Viewer.viewInWithDetails attributes viewer (viewBBox viewer.zoom maybeBBox)
         |> Element.html
         |> el Style.Viewer [ Attributes.height fill ]
 
 
-viewBBox : Maybe BoundingBox -> Svg msg
-viewBBox maybeBBox =
+viewBBox : Float -> Maybe BoundingBox -> Svg msg
+viewBBox zoom maybeBBox =
+    let
+        strokeStyle =
+            Style.Stroke (2 / zoom) Color.red
+    in
     maybeBBox
-        |> Maybe.map Svg.boundingBox
+        |> Maybe.map (Svg.boundingBoxStyled strokeStyle Style.fillDefault)
         |> Maybe.withDefault (Svg.text "No bounding box")

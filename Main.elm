@@ -15,6 +15,7 @@ import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Tool exposing (Tool)
+import Types exposing (Model, Msg(..))
 
 
 main : Program Device.Size Model Msg
@@ -34,14 +35,6 @@ main =
 port resizes : (Device.Size -> msg) -> Sub msg
 
 
-type alias Model =
-    { device : Device
-    , tool : Tool
-    , toolDropdownOpen : Bool
-    , currentDropdownTool : Tool
-    }
-
-
 init : Device.Size -> ( Model, Cmd Msg )
 init sizeFlag =
     ( Model (Device.classify sizeFlag) Tool.Move False Tool.Contour, Cmd.none )
@@ -49,13 +42,6 @@ init sizeFlag =
 
 
 -- UPDATE ############################################################
-
-
-type Msg
-    = NoOp
-    | WindowResizesMsg Device.Size
-    | SelectTool Tool
-    | ToggleToolDropdown
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

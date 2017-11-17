@@ -31,7 +31,7 @@ port resizes : (Device.Size -> msg) -> Sub msg
 
 init : Device.Size -> ( Model, Cmd Msg )
 init sizeFlag =
-    ( Model (Device.classify sizeFlag) Tool.Move False Tool.Contour, Cmd.none )
+    ( Model (Device.classify sizeFlag) Tool.Move False Tool.BBox, Cmd.none )
 
 
 

@@ -12,8 +12,8 @@ import Icons
 
 type Tool
     = Move
-    | Contour
     | BBox
+    | Contour
     | Outline
     | Stroke
     | Point
@@ -21,7 +21,7 @@ type Tool
 
 allAnnotationTools : List Tool
 allAnnotationTools =
-    [ Contour, BBox, Outline, Stroke, Point ]
+    [ BBox, Contour, Outline, Stroke, Point ]
 
 
 svgElement : Float -> Tool -> Element style variation msg
@@ -32,11 +32,11 @@ svgElement size tool =
                 Move ->
                     Icons.move
 
-                Contour ->
-                    Icons.contour
-
                 BBox ->
                     Icons.boundingBox
+
+                Contour ->
+                    Icons.contour
 
                 Outline ->
                     Icons.outline

@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Annotation.Geometry.Types exposing (BoundingBox)
 import Annotation.Viewer as Viewer exposing (Viewer)
+import Control exposing (Control)
 import Device exposing (Device)
 import Tool exposing (Tool)
 
@@ -14,6 +15,7 @@ type alias Model =
     , currentDropdownTool : Tool
     , bbox : Maybe BoundingBox
     , dragState : DragState
+    , moveThrottleState : Control.State Msg
     , viewer : Viewer
     }
 
@@ -52,6 +54,7 @@ init sizeFlag =
     , currentDropdownTool = Tool.BBox
     , bbox = Nothing
     , dragState = NoDrag
+    , moveThrottleState = Control.initialState
     , viewer = viewer
     }
 
@@ -99,6 +102,7 @@ type Msg
     | SelectTool Tool
     | ToggleToolDropdown
     | PointerMsg PointerMsg
+    | MoveThrottle (Control Msg)
     | ZoomMsg ZoomMsg
 
 

@@ -8,6 +8,7 @@ port module Main exposing (..)
 import Annotation.Geometry.BoundingBox as BBox
 import Annotation.Geometry.Point as Point
 import Annotation.Viewer as Viewer
+import Control
 import Device exposing (Device)
 import Html exposing (Html)
 import Tool exposing (Tool)
@@ -82,6 +83,9 @@ update msg model =
 
         PointerMsg pointerMsg ->
             ( updateWithPointer pointerMsg model, Cmd.none )
+
+        MoveThrottle throttleMsg ->
+            Control.update (\s -> { model | moveThrottleState = s }) model.moveThrottleState throttleMsg
 
         ZoomMsg zoomMsg ->
             ( updateZoom zoomMsg model, Cmd.none )

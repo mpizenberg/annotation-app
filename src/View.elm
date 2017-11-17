@@ -6,6 +6,7 @@ import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Button exposing (Button)
 import Color
+import Control.Throttle as Throttle
 import Device exposing (Device)
 import Element exposing (Element, below, el, empty, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
@@ -16,6 +17,7 @@ import Icons
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
+import Time
 import Tool exposing (Tool)
 import Types exposing (Model, Msg(..), PointerMsg(..), Position, ZoomMsg(..))
 
@@ -148,6 +150,7 @@ imageViewer viewer maybeBBox =
             , Html.Attributes.attribute "elm-pep" "true"
             , Pointer.onDown (.pointer >> .offsetPos >> PointerDownAt >> PointerMsg)
             , Pointer.onMove (.pointer >> .offsetPos >> PointerMoveAt >> PointerMsg)
+                |> Html.Attributes.map (Throttle.both MoveThrottle <| Time.second / 35)
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
     in

@@ -30,7 +30,7 @@ svgElement size tool =
                     Icons.move
 
                 Contour ->
-                    Icons.octagon
+                    Icons.contour
 
                 BBox ->
                     Icons.boundingBox

@@ -8,6 +8,7 @@
 module Icons
     exposing
         ( boundingBox
+        , contour
         , defaultAttributes
         , download
         , image
@@ -147,3 +148,8 @@ boundingBox : List (Svg msg)
 boundingBox =
     [ Svg.path [ d "M 23 17 h -6 m -3 0 H 4 V 7 H 20 V 11 m 0 3 v 6" ] []
     ]
+
+
+contour : List (Svg msg)
+contour =
+    [ Svg.polygon [ points "12 22, 2 11, 7 2, 12 9, 17 2, 22 11" ] [] ]

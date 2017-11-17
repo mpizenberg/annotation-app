@@ -166,3 +166,5 @@ contour =
 outline : List (Svg msg)
 outline =
     [ Svg.path [ d "M12,22 Q1,15 4,6 t6,0 t6,0 t6,0 T12,22" ] [] ]
+        |> Svg.g [ transform "rotate(90 12 12)" ]
+        |> List.singleton

@@ -26,44 +26,11 @@ view model =
 
 responsiveLayout : Model -> Element Style variation Msg
 responsiveLayout model =
-    let
-        ( actionBarWidth, actionBarHeight ) =
-            ( model.device.size.width |> toFloat
-            , deviceActionBarHeight model.device |> toFloat
-            )
-
-        ( viewerWidth, viewerHeight ) =
-            ( model.device.size.width |> toFloat
-            , max 0 (toFloat model.device.size.height - actionBarHeight)
-            )
-
-        actionBar =
-            deviceActionBar model.device model.tool model.currentDropdownTool model.toolDropdownOpen ( actionBarWidth, actionBarHeight )
-    in
     Element.column Style.None
         [ Attributes.height fill ]
-        [ actionBar
+        [ deviceActionBar model.device model.tool model.currentDropdownTool model.toolDropdownOpen model.layout.actionBarSize
         , imageViewer model.viewer model.bbox
         ]
-
-
-deviceActionBarHeight : Device -> Int
-deviceActionBarHeight device =
-    case ( device.kind, device.orientation ) of
-        ( Device.Phone, Device.Portrait ) ->
-            device.size.width // 7
-
-        ( Device.Phone, Device.Landscape ) ->
-            device.size.width // 13
-
-        ( Device.Tablet, Device.Portrait ) ->
-            device.size.width // 10
-
-        ( Device.Tablet, Device.Landscape ) ->
-            device.size.width // 16
-
-        _ ->
-            min 72 (device.size.width // 16)
 
 
 deviceActionBar : Device -> Tool -> Tool -> Bool -> ( Float, Float ) -> Element Style variation Msg

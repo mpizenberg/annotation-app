@@ -7,6 +7,7 @@ port module Main exposing (..)
 
 import Annotation.Geometry.BoundingBox as BBox
 import Annotation.Geometry.Point as Point
+import Annotation.Viewer as Viewer
 import Device exposing (Device)
 import Html exposing (Html)
 import Tool exposing (Tool)
@@ -47,7 +48,17 @@ update msg model =
             ( model, Cmd.none )
 
         WindowResizesMsg size ->
-            ( { model | device = Device.classify size }
+            let
+                device =
+                    Device.classify size
+
+                layout =
+                    Types.pageLayout device
+
+                viewer =
+                    Viewer.setSize layout.viewerSize model.viewer
+            in
+            ( { model | device = device, layout = layout, viewer = viewer }
             , Cmd.none
             )
 

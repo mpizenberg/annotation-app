@@ -4,6 +4,7 @@ import Annotation.Geometry.Types exposing (BoundingBox)
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)
 import Device exposing (Device)
+import Image exposing (Image)
 import Tool exposing (Tool)
 
 
@@ -17,6 +18,7 @@ type alias Model =
     , dragState : DragState
     , moveThrottleState : Control.State Msg
     , viewer : Viewer
+    , image : Maybe Image
     }
 
 
@@ -56,6 +58,7 @@ init sizeFlag =
     , dragState = NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer
+    , image = Nothing
     }
 
 

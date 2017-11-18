@@ -14,6 +14,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Html.Lazy exposing (lazy2)
 import Icons
+import Image exposing (Image)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
@@ -33,7 +34,7 @@ responsiveLayout model =
     Element.column Style.None
         [ Attributes.height fill ]
         [ deviceActionBar model.device model.tool model.currentDropdownTool model.toolDropdownOpen model.layout.actionBarSize
-        , imageViewer model.viewer model.bbox
+        , imageViewer model.viewer model.image model.bbox
         ]
 
 
@@ -142,8 +143,8 @@ toolButton size currentTool tool =
         }
 
 
-imageViewer : Viewer -> Maybe BoundingBox -> Element Style variation Msg
-imageViewer viewer maybeBBox =
+imageViewer : Viewer -> Maybe Image -> Maybe BoundingBox -> Element Style variation Msg
+imageViewer viewer maybeImage maybeBBox =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
@@ -154,7 +155,17 @@ imageViewer viewer maybeBBox =
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
     in
-    Viewer.viewInWithDetails attributes viewer (viewBBox viewer.zoom maybeBBox)
+    viewBBox viewer.zoom maybeBBox
+        |> List.singleton
+        |> (case maybeImage of
+                Just image ->
+                    (::) (Image.viewSvg [] image)
+
+                Nothing ->
+                    identity
+           )
+        |> Svg.g []
+        |> Viewer.viewInWithDetails attributes viewer
         |> Element.html
         |> el Style.Viewer [ Attributes.height fill ]
 

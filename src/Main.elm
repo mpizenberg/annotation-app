@@ -171,8 +171,8 @@ updateZoom zoomMsg model =
         ZoomOut ->
             { model | viewer = Viewer.setZoomCentered (0.64 * model.viewer.zoom) model.viewer }
 
-        _ ->
-            model
+        ZoomFit ->
+            resizeViewer model.viewer.size model
 
 
 subscriptions : Model -> Sub Msg

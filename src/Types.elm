@@ -5,6 +5,7 @@ import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)
 import Device exposing (Device)
 import Image exposing (Image)
+import Json.Encode as Encode
 import Tool exposing (Tool)
 
 
@@ -107,6 +108,8 @@ type Msg
     | PointerMsg PointerMsg
     | MoveThrottle (Control Msg)
     | ZoomMsg ZoomMsg
+    | LoadImageFile Encode.Value
+    | ImageLoaded ( String, Int, Int )
 
 
 type PointerMsg

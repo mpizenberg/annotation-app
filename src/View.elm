@@ -8,13 +8,15 @@ import Button exposing (Button)
 import Color
 import Control.Throttle as Throttle
 import Device exposing (Device)
-import Element exposing (Element, below, el, empty, span)
+import Element exposing (Element, below, el, empty, node, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
 import Html.Attributes
+import Html.Events
 import Html.Lazy exposing (lazy2)
 import Icons
 import Image exposing (Image)
+import Json.Decode as Decode
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
@@ -59,7 +61,7 @@ deviceActionBar device currentTool currentDropdownTool toolDropdownOpen ( width,
         actionButtons =
             [ actionButton height False NoOp Icons.rotateCcw
             , actionButton height True NoOp Icons.trash2
-            , actionButton height True NoOp Icons.image
+            , loadFileInput height Icons.image
             ]
 
         zoomActions =
@@ -99,6 +101,46 @@ actionButton size clickable sendMsg innerSvg =
         , outerStyle = Style.Button (not clickable)
         , otherAttributes = [ Attributes.attribute "elm-pep" "true" ]
         }
+
+
+loadFileInput : Float -> List (Svg Msg) -> Element Style variation Msg
+loadFileInput size innerSvg =
+    let
+        invisibleInput =
+            Html.input
+                [ Html.Attributes.id "file-input"
+                , Html.Attributes.type_ "file"
+                , Html.Attributes.style [ ( "display", "none" ) ]
+                , loadFileEvent
+                ]
+                []
+
+        labelButton =
+            Button.view
+                { actionability = Button.Abled Button.Inactive
+                , action = Html.Attributes.for "file-input" |> Attributes.toAttr
+                , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
+                , innerStyle = Style.None
+                , size = ( size, size )
+                , outerStyle = Style.Button False
+                , otherAttributes = []
+                }
+    in
+    Element.row Style.None [] [ Element.html invisibleInput, node "label" labelButton ]
+
+
+loadFileEvent : Html.Attribute Msg
+loadFileEvent =
+    Decode.at [ "target", "files", "0" ] Decode.value
+        |> Decode.map LoadImageFile
+        |> Html.Events.onWithOptions "change" stopAndPrevent
+
+
+stopAndPrevent : Html.Events.Options
+stopAndPrevent =
+    { stopPropagation = True
+    , preventDefault = True
+    }
 
 
 toolDropdown : Float -> Tool -> Tool -> Bool -> Element Style variation Msg

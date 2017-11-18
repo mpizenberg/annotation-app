@@ -11,6 +11,8 @@ import Annotation.Viewer as Viewer
 import Control
 import Device exposing (Device)
 import Html exposing (Html)
+import Image exposing (Image)
+import Json.Encode as Encode
 import Tool exposing (Tool)
 import Types exposing (DragState(..), Model, Msg(..), PointerMsg(..), Position, ZoomMsg(..))
 import View
@@ -31,6 +33,12 @@ main =
 
 
 port resizes : (Device.Size -> msg) -> Sub msg
+
+
+port loadImageFile : Encode.Value -> Cmd msg
+
+
+port imageLoaded : (( String, Int, Int ) -> msg) -> Sub msg
 
 
 init : Device.Size -> ( Model, Cmd Msg )
@@ -90,6 +98,32 @@ update msg model =
         ZoomMsg zoomMsg ->
             ( updateZoom zoomMsg model, Cmd.none )
 
+        LoadImageFile jsValue ->
+            ( model, loadImageFile jsValue )
+
+        ImageLoaded ( src, width, height ) ->
+            ( resetImage (Image src width height) model, Cmd.none )
+
+
+resetImage : Image -> Model -> Model
+resetImage image model =
+    let
+        initialModel =
+            Types.init model.device.size
+    in
+    { initialModel | image = Just image }
+        |> resizeViewer model.viewer.size
+
+
+resizeViewer : ( Float, Float ) -> Model -> Model
+resizeViewer size model =
+    case model.image of
+        Nothing ->
+            model
+
+        Just image ->
+            { model | viewer = Viewer.setSize size model.viewer |> Viewer.fitImage 0.8 image }
+
 
 updateWithPointer : PointerMsg -> Model -> Model
 updateWithPointer pointerMsg model =
@@ -143,7 +177,10 @@ updateZoom zoomMsg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    resizes WindowResizesMsg
+    Sub.batch
+        [ resizes WindowResizesMsg
+        , imageLoaded ImageLoaded
+        ]
 
 
 

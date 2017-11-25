@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Annotation.Geometry.Stroke as Stroke
 import Annotation.Geometry.Types exposing (BoundingBox)
 import Annotation.Style as Style
 import Annotation.Svg as Svg
@@ -22,7 +23,7 @@ import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Time
 import Tool exposing (Tool)
-import Types exposing (Model, Msg(..), PointerMsg(..), Position, ZoomMsg(..))
+import Types exposing (..)
 
 
 view : Model -> Html Msg
@@ -36,7 +37,7 @@ responsiveLayout model =
     Element.column Style.None
         [ Attributes.height fill ]
         [ deviceActionBar model.device model.tool model.currentDropdownTool model.toolDropdownOpen model.layout.actionBarSize
-        , imageViewer model.viewer model.image model.bbox
+        , imageViewer model
         ]
 
 
@@ -185,8 +186,8 @@ toolButton size currentTool tool =
         }
 
 
-imageViewer : Viewer -> Maybe Image -> Maybe BoundingBox -> Element Style variation Msg
-imageViewer viewer maybeImage maybeBBox =
+imageViewer : Model -> Element Style variation Msg
+imageViewer model =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
@@ -197,19 +198,24 @@ imageViewer viewer maybeImage maybeBBox =
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
     in
-    viewBBox viewer.zoom maybeBBox
-        |> List.singleton
-        |> (case maybeImage of
-                Just image ->
-                    (::) (Image.viewSvg [] image)
-
-                Nothing ->
-                    identity
-           )
+    []
+        |> (::) (viewBBox model.viewer.zoom model.bbox)
+        |> (::) (viewContour model.viewer.zoom model.contour)
+        |> (::) (viewImage model.image)
         |> Svg.g []
-        |> Viewer.viewInWithDetails attributes viewer
+        |> Viewer.viewInWithDetails attributes model.viewer
         |> Element.html
         |> el Style.Viewer [ Attributes.height fill ]
+
+
+viewImage : Maybe Image -> Svg msg
+viewImage maybeImage =
+    case maybeImage of
+        Nothing ->
+            Svg.text "No background image"
+
+        Just image ->
+            Image.viewSvg [] image
 
 
 viewBBox : Float -> Maybe BoundingBox -> Svg msg
@@ -221,3 +227,23 @@ viewBBox zoom maybeBBox =
     maybeBBox
         |> Maybe.map (Svg.boundingBoxStyled strokeStyle Style.fillDefault)
         |> Maybe.withDefault (Svg.text "No bounding box")
+
+
+viewContour : Float -> ContourDrawing -> Svg msg
+viewContour zoom contourDrawing =
+    let
+        strokeStyle =
+            Style.Stroke (2 / zoom) Color.red
+    in
+    case contourDrawing of
+        NoContour ->
+            Svg.text "No contour"
+
+        Ended contour ->
+            Svg.contourStyled strokeStyle Style.fillDefault contour
+
+        DrawingStartedAt _ stroke ->
+            Stroke.points stroke
+                |> List.map (Svg.pointStyled <| Style.Disk (10 / zoom) Color.orange)
+                |> (::) (Svg.strokeStyled strokeStyle stroke)
+                |> Svg.g []

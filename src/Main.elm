@@ -7,6 +7,7 @@ port module Main exposing (..)
 
 import Annotation.Geometry.BoundingBox as BBox
 import Annotation.Geometry.Point as Point
+import Annotation.Geometry.Stroke as Stroke
 import Annotation.Viewer as Viewer
 import Control
 import Device exposing (Device)
@@ -14,7 +15,7 @@ import Html exposing (Html)
 import Image exposing (Image)
 import Json.Encode as Encode
 import Tool exposing (Tool)
-import Types exposing (DragState(..), Model, Msg(..), PointerMsg(..), Position, ZoomMsg(..))
+import Types exposing (..)
 import View
 
 
@@ -157,6 +158,88 @@ updateWithPointer pointerMsg model =
 
         ( PointerUpAt _, Tool.BBox, _ ) ->
             { model | dragState = NoDrag }
+
+        ( _, Tool.Contour, _ ) ->
+            updateContour pointerMsg model
+
+        _ ->
+            model
+
+
+updateContour : PointerMsg -> Model -> Model
+updateContour pointerMsg model =
+    case ( pointerMsg, model.dragState, model.contour ) of
+        ( PointerDownAt pos, NoDrag, _ ) ->
+            let
+                scaledPos =
+                    Viewer.positionIn model.viewer pos
+
+                dragState =
+                    DraggingFrom scaledPos
+
+                point =
+                    Point.fromCoordinates scaledPos
+
+                ( startPos, newStroke ) =
+                    case model.contour of
+                        DrawingStartedAt scaledStartPos stroke ->
+                            ( scaledStartPos, Stroke.addPoint point stroke )
+
+                        _ ->
+                            ( scaledPos, Stroke.fromPoints [ point ] )
+
+                contour =
+                    DrawingStartedAt startPos newStroke
+            in
+            { model | dragState = dragState, contour = contour }
+
+        ( PointerMoveAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
+            let
+                scaledPos =
+                    Viewer.positionIn model.viewer pos
+
+                point =
+                    Point.fromCoordinates scaledPos
+
+                ( startPos, newStroke ) =
+                    case Stroke.points stroke of
+                        _ :: [] ->
+                            ( scaledPos, Stroke.fromPoints [ point ] )
+
+                        _ :: rest ->
+                            ( scaledStartPos, Stroke.fromPoints (point :: rest) )
+
+                        _ ->
+                            ( scaledStartPos, stroke )
+
+                contour =
+                    DrawingStartedAt startPos newStroke
+            in
+            { model | contour = contour }
+
+        ( PointerUpAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
+            case Stroke.points stroke of
+                startPoint :: [] ->
+                    { model | dragState = NoDrag }
+
+                endPoint :: rest ->
+                    let
+                        scaledEndPos =
+                            Viewer.positionIn model.viewer pos
+
+                        distance ( x1, x2 ) ( y1, y2 ) =
+                            abs (x1 - y1) + abs (x2 - y2)
+                    in
+                    if distance scaledEndPos scaledStartPos > 10 then
+                        { model | dragState = NoDrag }
+                    else
+                        { model
+                            | dragState = NoDrag
+                            , contour = Ended (Stroke.close <| Stroke.fromPoints rest)
+                        }
+
+                _ ->
+                    { model | dragState = NoDrag }
 
         _ ->
             model

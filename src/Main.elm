@@ -260,7 +260,7 @@ updateContour pointerMsg model =
                         distance ( x1, x2 ) ( y1, y2 ) =
                             abs (x1 - y1) + abs (x2 - y2)
                     in
-                    if distance scaledEndPos scaledStartPos > 10 then
+                    if distance scaledEndPos scaledStartPos > (30 / model.viewer.zoom) then
                         { model | dragState = NoDrag }
                     else
                         { model

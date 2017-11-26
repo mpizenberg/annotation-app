@@ -99,6 +99,14 @@ update msg model =
         ZoomMsg zoomMsg ->
             ( updateZoom zoomMsg model, Cmd.none )
 
+        ClearAnnotations ->
+            case model.image of
+                Just image ->
+                    ( resetImage image model, Cmd.none )
+
+                Nothing ->
+                    ( Types.init model.device.size, Cmd.none )
+
         LoadImageFile jsValue ->
             ( model, loadImageFile jsValue )
 

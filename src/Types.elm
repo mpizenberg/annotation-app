@@ -128,6 +128,7 @@ type Msg
     | PointerMsg PointerMsg
     | MoveThrottle (Control Msg)
     | ZoomMsg ZoomMsg
+    | ClearAnnotations
     | LoadImageFile Encode.Value
     | ImageLoaded ( String, Int, Int )
 

@@ -61,7 +61,7 @@ deviceActionBar device currentTool currentDropdownTool toolDropdownOpen ( width,
 
         actionButtons =
             [ actionButton height False NoOp Icons.rotateCcw
-            , actionButton height True NoOp Icons.trash2
+            , actionButton height True ClearAnnotations Icons.trash2
             , loadFileInput height Icons.image
             ]
 

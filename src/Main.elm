@@ -162,6 +162,36 @@ updateWithPointer pointerMsg model =
         ( _, Tool.Contour, _ ) ->
             updateContour pointerMsg model
 
+        ( _, Tool.Point, _ ) ->
+            updatePoint pointerMsg model
+
+        _ ->
+            model
+
+
+updatePoint : PointerMsg -> Model -> Model
+updatePoint pointerMsg model =
+    case ( pointerMsg, model.dragState ) of
+        ( PointerDownAt pos, NoDrag ) ->
+            let
+                scaledPos =
+                    Viewer.positionIn model.viewer pos
+            in
+            { model
+                | point = Just (Point.fromCoordinates scaledPos)
+                , dragState = DraggingFrom scaledPos
+            }
+
+        ( PointerMoveAt pos, DraggingFrom _ ) ->
+            let
+                scaledPos =
+                    Viewer.positionIn model.viewer pos
+            in
+            { model | point = Just (Point.fromCoordinates scaledPos) }
+
+        ( PointerUpAt _, _ ) ->
+            { model | dragState = NoDrag }
+
         _ ->
             model
 

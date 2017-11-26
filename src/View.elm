@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Annotation.Geometry.Stroke as Stroke
-import Annotation.Geometry.Types exposing (BoundingBox)
+import Annotation.Geometry.Types exposing (BoundingBox, Point)
 import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
@@ -201,6 +201,7 @@ imageViewer model =
     []
         |> (::) (viewBBox model.viewer.zoom model.bbox)
         |> (::) (viewContour model.viewer.zoom model.contour)
+        |> (::) (viewPoint model.viewer.zoom model.point)
         |> (::) (viewImage model.image)
         |> Svg.g []
         |> Viewer.viewInWithDetails attributes model.viewer
@@ -216,6 +217,13 @@ viewImage maybeImage =
 
         Just image ->
             Image.viewSvg [] image
+
+
+viewPoint : Float -> Maybe Point -> Svg msg
+viewPoint zoom maybePoint =
+    maybePoint
+        |> Maybe.map (Svg.pointStyled (Style.Disk (10 / zoom) Color.blue))
+        |> Maybe.withDefault (Svg.text "No point there")
 
 
 viewBBox : Float -> Maybe BoundingBox -> Svg msg

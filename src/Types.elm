@@ -1,6 +1,6 @@
 module Types exposing (..)
 
-import Annotation.Geometry.Types exposing (BoundingBox, Contour, Stroke)
+import Annotation.Geometry.Types exposing (BoundingBox, Contour, Point, Stroke)
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)
 import Device exposing (Device)
@@ -17,6 +17,7 @@ type alias Model =
     , currentDropdownTool : Tool
     , bbox : Maybe BoundingBox
     , contour : ContourDrawing
+    , point : Maybe Point
     , dragState : DragState
     , moveThrottleState : Control.State Msg
     , viewer : Viewer
@@ -64,6 +65,7 @@ init sizeFlag =
     , currentDropdownTool = Tool.BBox
     , bbox = Nothing
     , contour = NoContour
+    , point = Nothing
     , dragState = NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer

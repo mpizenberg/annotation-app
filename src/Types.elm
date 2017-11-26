@@ -18,6 +18,7 @@ type alias Model =
     , bbox : Maybe BoundingBox
     , outline : OutlineDrawing
     , contour : ContourDrawing
+    , stroke : Maybe Stroke
     , point : Maybe Point
     , dragState : DragState
     , moveThrottleState : Control.State Msg
@@ -73,6 +74,7 @@ init sizeFlag =
     , bbox = Nothing
     , outline = NoOutline
     , contour = NoContour
+    , stroke = Nothing
     , point = Nothing
     , dragState = NoDrag
     , moveThrottleState = Control.initialState

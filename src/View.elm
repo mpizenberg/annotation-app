@@ -200,6 +200,7 @@ imageViewer model =
     in
     []
         |> (::) (viewPoint model.viewer.zoom model.point)
+        |> (::) (viewStroke model.viewer.zoom model.stroke)
         |> (::) (viewBBox model.viewer.zoom model.bbox)
         |> (::) (viewContour model.viewer.zoom model.contour)
         |> (::) (viewOutline model.viewer.zoom model.outline)
@@ -225,6 +226,13 @@ viewPoint zoom maybePoint =
     maybePoint
         |> Maybe.map (Svg.pointStyled (Style.Disk (10 / zoom) Color.blue))
         |> Maybe.withDefault (Svg.text "No point there")
+
+
+viewStroke : Float -> Maybe Stroke -> Svg msg
+viewStroke zoom maybeStroke =
+    maybeStroke
+        |> Maybe.map (Svg.strokeStyled <| Style.Stroke (2 / zoom) Color.purple)
+        |> Maybe.withDefault (Svg.text "No stroke")
 
 
 viewBBox : Float -> Maybe BoundingBox -> Svg msg

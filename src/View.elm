@@ -199,9 +199,9 @@ imageViewer model =
             ]
     in
     []
+        |> (::) (viewPoint model.viewer.zoom model.point)
         |> (::) (viewBBox model.viewer.zoom model.bbox)
         |> (::) (viewContour model.viewer.zoom model.contour)
-        |> (::) (viewPoint model.viewer.zoom model.point)
         |> (::) (viewImage model.image)
         |> Svg.g []
         |> Viewer.viewInWithDetails attributes model.viewer

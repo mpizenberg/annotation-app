@@ -92,8 +92,7 @@ deviceActionBar param =
                         |> List.map (toolButton height param.currentTool)
 
         actionButtons =
-            [ actionButton height False NoOp Icons.rotateCcw
-            , actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
+            [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
             , loadFileInput height Icons.image
             ]
 

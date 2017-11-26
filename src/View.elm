@@ -34,30 +34,51 @@ view model =
 
 responsiveLayout : Model -> Element Style variation Msg
 responsiveLayout model =
+    let
+        actionBarParameters =
+            { device = model.device
+            , currentTool = model.tool
+            , currentDropdownTool = model.currentDropdownTool
+            , dropdownIsOpen = model.toolDropdownOpen
+            , size = model.layout.actionBarSize
+            }
+    in
     Element.column Style.None
         [ Attributes.height fill ]
-        [ deviceActionBar model.device model.tool model.currentDropdownTool model.toolDropdownOpen model.layout.actionBarSize
+        [ deviceActionBar actionBarParameters
         , imageViewer model
         ]
 
 
-deviceActionBar : Device -> Tool -> Tool -> Bool -> ( Float, Float ) -> Element Style variation Msg
-deviceActionBar device currentTool currentDropdownTool toolDropdownOpen ( width, height ) =
+type alias ActionBarParameters =
+    { device : Device
+    , currentTool : Tool
+    , currentDropdownTool : Tool
+    , dropdownIsOpen : Bool
+    , size : ( Float, Float )
+    }
+
+
+deviceActionBar : ActionBarParameters -> Element Style variation Msg
+deviceActionBar param =
     let
+        ( width, height ) =
+            param.size
+
         filler =
             el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
 
         toolButtons =
-            case device.kind of
+            case param.device.kind of
                 Device.Phone ->
-                    [ toolButton height currentTool Tool.Move
-                    , toolDropdown height currentTool currentDropdownTool toolDropdownOpen
+                    [ toolButton height param.currentTool Tool.Move
+                    , toolDropdown height param.currentTool param.currentDropdownTool param.dropdownIsOpen
                     , actionButton height True ToggleToolDropdown Icons.moreVertical
                     ]
 
                 _ ->
                     (Tool.Move :: Tool.allAnnotationTools)
-                        |> List.map (toolButton height currentTool)
+                        |> List.map (toolButton height param.currentTool)
 
         actionButtons =
             [ actionButton height False NoOp Icons.rotateCcw
@@ -71,7 +92,7 @@ deviceActionBar device currentTool currentDropdownTool toolDropdownOpen ( width,
             , actionButton height True (ZoomMsg ZoomFit) Icons.zoomFit
             ]
     in
-    case ( device.kind, device.orientation ) of
+    case ( param.device.kind, param.device.orientation ) of
         ( Device.Phone, Device.Portrait ) ->
             (toolButtons ++ filler :: actionButtons)
                 |> Element.row Style.None []

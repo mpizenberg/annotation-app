@@ -35,12 +35,21 @@ view model =
 responsiveLayout : Model -> Element Style variation Msg
 responsiveLayout model =
     let
+        hasAnnotation =
+            (model.point /= Nothing)
+                || (model.stroke /= Nothing)
+                || (model.bbox /= Nothing)
+                || (model.outline /= NoOutline)
+                || (model.contour /= NoContour)
+
         actionBarParameters =
             { device = model.device
             , currentTool = model.tool
             , currentDropdownTool = model.currentDropdownTool
             , dropdownIsOpen = model.toolDropdownOpen
             , size = model.layout.actionBarSize
+            , canClearAnnotations = hasAnnotation
+            , hasImage = model.image /= Nothing
             }
     in
     Element.column Style.None
@@ -56,6 +65,8 @@ type alias ActionBarParameters =
     , currentDropdownTool : Tool
     , dropdownIsOpen : Bool
     , size : ( Float, Float )
+    , canClearAnnotations : Bool
+    , hasImage : Bool
     }
 
 
@@ -82,14 +93,14 @@ deviceActionBar param =
 
         actionButtons =
             [ actionButton height False NoOp Icons.rotateCcw
-            , actionButton height True ClearAnnotations Icons.trash2
+            , actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
             , loadFileInput height Icons.image
             ]
 
         zoomActions =
             [ actionButton height True (ZoomMsg ZoomIn) Icons.zoomIn
             , actionButton height True (ZoomMsg ZoomOut) Icons.zoomOut
-            , actionButton height True (ZoomMsg ZoomFit) Icons.zoomFit
+            , actionButton height param.hasImage (ZoomMsg ZoomFit) Icons.zoomFit
             ]
     in
     case ( param.device.kind, param.device.orientation ) of

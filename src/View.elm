@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Annotation.Geometry.Stroke as Stroke
-import Annotation.Geometry.Types exposing (BoundingBox, Point)
+import Annotation.Geometry.Types exposing (..)
 import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
@@ -202,6 +202,7 @@ imageViewer model =
         |> (::) (viewPoint model.viewer.zoom model.point)
         |> (::) (viewBBox model.viewer.zoom model.bbox)
         |> (::) (viewContour model.viewer.zoom model.contour)
+        |> (::) (viewOutline model.viewer.zoom model.outline)
         |> (::) (viewImage model.image)
         |> Svg.g []
         |> Viewer.viewInWithDetails attributes model.viewer
@@ -235,6 +236,23 @@ viewBBox zoom maybeBBox =
     maybeBBox
         |> Maybe.map (Svg.boundingBoxStyled strokeStyle Style.fillDefault)
         |> Maybe.withDefault (Svg.text "No bounding box")
+
+
+viewOutline : Float -> OutlineDrawing -> Svg msg
+viewOutline zoom outlineDrawing =
+    let
+        strokeStyle =
+            Style.Stroke (2 / zoom) Color.red
+    in
+    case outlineDrawing of
+        NoOutline ->
+            Svg.text "No outline"
+
+        DrawingOutline stroke ->
+            Svg.strokeStyled strokeStyle stroke
+
+        EndedOutline outline ->
+            Svg.outlineStyled strokeStyle Style.fillDefault outline
 
 
 viewContour : Float -> ContourDrawing -> Svg msg

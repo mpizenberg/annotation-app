@@ -165,6 +165,9 @@ updateWithPointer pointerMsg model =
         ( _, Tool.Point, _ ) ->
             updatePoint pointerMsg model
 
+        ( _, Tool.Outline, _ ) ->
+            updateOutline pointerMsg model
+
         _ ->
             model
 
@@ -191,6 +194,45 @@ updatePoint pointerMsg model =
 
         ( PointerUpAt _, _ ) ->
             { model | dragState = NoDrag }
+
+        _ ->
+            model
+
+
+updateOutline : PointerMsg -> Model -> Model
+updateOutline pointerMsg model =
+    case ( pointerMsg, model.dragState, model.outline ) of
+        ( PointerDownAt pos, NoDrag, _ ) ->
+            let
+                scaledPos =
+                    Viewer.positionIn model.viewer pos
+
+                dragState =
+                    DraggingFrom scaledPos
+
+                point =
+                    Point.fromCoordinates scaledPos
+
+                outline =
+                    DrawingOutline (Stroke.fromPoints [ point ])
+            in
+            { model | dragState = dragState, outline = outline }
+
+        ( PointerMoveAt pos, DraggingFrom _, DrawingOutline stroke ) ->
+            let
+                scaledPos =
+                    Viewer.positionIn model.viewer pos
+
+                point =
+                    Point.fromCoordinates scaledPos
+
+                outline =
+                    DrawingOutline (Stroke.fromPoints <| point :: Stroke.points stroke)
+            in
+            { model | outline = outline }
+
+        ( PointerUpAt pos, DraggingFrom _, DrawingOutline stroke ) ->
+            { model | dragState = NoDrag, outline = EndedOutline (Stroke.close stroke) }
 
         _ ->
             model

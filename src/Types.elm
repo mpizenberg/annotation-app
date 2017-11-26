@@ -1,6 +1,6 @@
 module Types exposing (..)
 
-import Annotation.Geometry.Types exposing (BoundingBox, Contour, Point, Stroke)
+import Annotation.Geometry.Types exposing (..)
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)
 import Device exposing (Device)
@@ -16,6 +16,7 @@ type alias Model =
     , toolDropdownOpen : Bool
     , currentDropdownTool : Tool
     , bbox : Maybe BoundingBox
+    , outline : OutlineDrawing
     , contour : ContourDrawing
     , point : Maybe Point
     , dragState : DragState
@@ -29,6 +30,12 @@ type alias PageLayout =
     { actionBarSize : ( Float, Float )
     , viewerSize : ( Float, Float )
     }
+
+
+type OutlineDrawing
+    = NoOutline
+    | DrawingOutline Stroke
+    | EndedOutline Outline
 
 
 type ContourDrawing
@@ -64,6 +71,7 @@ init sizeFlag =
     , toolDropdownOpen = False
     , currentDropdownTool = Tool.BBox
     , bbox = Nothing
+    , outline = NoOutline
     , contour = NoContour
     , point = Nothing
     , dragState = NoDrag

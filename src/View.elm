@@ -131,7 +131,7 @@ actionButton size clickable sendMsg innerSvg =
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle = Style.Button (not clickable)
-        , otherAttributes = [ Attributes.attribute "elm-pep" "true" ]
+        , otherAttributes = []
         }
 
 
@@ -213,7 +213,7 @@ toolButton size currentTool tool =
                 Style.CurrentTool
             else
                 Style.Button False
-        , otherAttributes = [ Attributes.attribute "elm-pep" "true" ]
+        , otherAttributes = []
         }
 
 
@@ -222,7 +222,6 @@ imageViewer model =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
-            , Html.Attributes.attribute "elm-pep" "true"
             , Pointer.onDown (.pointer >> .offsetPos >> PointerDownAt >> PointerMsg)
             , Pointer.onMove (.pointer >> .offsetPos >> PointerMoveAt >> PointerMsg)
                 |> Html.Attributes.map (Throttle.both MoveThrottle <| Time.second / 35)

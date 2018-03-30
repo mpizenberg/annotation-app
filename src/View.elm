@@ -32,7 +32,7 @@ view model =
         |> Element.layout Style.sheet
 
 
-responsiveLayout : Model -> Element Style variation Msg
+responsiveLayout : Model -> Element Style Style.ColorVariations Msg
 responsiveLayout model =
     let
         hasAnnotation =
@@ -70,7 +70,7 @@ type alias ActionBarParameters =
     }
 
 
-deviceActionBar : ActionBarParameters -> Element Style variation Msg
+deviceActionBar : ActionBarParameters -> Element Style Style.ColorVariations Msg
 deviceActionBar param =
     let
         ( width, height ) =
@@ -118,7 +118,7 @@ deviceActionBar param =
                 |> Element.row Style.None []
 
 
-actionButton : Float -> Bool -> Msg -> List (Svg Msg) -> Element Style v Msg
+actionButton : Float -> Bool -> Msg -> List (Svg Msg) -> Element Style Style.ColorVariations Msg
 actionButton size clickable sendMsg innerSvg =
     Button.view
         { actionability =
@@ -130,12 +130,16 @@ actionButton size clickable sendMsg innerSvg =
         , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
         , innerStyle = Style.None
         , size = ( size, size )
-        , outerStyle = Style.Button (not clickable)
+        , outerStyle =
+            if clickable then
+                Style.Button Style.Abled
+            else
+                Style.Button Style.Disabled
         , otherAttributes = []
         }
 
 
-loadFileInput : Float -> List (Svg Msg) -> Element Style variation Msg
+loadFileInput : Float -> List (Svg Msg) -> Element Style Style.ColorVariations Msg
 loadFileInput size innerSvg =
     let
         invisibleInput =
@@ -154,7 +158,7 @@ loadFileInput size innerSvg =
                 , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
                 , innerStyle = Style.None
                 , size = ( size, size )
-                , outerStyle = Style.Button False
+                , outerStyle = Style.Button Style.Abled
                 , otherAttributes = []
                 }
     in
@@ -175,7 +179,7 @@ stopAndPrevent =
     }
 
 
-toolDropdown : Float -> Tool -> Tool -> Bool -> Element Style variation Msg
+toolDropdown : Float -> Tool -> Tool -> Bool -> Element Style Style.ColorVariations Msg
 toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
     let
         downTools =
@@ -194,7 +198,7 @@ toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
             )
 
 
-toolButton : Float -> Tool -> Tool -> Element Style variation Msg
+toolButton : Float -> Tool -> Tool -> Element Style Style.ColorVariations Msg
 toolButton size currentTool tool =
     Button.view
         { actionability =
@@ -210,10 +214,10 @@ toolButton size currentTool tool =
         , size = ( size, size )
         , outerStyle =
             if tool == currentTool then
-                Style.CurrentTool
+                Style.Button Style.Selected
             else
-                Style.Button False
-        , otherAttributes = []
+                Style.Button Style.Abled
+        , otherAttributes = [ Attributes.vary (Style.FromPalette 0) True ]
         }
 
 

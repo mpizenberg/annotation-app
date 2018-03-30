@@ -16,7 +16,7 @@
         "mpizenberg/elm-debounce": "3.0.2 <= v < 4.0.0",
         "mpizenberg/elm-image-annotation": "8.2.0 <= v < 9.0.0",
         "mpizenberg/elm-image-collection": "4.0.2 <= v < 5.0.0",
-        "mpizenberg/elm-pointer-events": "1.0.5 <= v < 2.0.0",
+        "mpizenberg/elm-pointer-events": "2.0.1 <= v < 3.0.0",
         "ohanhi/lorem": "1.0.1 <= v < 2.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"

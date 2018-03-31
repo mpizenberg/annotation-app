@@ -36,6 +36,15 @@ fromAnnotationType annotationType =
         Annotation.BBoxType ->
             Annotation (Annotation.BBox [])
 
+        Annotation.StrokeType ->
+            Annotation (Annotation.Stroke [])
+
+        Annotation.OutlineType ->
+            Annotation (Annotation.Outline [])
+
+        Annotation.PolygonType ->
+            Annotation (Annotation.Polygon [])
+
 
 fromConfig : Annotation.Config -> Zipper Data
 fromConfig config =
@@ -108,6 +117,15 @@ svgElement size toolData =
 
                 Annotation (Annotation.BBox _) ->
                     Icons.boundingBox
+
+                Annotation (Annotation.Stroke _) ->
+                    Icons.stroke
+
+                Annotation (Annotation.Outline _) ->
+                    Icons.outline
+
+                Annotation (Annotation.Polygon _) ->
+                    Icons.polygon
     in
     lazy2 Icons.sized size svgIcon
         |> Element.html

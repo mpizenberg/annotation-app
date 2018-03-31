@@ -60,6 +60,15 @@ viewAnnotationData zoom toolData =
         Tool.Annotation (Annotation.BBox bboxDrawings) ->
             viewBBox zoom Color.purple bboxDrawings
 
+        Tool.Annotation (Annotation.Stroke drawings) ->
+            viewStroke zoom Color.purple drawings
+
+        Tool.Annotation (Annotation.Outline drawings) ->
+            viewOutline zoom Color.purple drawings
+
+        Tool.Annotation (Annotation.Polygon drawings) ->
+            viewPolygon zoom Color.purple drawings
+
 
 viewImage : Maybe Image -> Svg msg
 viewImage maybeImage =
@@ -96,42 +105,40 @@ viewBBox zoom color bboxDrawings =
         |> Svg.g []
 
 
+viewOutline : Float -> Color -> Annotation.OutlineDrawings -> Svg msg
+viewOutline zoom color outlineDrawings =
+    let
+        strokeStyle =
+            Style.Stroke (2 / zoom) color
 
--- TODO Below are functions to modify
+        viewOne one =
+            case one of
+                Annotation.DrawingOutline stroke ->
+                    Svg.strokeStyled strokeStyle stroke
+
+                Annotation.EndedOutline outline ->
+                    Svg.outlineStyled strokeStyle Style.fillDefault outline
+    in
+    List.map viewOne outlineDrawings
+        |> Svg.g []
 
 
-viewOutline : Float -> Annotation.OutlineDrawing -> Svg msg
-viewOutline zoom outlineDrawing =
+viewPolygon : Float -> Color -> Annotation.PolygonDrawings -> Svg msg
+viewPolygon zoom color polygonDrawings =
     let
         strokeStyle =
             Style.Stroke (2 / zoom) Color.red
+
+        viewOne one =
+            case one of
+                Annotation.EndedPolygon contour ->
+                    Svg.contourStyled strokeStyle Style.fillDefault contour
+
+                Annotation.PolygonStartedAt _ stroke ->
+                    Stroke.points stroke
+                        |> List.map (Svg.pointStyled <| Style.Disk (10 / zoom) Color.orange)
+                        |> (::) (Svg.strokeStyled strokeStyle stroke)
+                        |> Svg.g []
     in
-    case outlineDrawing of
-        Annotation.NoOutline ->
-            Svg.text "No outline"
-
-        Annotation.DrawingOutline stroke ->
-            Svg.strokeStyled strokeStyle stroke
-
-        Annotation.EndedOutline outline ->
-            Svg.outlineStyled strokeStyle Style.fillDefault outline
-
-
-viewContour : Float -> Annotation.ContourDrawing -> Svg msg
-viewContour zoom contourDrawing =
-    let
-        strokeStyle =
-            Style.Stroke (2 / zoom) Color.red
-    in
-    case contourDrawing of
-        Annotation.NoContour ->
-            Svg.text "No contour"
-
-        Annotation.Ended contour ->
-            Svg.contourStyled strokeStyle Style.fillDefault contour
-
-        Annotation.DrawingStartedAt _ stroke ->
-            Stroke.points stroke
-                |> List.map (Svg.pointStyled <| Style.Disk (10 / zoom) Color.orange)
-                |> (::) (Svg.strokeStyled strokeStyle stroke)
-                |> Svg.g []
+    List.map viewOne polygonDrawings
+        |> Svg.g []

@@ -8,7 +8,6 @@
 module Icons
     exposing
         ( boundingBox
-        , contour
         , defaultAttributes
         , download
         , image
@@ -18,6 +17,7 @@ module Icons
         , octagon
         , outline
         , point
+        , polygon
         , rotateCcw
         , save
         , settings
@@ -161,8 +161,8 @@ boundingBox =
     ]
 
 
-contour : List (Svg msg)
-contour =
+polygon : List (Svg msg)
+polygon =
     [ Svg.polygon [ points "12 22, 2 11, 7 2, 12 9, 17 2, 22 11" ] []
     , Svg.circle [ cx "12", cy "22", r "1" ] []
     , Svg.circle [ cx "2", cy "11", r "1" ] []

@@ -29,11 +29,17 @@ type alias Kind =
 type Type
     = PointType
     | BBoxType
+    | StrokeType
+    | OutlineType
+    | PolygonType
 
 
 type Annotations
     = Point PointDrawings
     | BBox BBoxDrawings
+    | Stroke StrokeDrawings
+    | Outline OutlineDrawings
+    | Polygon PolygonDrawings
 
 
 type alias PointDrawings =
@@ -48,16 +54,22 @@ type alias BBoxDrawings =
     List BoundingBox
 
 
+type alias OutlineDrawings =
+    List OutlineDrawing
+
+
 type OutlineDrawing
-    = NoOutline
-    | DrawingOutline Stroke
+    = DrawingOutline Stroke
     | EndedOutline Outline
 
 
-type ContourDrawing
-    = NoContour
-    | DrawingStartedAt ( Float, Float ) Stroke
-    | Ended Contour
+type alias PolygonDrawings =
+    List PolygonDrawing
+
+
+type PolygonDrawing
+    = PolygonStartedAt ( Float, Float ) Stroke
+    | EndedPolygon Contour
 
 
 
@@ -91,6 +103,15 @@ typeFromString str =
 
         "bbox" ->
             BBoxType
+
+        "stroke" ->
+            StrokeType
+
+        "outline" ->
+            OutlineType
+
+        "polygon" ->
+            PolygonType
 
         _ ->
             PointType

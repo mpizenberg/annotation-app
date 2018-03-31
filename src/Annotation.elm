@@ -7,10 +7,7 @@ import Json.Decode as Decode exposing (Decoder)
 emptyConfig : Config
 emptyConfig =
     { classes = []
-    , kinds =
-        [ Kind PointType [ "", "" ]
-        , Kind BBoxType []
-        ]
+    , kinds = []
     }
 
 

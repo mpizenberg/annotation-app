@@ -30,10 +30,10 @@ fromAnnotationType : Annotation.Type -> Tool
 fromAnnotationType annotationType =
     case annotationType of
         Annotation.PointType ->
-            Annotation (Annotation.Point {})
+            Annotation (Annotation.Point [])
 
         Annotation.BBoxType ->
-            Annotation (Annotation.BBox {})
+            Annotation (Annotation.BBox [])
 
 
 fromConfig : Annotation.Config -> Zipper Data

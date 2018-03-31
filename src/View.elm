@@ -1,11 +1,5 @@
 module View exposing (view)
 
-import Annotation.Geometry.Types exposing (..)
-import Annotation.Style as Style
-import Annotation.Svg as Svg
-import Annotation.Viewer as Viewer exposing (Viewer)
-import Color
-import Control.Throttle as Throttle
 import Element exposing (Element, below, el, empty, node, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
@@ -13,7 +7,6 @@ import Html.Attributes
 import Html.Events
 import Html.Lazy exposing (lazy2)
 import Icons
-import Image exposing (Image)
 import Json.Decode as Decode
 import Packages.Button as Button exposing (Button)
 import Packages.Device as Device exposing (Device)
@@ -21,9 +14,9 @@ import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
-import Time
 import Tool exposing (Tool)
 import Types exposing (..)
+import View.ImageAnnotations
 
 
 view : Model -> Html Msg
@@ -50,11 +43,15 @@ responsiveLayout model =
             , hasImage = model.image /= Nothing
             , toolsData = model.toolsData
             }
+
+        toolsDataList =
+            Zipper.getAll model.toolsData
+                |> List.drop 1
     in
     Element.column Style.None
         [ Attributes.height fill ]
         [ deviceActionBar actionBarParameters
-        , imageViewer model
+        , View.ImageAnnotations.imageViewer model.viewer model.image toolsDataList
         ]
 
 
@@ -241,103 +238,3 @@ toolButton size isSelected toolData =
                 Style.Button Style.Abled
         , otherAttributes = []
         }
-
-
-imageViewer : Model -> Element Style variation Msg
-imageViewer model =
-    let
-        attributes =
-            [ Html.Attributes.style [ ( "height", "100%" ) ]
-
-            -- pointer capture hack to continue "globally" the event anywhere on document
-            , Html.Attributes.attribute "onpointerdown" "event.target.setPointerCapture(event.pointerId);"
-            , Pointer.onDown (.pointer >> .offsetPos >> PointerDownAt >> PointerMsg)
-            , Pointer.onMove (.pointer >> .offsetPos >> PointerMoveAt >> PointerMsg)
-                |> Html.Attributes.map (Throttle.both MoveThrottle <| Time.second / 35)
-            , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
-            ]
-    in
-    []
-        -- |> (::) (viewPoint model.viewer.zoom model.point)
-        -- |> (::) (viewStroke model.viewer.zoom model.stroke)
-        -- |> (::) (viewBBox model.viewer.zoom model.bbox)
-        -- |> (::) (viewContour model.viewer.zoom model.contour)
-        -- |> (::) (viewOutline model.viewer.zoom model.outline)
-        -- |> (::) (viewImage model.image)
-        |> Svg.g []
-        |> Viewer.viewInWithDetails attributes model.viewer
-        |> Element.html
-        |> el Style.Viewer [ Attributes.height fill ]
-
-
-viewImage : Maybe Image -> Svg msg
-viewImage maybeImage =
-    case maybeImage of
-        Nothing ->
-            Svg.text "No background image"
-
-        Just image ->
-            Image.viewSvg [] image
-
-
-viewPoint : Float -> Maybe Point -> Svg msg
-viewPoint zoom maybePoint =
-    maybePoint
-        |> Maybe.map (Svg.pointStyled (Style.Disk (10 / zoom) Color.blue))
-        |> Maybe.withDefault (Svg.text "No point there")
-
-
-viewStroke : Float -> Maybe Stroke -> Svg msg
-viewStroke zoom maybeStroke =
-    maybeStroke
-        |> Maybe.map (Svg.strokeStyled <| Style.Stroke (2 / zoom) Color.purple)
-        |> Maybe.withDefault (Svg.text "No stroke")
-
-
-viewBBox : Float -> Maybe BoundingBox -> Svg msg
-viewBBox zoom maybeBBox =
-    let
-        strokeStyle =
-            Style.Stroke (2 / zoom) Color.red
-    in
-    maybeBBox
-        |> Maybe.map (Svg.boundingBoxStyled strokeStyle Style.fillDefault)
-        |> Maybe.withDefault (Svg.text "No bounding box")
-
-
-
--- viewOutline : Float -> OutlineDrawing -> Svg msg
--- viewOutline zoom outlineDrawing =
---     let
---         strokeStyle =
---             Style.Stroke (2 / zoom) Color.red
---     in
---     case outlineDrawing of
---         NoOutline ->
---             Svg.text "No outline"
---
---         DrawingOutline stroke ->
---             Svg.strokeStyled strokeStyle stroke
---
---         EndedOutline outline ->
---             Svg.outlineStyled strokeStyle Style.fillDefault outline
---
---
--- viewContour : Float -> ContourDrawing -> Svg msg
--- viewContour zoom contourDrawing =
---     let
---         strokeStyle =
---             Style.Stroke (2 / zoom) Color.red
---     in
---     case contourDrawing of
---         NoContour ->
---             Svg.text "No contour"
---
---         Ended contour ->
---             Svg.contourStyled strokeStyle Style.fillDefault contour
---
---         DrawingStartedAt _ stroke ->
---             Stroke.points stroke
---                 |> List.map (Svg.pointStyled <| Style.Disk (10 / zoom) Color.orange)
---                 |> (::) (Svg.strokeStyled strokeStyle stroke)
---                 |> Svg.g []

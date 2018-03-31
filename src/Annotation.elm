@@ -36,11 +36,15 @@ type Annotations
 
 
 type alias PointDrawings =
-    {}
+    List Point
+
+
+type alias StrokeDrawings =
+    List Stroke
 
 
 type alias BBoxDrawings =
-    {}
+    List BoundingBox
 
 
 type OutlineDrawing

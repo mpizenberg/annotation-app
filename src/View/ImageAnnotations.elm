@@ -32,6 +32,7 @@ imageViewer viewer maybeImage toolsData =
     in
     toolsData
         |> List.map (viewAnnotationData viewer)
+        |> (::) (viewImage maybeImage)
         |> Svg.g []
         |> Viewer.viewInWithDetails attributes viewer
         |> Element.html

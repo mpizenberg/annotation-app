@@ -3,7 +3,7 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Button exposing (..)
+module Packages.Button exposing (..)
 
 import Element exposing (Element, el)
 import Element.Attributes as Attributes exposing (center, px, verticalCenter)

@@ -1,4 +1,4 @@
-module Internal.Zipper exposing (..)
+module Packages.Zipper exposing (..)
 
 
 type Zipper a

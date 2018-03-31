@@ -10,10 +10,10 @@ import Annotation.Geometry.Point as Point
 import Annotation.Geometry.Stroke as Stroke
 import Annotation.Viewer as Viewer
 import Control
-import Device exposing (Device)
 import Html exposing (Html)
 import Image exposing (Image)
 import Json.Encode as Encode
+import Packages.Device as Device exposing (Device)
 import Tool exposing (Tool)
 import Types exposing (..)
 import View

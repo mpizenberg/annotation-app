@@ -4,10 +4,8 @@ import Annotation.Geometry.Types exposing (..)
 import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
-import Button exposing (Button)
 import Color
 import Control.Throttle as Throttle
-import Device exposing (Device)
 import Element exposing (Element, below, el, empty, node, span)
 import Element.Attributes as Attributes exposing (Length, alignRight, center, fill, px, verticalCenter)
 import Html exposing (Html)
@@ -16,8 +14,10 @@ import Html.Events
 import Html.Lazy exposing (lazy2)
 import Icons
 import Image exposing (Image)
-import Internal.Zipper as Zipper exposing (Zipper)
 import Json.Decode as Decode
+import Packages.Button as Button exposing (Button)
+import Packages.Device as Device exposing (Device)
+import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)

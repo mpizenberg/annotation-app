@@ -10,7 +10,7 @@ import Element exposing (Element)
 import Element.Attributes exposing (vary)
 import Html.Lazy exposing (lazy2)
 import Icons
-import Internal.Zipper as Zipper exposing (Zipper)
+import Packages.Zipper as Zipper exposing (Zipper)
 import StyleSheet as Style exposing (Style)
 
 

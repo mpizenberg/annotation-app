@@ -3,10 +3,10 @@ module Types exposing (..)
 import Annotation
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)
-import Device exposing (Device)
 import Image exposing (Image)
-import Internal.Zipper as Zipper exposing (Zipper)
 import Json.Encode as Encode
+import Packages.Device as Device exposing (Device)
+import Packages.Zipper as Zipper exposing (Zipper)
 import Tool exposing (Tool)
 
 

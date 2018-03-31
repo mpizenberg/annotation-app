@@ -120,6 +120,8 @@ type Msg
     | ClearAnnotations
     | LoadImageFile Encode.Value
     | ImageLoaded ( String, Int, Int )
+    | LoadConfigFile Encode.Value
+    | ConfigLoaded String
 
 
 type PointerMsg

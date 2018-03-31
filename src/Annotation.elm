@@ -1,6 +1,7 @@
 module Annotation exposing (..)
 
 import Annotation.Geometry.Types exposing (..)
+import Json.Decode as Decode exposing (Decoder)
 
 
 emptyConfig : Config
@@ -57,3 +58,39 @@ type ContourDrawing
     = NoContour
     | DrawingStartedAt ( Float, Float ) Stroke
     | Ended Contour
+
+
+
+-- Decoders
+
+
+configDecoder : Decoder Config
+configDecoder =
+    Decode.map2 Config
+        (Decode.field "classes" <| Decode.list Decode.string)
+        (Decode.field "kinds" <| Decode.list kindDecoder)
+
+
+kindDecoder : Decoder Kind
+kindDecoder =
+    Decode.map2 Kind
+        (Decode.field "type" typeDecoder)
+        (Decode.field "variants" <| Decode.list Decode.string)
+
+
+typeDecoder : Decoder Type
+typeDecoder =
+    Decode.map typeFromString Decode.string
+
+
+typeFromString : String -> Type
+typeFromString str =
+    case str of
+        "point" ->
+            PointType
+
+        "bbox" ->
+            BBoxType
+
+        _ ->
+            PointType

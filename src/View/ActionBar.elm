@@ -55,7 +55,8 @@ deviceActionBar param =
 
         actionButtons =
             [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
-            , loadFileInput height Icons.image
+            , loadFileInput height LoadConfigFile Icons.settings
+            , loadFileInput height LoadImageFile Icons.image
             ]
 
         zoomActions =
@@ -101,15 +102,15 @@ actionButton size clickable sendMsg innerSvg =
         }
 
 
-loadFileInput : Float -> List (Svg Msg) -> Element Style Style.ColorVariations Msg
-loadFileInput size innerSvg =
+loadFileInput : Float -> (Decode.Value -> msg) -> List (Svg msg) -> Element Style Style.ColorVariations msg
+loadFileInput size tagger innerSvg =
     let
         invisibleInput =
             Html.input
                 [ Html.Attributes.id "file-input"
                 , Html.Attributes.type_ "file"
                 , Html.Attributes.style [ ( "display", "none" ) ]
-                , loadFileEvent
+                , loadFileEvent tagger
                 ]
                 []
 
@@ -127,10 +128,10 @@ loadFileInput size innerSvg =
     Element.row Style.None [] [ Element.html invisibleInput, node "label" labelButton ]
 
 
-loadFileEvent : Html.Attribute Msg
-loadFileEvent =
+loadFileEvent : (Decode.Value -> msg) -> Html.Attribute msg
+loadFileEvent tagger =
     Decode.at [ "target", "files", "0" ] Decode.value
-        |> Decode.map LoadImageFile
+        |> Decode.map tagger
         |> Html.Events.onWithOptions "change" stopAndPrevent
 
 

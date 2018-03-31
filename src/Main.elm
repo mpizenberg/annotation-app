@@ -5,9 +5,6 @@
 
 port module Main exposing (..)
 
-import Annotation.Geometry.BoundingBox as BBox
-import Annotation.Geometry.Point as Point
-import Annotation.Geometry.Stroke as Stroke
 import Annotation.Viewer as Viewer
 import Control
 import Html exposing (Html)
@@ -40,6 +37,12 @@ port loadImageFile : Encode.Value -> Cmd msg
 
 
 port imageLoaded : (( String, Int, Int ) -> msg) -> Sub msg
+
+
+port loadConfigFile : Encode.Value -> Cmd msg
+
+
+port configLoaded : (String -> msg) -> Sub msg
 
 
 init : Device.Size -> ( Model, Cmd Msg )
@@ -105,6 +108,12 @@ update msg model =
 
         ImageLoaded ( src, width, height ) ->
             ( resetImage (Image src width height) model, Cmd.none )
+
+        LoadConfigFile jsValue ->
+            ( model, loadConfigFile jsValue )
+
+        ConfigLoaded configString ->
+            ( { model | toolsData = Tool.fromConfigString configString }, Cmd.none )
 
 
 resetImage : Image -> Model -> Model
@@ -367,6 +376,7 @@ subscriptions model =
     Sub.batch
         [ resizes WindowResizesMsg
         , imageLoaded ImageLoaded
+        , configLoaded ConfigLoaded
         ]
 
 

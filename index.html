@@ -29,6 +29,18 @@
 			img.onload = () => outPort.send( [img.src, img.width, img.height] )
 			img.src = window.URL.createObjectURL( imageFile )
 		}
+
+		app.ports.loadConfigFile.subscribe( (file) => {
+			if ( file.type === "application/json" ) {
+				sendLoadedConfig( file, app.ports.configLoaded )
+			}
+		})
+
+		function sendLoadedConfig( configFile, outPort ) {
+			const fileReader = new FileReader()
+			fileReader.onload = () => outPort.send( fileReader.result )
+			fileReader.readAsText( configFile )
+		}
 	</script>
 </body>
 </html>

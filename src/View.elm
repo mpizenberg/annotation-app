@@ -1,12 +1,9 @@
 module View exposing (view)
 
-import Annotation
-import Annotation.Geometry.Stroke as Stroke
 import Annotation.Geometry.Types exposing (..)
 import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
-import Array exposing (Array)
 import Button exposing (Button)
 import Color
 import Control.Throttle as Throttle
@@ -19,12 +16,13 @@ import Html.Events
 import Html.Lazy exposing (lazy2)
 import Icons
 import Image exposing (Image)
+import Internal.Zipper as Zipper exposing (Zipper)
 import Json.Decode as Decode
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Time
-import Tool exposing (Tool, ToolBis)
+import Tool exposing (Tool)
 import Types exposing (..)
 
 
@@ -38,31 +36,19 @@ responsiveLayout : Model -> Element Style Style.ColorVariations Msg
 responsiveLayout model =
     let
         hasAnnotation =
-            (model.point /= Nothing)
-                || (model.stroke /= Nothing)
-                || (model.bbox /= Nothing)
-                || (model.outline /= NoOutline)
-                || (model.contour /= NoContour)
-
-        ( currentToolId, currentTool ) =
-            model.toolBis
+            -- (model.point /= Nothing)
+            --     || (model.stroke /= Nothing)
+            --     || (model.bbox /= Nothing)
+            --     || (model.outline /= NoOutline)
+            --     || (model.contour /= NoContour)
+            False
 
         actionBarParameters =
             { device = model.device
-            , currentTool = model.tool
-            , currentDropdownTool = model.currentDropdownTool
-            , dropdownIsOpen = model.toolDropdownOpen
             , size = model.layout.actionBarSize
             , canClearAnnotations = hasAnnotation
             , hasImage = model.image /= Nothing
-            , currentToolId = currentToolId
-            , chosenTools =
-                Array.fromList
-                    [ Tool.DrawTool Annotation.Point (Just 0)
-                    , Tool.DrawTool Annotation.Point (Just 1)
-                    , Tool.DrawTool Annotation.Polygone (Just 0)
-                    , Tool.DrawTool Annotation.Polygone (Just 1)
-                    ]
+            , toolsData = model.toolsData
             }
     in
     Element.column Style.None
@@ -74,14 +60,10 @@ responsiveLayout model =
 
 type alias ActionBarParameters =
     { device : Device
-    , currentTool : Tool
-    , currentDropdownTool : Tool
-    , dropdownIsOpen : Bool
     , size : ( Float, Float )
     , canClearAnnotations : Bool
     , hasImage : Bool
-    , currentToolId : Maybe Int
-    , chosenTools : Array ToolBis
+    , toolsData : Zipper Tool.Data
     }
 
 
@@ -94,27 +76,22 @@ deviceActionBar param =
         filler =
             el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
 
-        oneToolButton tool id =
-            toolButtonBis height (param.currentToolId == Just id) tool id
+        selectedToolButton : Tool.Data -> Element Style Style.ColorVariations Msg
+        selectedToolButton =
+            toolButton height True
 
-        toolButtonAccum tool ( id, buttons ) =
-            ( id + 1, oneToolButton tool id :: buttons )
-
-        drawToolsButtons =
-            Array.foldr toolButtonAccum ( 0, [] ) param.chosenTools
-                |> Tuple.second
+        unselectedToolButton : Tool.Data -> Element Style Style.ColorVariations Msg
+        unselectedToolButton =
+            toolButton height False
 
         toolButtons =
-            case param.device.kind of
-                Device.Phone ->
-                    [ toolButton height param.currentTool Tool.Move
-                    , toolDropdown height param.currentTool param.currentDropdownTool param.dropdownIsOpen
-                    , actionButton height True ToggleToolDropdown Icons.moreVertical
-                    ]
-
-                _ ->
-                    oneToolButton Tool.MoveBis -1
-                        :: drawToolsButtons
+            List.concat
+                [ Zipper.getL param.toolsData
+                    |> List.map unselectedToolButton
+                , [ selectedToolButton (Zipper.getC param.toolsData) ]
+                , Zipper.getR param.toolsData
+                    |> List.map unselectedToolButton
+                ]
 
         actionButtons =
             [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
@@ -204,35 +181,57 @@ stopAndPrevent =
     }
 
 
-toolDropdown : Float -> Tool -> Tool -> Bool -> Element Style Style.ColorVariations Msg
-toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
-    let
-        downTools =
-            Tool.allAnnotationTools
-                |> List.filter ((/=) currentDropdownTool)
-                |> List.map (toolButton size currentTool)
-                |> Element.column Style.None []
-                |> List.singleton
-    in
-    el Style.None [] (toolButton size currentTool currentDropdownTool)
-        |> below
-            (if toolDropdownOpen then
-                downTools
-             else
-                []
-            )
+
+-- toolDropdown : Float -> Tool -> Tool -> Bool -> Element Style Style.ColorVariations Msg
+-- toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
+--     let
+--         downTools =
+--             Tool.allAnnotationTools
+--                 |> List.filter ((/=) currentDropdownTool)
+--                 |> List.map (toolButton size currentTool)
+--                 |> Element.column Style.None []
+--                 |> List.singleton
+--     in
+--     el Style.None [] (toolButton size currentTool currentDropdownTool)
+--         |> below
+--             (if toolDropdownOpen then
+--                 downTools
+--              else
+--                 []
+--             )
+--
+--
+-- toolButtonBis : Float -> Bool -> ToolBis -> Int -> Element Style Style.ColorVariations Msg
+-- toolButtonBis size isSelected tool toolId =
+--     Button.view
+--         { actionability =
+--             if isSelected then
+--                 Button.Abled Button.Active
+--             else
+--                 Button.Abled Button.Inactive
+--         , action = Pointer.onDown (always <| SelectTool ( Just toolId, tool )) |> Attributes.toAttr
+--         , innerElement = Tool.toolSvg (0.6 * size) tool
+--         , innerStyle = Style.None
+--         , size = ( size, size )
+--         , outerStyle =
+--             if isSelected then
+--                 Style.Button Style.Selected
+--             else
+--                 Style.Button Style.Abled
+--         , otherAttributes = []
+--         }
 
 
-toolButtonBis : Float -> Bool -> ToolBis -> Int -> Element Style Style.ColorVariations Msg
-toolButtonBis size isSelected tool toolId =
+toolButton : Float -> Bool -> Tool.Data -> Element Style Style.ColorVariations Msg
+toolButton size isSelected toolData =
     Button.view
         { actionability =
             if isSelected then
                 Button.Abled Button.Active
             else
                 Button.Abled Button.Inactive
-        , action = Pointer.onDown (always <| SelectTool ( Just toolId, tool )) |> Attributes.toAttr
-        , innerElement = Tool.toolSvg (0.6 * size) tool
+        , action = Pointer.onDown (always <| SelectTool toolData.id) |> Attributes.toAttr
+        , innerElement = Tool.svgElement (0.6 * size) toolData
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle =
@@ -241,29 +240,6 @@ toolButtonBis size isSelected tool toolId =
             else
                 Style.Button Style.Abled
         , otherAttributes = []
-        }
-
-
-toolButton : Float -> Tool -> Tool -> Element Style Style.ColorVariations Msg
-toolButton size currentTool tool =
-    Button.view
-        { actionability =
-            Button.Abled
-                (if tool == currentTool then
-                    Button.Active
-                 else
-                    Button.Inactive
-                )
-        , action = Pointer.onDown (always <| NoOp) |> Attributes.toAttr
-        , innerElement = Element.html (Tool.svgElement (0.6 * size) tool)
-        , innerStyle = Style.None
-        , size = ( size, size )
-        , outerStyle =
-            if tool == currentTool then
-                Style.Button Style.Selected
-            else
-                Style.Button Style.Abled
-        , otherAttributes = [ Attributes.vary (Style.FromPalette 0) True ]
         }
 
 
@@ -282,12 +258,12 @@ imageViewer model =
             ]
     in
     []
-        |> (::) (viewPoint model.viewer.zoom model.point)
-        |> (::) (viewStroke model.viewer.zoom model.stroke)
-        |> (::) (viewBBox model.viewer.zoom model.bbox)
-        |> (::) (viewContour model.viewer.zoom model.contour)
-        |> (::) (viewOutline model.viewer.zoom model.outline)
-        |> (::) (viewImage model.image)
+        -- |> (::) (viewPoint model.viewer.zoom model.point)
+        -- |> (::) (viewStroke model.viewer.zoom model.stroke)
+        -- |> (::) (viewBBox model.viewer.zoom model.bbox)
+        -- |> (::) (viewContour model.viewer.zoom model.contour)
+        -- |> (::) (viewOutline model.viewer.zoom model.outline)
+        -- |> (::) (viewImage model.image)
         |> Svg.g []
         |> Viewer.viewInWithDetails attributes model.viewer
         |> Element.html
@@ -329,38 +305,39 @@ viewBBox zoom maybeBBox =
         |> Maybe.withDefault (Svg.text "No bounding box")
 
 
-viewOutline : Float -> OutlineDrawing -> Svg msg
-viewOutline zoom outlineDrawing =
-    let
-        strokeStyle =
-            Style.Stroke (2 / zoom) Color.red
-    in
-    case outlineDrawing of
-        NoOutline ->
-            Svg.text "No outline"
 
-        DrawingOutline stroke ->
-            Svg.strokeStyled strokeStyle stroke
-
-        EndedOutline outline ->
-            Svg.outlineStyled strokeStyle Style.fillDefault outline
-
-
-viewContour : Float -> ContourDrawing -> Svg msg
-viewContour zoom contourDrawing =
-    let
-        strokeStyle =
-            Style.Stroke (2 / zoom) Color.red
-    in
-    case contourDrawing of
-        NoContour ->
-            Svg.text "No contour"
-
-        Ended contour ->
-            Svg.contourStyled strokeStyle Style.fillDefault contour
-
-        DrawingStartedAt _ stroke ->
-            Stroke.points stroke
-                |> List.map (Svg.pointStyled <| Style.Disk (10 / zoom) Color.orange)
-                |> (::) (Svg.strokeStyled strokeStyle stroke)
-                |> Svg.g []
+-- viewOutline : Float -> OutlineDrawing -> Svg msg
+-- viewOutline zoom outlineDrawing =
+--     let
+--         strokeStyle =
+--             Style.Stroke (2 / zoom) Color.red
+--     in
+--     case outlineDrawing of
+--         NoOutline ->
+--             Svg.text "No outline"
+--
+--         DrawingOutline stroke ->
+--             Svg.strokeStyled strokeStyle stroke
+--
+--         EndedOutline outline ->
+--             Svg.outlineStyled strokeStyle Style.fillDefault outline
+--
+--
+-- viewContour : Float -> ContourDrawing -> Svg msg
+-- viewContour zoom contourDrawing =
+--     let
+--         strokeStyle =
+--             Style.Stroke (2 / zoom) Color.red
+--     in
+--     case contourDrawing of
+--         NoContour ->
+--             Svg.text "No contour"
+--
+--         Ended contour ->
+--             Svg.contourStyled strokeStyle Style.fillDefault contour
+--
+--         DrawingStartedAt _ stroke ->
+--             Stroke.points stroke
+--                 |> List.map (Svg.pointStyled <| Style.Disk (10 / zoom) Color.orange)
+--                 |> (::) (Svg.strokeStyled strokeStyle stroke)
+--                 |> Svg.g []

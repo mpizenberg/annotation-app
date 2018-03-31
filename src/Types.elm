@@ -1,26 +1,19 @@
 module Types exposing (..)
 
-import Annotation.Geometry.Types exposing (..)
+import Annotation
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)
 import Device exposing (Device)
 import Image exposing (Image)
+import Internal.Zipper as Zipper exposing (Zipper)
 import Json.Encode as Encode
-import Tool exposing (Tool, ToolBis)
+import Tool exposing (Tool)
 
 
 type alias Model =
     { device : Device
     , layout : PageLayout
-    , tool : Tool
-    , toolBis : ( Maybe Int, ToolBis )
-    , toolDropdownOpen : Bool
-    , currentDropdownTool : Tool
-    , bbox : Maybe BoundingBox
-    , outline : OutlineDrawing
-    , contour : ContourDrawing
-    , stroke : Maybe Stroke
-    , point : Maybe Point
+    , toolsData : Zipper Tool.Data
     , dragState : DragState
     , moveThrottleState : Control.State Msg
     , viewer : Viewer
@@ -32,18 +25,6 @@ type alias PageLayout =
     { actionBarSize : ( Float, Float )
     , viewerSize : ( Float, Float )
     }
-
-
-type OutlineDrawing
-    = NoOutline
-    | DrawingOutline Stroke
-    | EndedOutline Outline
-
-
-type ContourDrawing
-    = NoContour
-    | DrawingStartedAt ( Float, Float ) Stroke
-    | Ended Contour
 
 
 type DragState
@@ -69,20 +50,26 @@ init sizeFlag =
     in
     { device = device
     , layout = layout
-    , tool = Tool.Move
-    , toolBis = ( Just -1, Tool.MoveBis )
-    , toolDropdownOpen = False
-    , currentDropdownTool = Tool.BBox
-    , bbox = Nothing
-    , outline = NoOutline
-    , contour = NoContour
-    , stroke = Nothing
-    , point = Nothing
+    , toolsData = Tool.fromConfig Annotation.emptyConfig
     , dragState = NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer
     , image = Nothing
     }
+
+
+selectTool : Int -> Zipper Tool.Data -> Zipper Tool.Data
+selectTool targetId zipper =
+    let
+        currentId =
+            .id (Zipper.getC zipper)
+    in
+    if currentId < targetId && Zipper.hasR zipper then
+        selectTool targetId (Zipper.goR zipper)
+    else if targetId < currentId && Zipper.hasL zipper then
+        selectTool targetId (Zipper.goL zipper)
+    else
+        zipper
 
 
 pageLayout : Device -> PageLayout
@@ -125,7 +112,7 @@ deviceActionBarHeight device =
 type Msg
     = NoOp
     | WindowResizesMsg Device.Size
-    | SelectTool ( Maybe Int, ToolBis )
+    | SelectTool Int
     | ToggleToolDropdown
     | PointerMsg PointerMsg
     | MoveThrottle (Control Msg)

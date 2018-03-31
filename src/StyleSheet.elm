@@ -47,11 +47,12 @@ colorVariations : List (Style.Property class ColorVariations)
 colorVariations =
     case Color.palette of
         ( color4, color3, color2, color1, color0 ) ->
-            Style.variation (FromPalette 0) [ Color.text color0 ]
-                :: Style.variation (FromPalette 1) [ Color.text color1 ]
-                :: Style.variation (FromPalette 2) [ Color.text color2 ]
-                :: Style.variation (FromPalette 3) [ Color.text color3 ]
-                :: Style.variation (FromPalette 4) [ Color.text color4 ]
+            Style.variation (FromPalette 0) [ Color.text Color.black ]
+                :: Style.variation (FromPalette 1) [ Color.text color0 ]
+                :: Style.variation (FromPalette 2) [ Color.text color1 ]
+                :: Style.variation (FromPalette 3) [ Color.text color2 ]
+                :: Style.variation (FromPalette 4) [ Color.text color3 ]
+                :: Style.variation (FromPalette 5) [ Color.text color4 ]
                 :: []
 
 

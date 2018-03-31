@@ -5,109 +5,102 @@
 
 module Tool exposing (..)
 
-import Annotation
-import Array exposing (Array)
+import Annotation exposing (Annotations)
 import Element exposing (Element)
-import Element.Attributes as Attributes
-import Html exposing (Html)
+import Element.Attributes exposing (vary)
 import Html.Lazy exposing (lazy2)
 import Icons
+import Internal.Zipper as Zipper exposing (Zipper)
 import StyleSheet as Style exposing (Style)
+
+
+type alias Data =
+    { id : Int
+    , tool : Tool
+    , colorId : Int
+    }
 
 
 type Tool
     = Move
-    | BBox
-    | Contour
-    | Outline
-    | Stroke
-    | Point
+    | Annotation Annotations
 
 
-type ToolBis
-    = MoveBis
-    | DrawTool Annotation.Type (Maybe Int)
+fromAnnotationType : Annotation.Type -> Tool
+fromAnnotationType annotationType =
+    case annotationType of
+        Annotation.PointType ->
+            Annotation (Annotation.Point {})
+
+        Annotation.BBoxType ->
+            Annotation (Annotation.BBox {})
 
 
-toolsFromConfig : Annotation.Config -> Array ToolBis
-toolsFromConfig config =
+fromConfig : Annotation.Config -> Zipper Data
+fromConfig config =
     let
-        f kind toolArray =
-            case Array.length kind.variants of
-                0 ->
-                    Array.push (DrawTool kind.annotationType Nothing) toolArray
+        moveData : Data
+        moveData =
+            { id = 0
+            , tool = Move
+            , colorId = 0
+            }
 
-                nbVariants ->
-                    -- add all variants drawtool
-                    List.range 0 (nbVariants - 1)
-                        |> List.map (\n -> DrawTool kind.annotationType (Just n))
-                        |> Array.fromList
-                        |> Array.append toolArray
+        zipperWithOnlyMove : Zipper Data
+        zipperWithOnlyMove =
+            Zipper.init [] moveData []
+
+        addKind : Annotation.Kind -> Zipper Data -> Zipper Data
+        addKind kind zipper =
+            case kind.variants of
+                [] ->
+                    addVariants 0 kind.annotationType [] zipper
+
+                _ :: vs ->
+                    addVariants 1 kind.annotationType vs zipper
+
+        addVariants : Int -> Annotation.Type -> List a -> Zipper Data -> Zipper Data
+        addVariants id annotationType otherVariants zipper =
+            let
+                currentId =
+                    .id (Zipper.getC zipper)
+
+                variantData =
+                    { id = 1 + .id (Zipper.getC zipper)
+                    , tool = fromAnnotationType annotationType
+                    , colorId = id
+                    }
+
+                newZipper =
+                    zipper
+                        |> Zipper.insertR variantData
+                        |> Zipper.goR
+            in
+            case otherVariants of
+                [] ->
+                    newZipper
+
+                v :: vs ->
+                    addVariants (id + 1) annotationType vs newZipper
     in
-    Array.foldl f Array.empty config.kinds
+    List.foldl addKind zipperWithOnlyMove config.kinds
+        |> Zipper.goStart
 
 
-allAnnotationTools : List Tool
-allAnnotationTools =
-    [ BBox, Contour, Outline, Stroke, Point ]
-
-
-toolSvg : Float -> ToolBis -> Element Style Style.ColorVariations msg
-toolSvg size tool =
-    let
-        ( svgIcon, maybeVariation ) =
-            case tool of
-                MoveBis ->
-                    ( Icons.move, Nothing )
-
-                DrawTool Annotation.BBox var ->
-                    ( Icons.boundingBox, var )
-
-                DrawTool Annotation.Polygone var ->
-                    ( Icons.contour, var )
-
-                DrawTool Annotation.Outline var ->
-                    ( Icons.outline, var )
-
-                DrawTool Annotation.Stroke var ->
-                    ( Icons.stroke, var )
-
-                DrawTool Annotation.Point var ->
-                    ( Icons.point, var )
-
-        lazyIconElement =
-            lazy2 Icons.sized size svgIcon
-                |> Element.html
-    in
-    case maybeVariation of
-        Nothing ->
-            lazyIconElement
-
-        Just var ->
-            Element.el Style.ToolIcon [ Attributes.vary (Style.FromPalette var) True ] lazyIconElement
-
-
-svgElement : Float -> Tool -> Html msg
-svgElement size tool =
+svgElement : Float -> Data -> Element Style Style.ColorVariations msg
+svgElement size toolData =
     let
         svgIcon =
-            case tool of
+            case toolData.tool of
                 Move ->
                     Icons.move
 
-                BBox ->
-                    Icons.boundingBox
-
-                Contour ->
-                    Icons.contour
-
-                Outline ->
-                    Icons.outline
-
-                Stroke ->
-                    Icons.stroke
-
-                Point ->
+                Annotation (Annotation.Point _) ->
                     Icons.point
+
+                Annotation (Annotation.BBox _) ->
+                    Icons.boundingBox
     in
     lazy2 Icons.sized size svgIcon
+        |> Element.html
+        |> Element.el Style.ToolIcon [ vary (Style.FromPalette toolData.colorId) True ]

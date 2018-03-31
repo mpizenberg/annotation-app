@@ -72,22 +72,14 @@ update msg model =
             , Cmd.none
             )
 
-        SelectTool pairIdTool ->
-            ( { model
-                | toolBis = pairIdTool
-
-                -- , toolDropdownOpen = False
-                -- , currentDropdownTool =
-                --     if tool /= Tool.Move then
-                --         tool
-                --     else
-                --         model.currentDropdownTool
-              }
+        SelectTool toolId ->
+            ( { model | toolsData = Types.selectTool toolId model.toolsData }
             , Cmd.none
             )
 
         ToggleToolDropdown ->
-            ( { model | toolDropdownOpen = not model.toolDropdownOpen }
+            -- ( { model | toolDropdownOpen = not model.toolDropdownOpen }
+            ( model
             , Cmd.none
             )
 
@@ -137,223 +129,224 @@ resizeViewer size model =
 
 updateWithPointer : PointerMsg -> Model -> Model
 updateWithPointer pointerMsg model =
-    case ( pointerMsg, model.tool, model.dragState ) of
-        ( PointerDownAt pos, Tool.Move, _ ) ->
-            { model | dragState = DraggingFrom pos }
-
-        ( PointerMoveAt ( x, y ), Tool.Move, DraggingFrom ( ox, oy ) ) ->
-            { model
-                | dragState = DraggingFrom ( x, y )
-                , viewer = Viewer.grabMove ( x - ox, y - oy ) model.viewer
-            }
-
-        ( PointerUpAt _, Tool.Move, _ ) ->
-            { model | dragState = NoDrag }
-
-        ( PointerDownAt pos, Tool.BBox, _ ) ->
-            { model
-                | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)
-                , bbox = Nothing
-            }
-
-        ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
-            let
-                ( startPoint, point ) =
-                    ( Point.fromCoordinates startPos
-                    , Point.fromCoordinates (Viewer.positionIn model.viewer pos)
-                    )
-            in
-            { model | bbox = Just (BBox.fromPair ( startPoint, point )) }
-
-        ( PointerUpAt _, Tool.BBox, _ ) ->
-            { model | dragState = NoDrag }
-
-        ( _, Tool.Contour, _ ) ->
-            updateContour pointerMsg model
-
-        ( _, Tool.Point, _ ) ->
-            updatePoint pointerMsg model
-
-        ( _, Tool.Stroke, _ ) ->
-            updateStroke pointerMsg model
-
-        ( _, Tool.Outline, _ ) ->
-            updateOutline pointerMsg model
-
-        _ ->
-            model
-
-
-updatePoint : PointerMsg -> Model -> Model
-updatePoint pointerMsg model =
-    case ( pointerMsg, model.dragState ) of
-        ( PointerDownAt pos, NoDrag ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-            in
-            { model
-                | point = Just (Point.fromCoordinates scaledPos)
-                , dragState = DraggingFrom scaledPos
-            }
-
-        ( PointerMoveAt pos, DraggingFrom _ ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-            in
-            { model | point = Just (Point.fromCoordinates scaledPos) }
-
-        ( PointerUpAt _, _ ) ->
-            { model | dragState = NoDrag }
-
-        _ ->
-            model
+    -- case ( pointerMsg, model.tool, model.dragState ) of
+    --     ( PointerDownAt pos, Tool.Move, _ ) ->
+    --         { model | dragState = DraggingFrom pos }
+    --
+    --     ( PointerMoveAt ( x, y ), Tool.Move, DraggingFrom ( ox, oy ) ) ->
+    --         { model
+    --             | dragState = DraggingFrom ( x, y )
+    --             , viewer = Viewer.grabMove ( x - ox, y - oy ) model.viewer
+    --         }
+    --
+    --     ( PointerUpAt _, Tool.Move, _ ) ->
+    --         { model | dragState = NoDrag }
+    --
+    --     ( PointerDownAt pos, Tool.BBox, _ ) ->
+    --         { model
+    --             | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)
+    --             , bbox = Nothing
+    --         }
+    --
+    --     ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
+    --         let
+    --             ( startPoint, point ) =
+    --                 ( Point.fromCoordinates startPos
+    --                 , Point.fromCoordinates (Viewer.positionIn model.viewer pos)
+    --                 )
+    --         in
+    --         { model | bbox = Just (BBox.fromPair ( startPoint, point )) }
+    --
+    --     ( PointerUpAt _, Tool.BBox, _ ) ->
+    --         { model | dragState = NoDrag }
+    --
+    --     ( _, Tool.Contour, _ ) ->
+    --         updateContour pointerMsg model
+    --
+    --     ( _, Tool.Point, _ ) ->
+    --         updatePoint pointerMsg model
+    --
+    --     ( _, Tool.Stroke, _ ) ->
+    --         updateStroke pointerMsg model
+    --
+    --     ( _, Tool.Outline, _ ) ->
+    --         updateOutline pointerMsg model
+    --     _ ->
+    model
 
 
-updateStroke : PointerMsg -> Model -> Model
-updateStroke pointerMsg model =
-    case ( pointerMsg, model.dragState, model.stroke ) of
-        ( PointerDownAt pos, NoDrag, _ ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-            in
-            { model
-                | stroke = Just (Stroke.fromPoints [ Point.fromCoordinates scaledPos ])
-                , dragState = DraggingFrom scaledPos
-            }
 
-        ( PointerMoveAt pos, DraggingFrom _, Just stroke ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-            in
-            { model | stroke = Just (Stroke.addPoint (Point.fromCoordinates scaledPos) stroke) }
-
-        ( PointerUpAt _, _, _ ) ->
-            { model | dragState = NoDrag }
-
-        _ ->
-            model
-
-
-updateOutline : PointerMsg -> Model -> Model
-updateOutline pointerMsg model =
-    case ( pointerMsg, model.dragState, model.outline ) of
-        ( PointerDownAt pos, NoDrag, _ ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-
-                dragState =
-                    DraggingFrom scaledPos
-
-                point =
-                    Point.fromCoordinates scaledPos
-
-                outline =
-                    DrawingOutline (Stroke.fromPoints [ point ])
-            in
-            { model | dragState = dragState, outline = outline }
-
-        ( PointerMoveAt pos, DraggingFrom _, DrawingOutline stroke ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-
-                point =
-                    Point.fromCoordinates scaledPos
-
-                outline =
-                    DrawingOutline (Stroke.fromPoints <| point :: Stroke.points stroke)
-            in
-            { model | outline = outline }
-
-        ( PointerUpAt pos, DraggingFrom _, DrawingOutline stroke ) ->
-            { model | dragState = NoDrag, outline = EndedOutline (Stroke.close stroke) }
-
-        _ ->
-            model
-
-
-updateContour : PointerMsg -> Model -> Model
-updateContour pointerMsg model =
-    case ( pointerMsg, model.dragState, model.contour ) of
-        ( PointerDownAt pos, NoDrag, _ ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-
-                dragState =
-                    DraggingFrom scaledPos
-
-                point =
-                    Point.fromCoordinates scaledPos
-
-                ( startPos, newStroke ) =
-                    case model.contour of
-                        DrawingStartedAt scaledStartPos stroke ->
-                            ( scaledStartPos, Stroke.addPoint point stroke )
-
-                        _ ->
-                            ( scaledPos, Stroke.fromPoints [ point ] )
-
-                contour =
-                    DrawingStartedAt startPos newStroke
-            in
-            { model | dragState = dragState, contour = contour }
-
-        ( PointerMoveAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
-            let
-                scaledPos =
-                    Viewer.positionIn model.viewer pos
-
-                point =
-                    Point.fromCoordinates scaledPos
-
-                ( startPos, newStroke ) =
-                    case Stroke.points stroke of
-                        _ :: [] ->
-                            ( scaledPos, Stroke.fromPoints [ point ] )
-
-                        _ :: rest ->
-                            ( scaledStartPos, Stroke.fromPoints (point :: rest) )
-
-                        _ ->
-                            ( scaledStartPos, stroke )
-
-                contour =
-                    DrawingStartedAt startPos newStroke
-            in
-            { model | contour = contour }
-
-        ( PointerUpAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
-            case Stroke.points stroke of
-                startPoint :: [] ->
-                    { model | dragState = NoDrag }
-
-                endPoint :: rest ->
-                    let
-                        scaledEndPos =
-                            Viewer.positionIn model.viewer pos
-
-                        distance ( x1, x2 ) ( y1, y2 ) =
-                            abs (x1 - y1) + abs (x2 - y2)
-                    in
-                    if distance scaledEndPos scaledStartPos > (30 / model.viewer.zoom) then
-                        { model | dragState = NoDrag }
-                    else
-                        { model
-                            | dragState = NoDrag
-                            , contour = Ended (Stroke.close <| Stroke.fromPoints rest)
-                        }
-
-                _ ->
-                    { model | dragState = NoDrag }
-
-        _ ->
-            model
+-- updatePoint : PointerMsg -> Model -> Model
+-- updatePoint pointerMsg model =
+--     case ( pointerMsg, model.dragState ) of
+--         ( PointerDownAt pos, NoDrag ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--             in
+--             { model
+--                 | point = Just (Point.fromCoordinates scaledPos)
+--                 , dragState = DraggingFrom scaledPos
+--             }
+--
+--         ( PointerMoveAt pos, DraggingFrom _ ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--             in
+--             { model | point = Just (Point.fromCoordinates scaledPos) }
+--
+--         ( PointerUpAt _, _ ) ->
+--             { model | dragState = NoDrag }
+--
+--         _ ->
+--             model
+--
+--
+-- updateStroke : PointerMsg -> Model -> Model
+-- updateStroke pointerMsg model =
+--     case ( pointerMsg, model.dragState, model.stroke ) of
+--         ( PointerDownAt pos, NoDrag, _ ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--             in
+--             { model
+--                 | stroke = Just (Stroke.fromPoints [ Point.fromCoordinates scaledPos ])
+--                 , dragState = DraggingFrom scaledPos
+--             }
+--
+--         ( PointerMoveAt pos, DraggingFrom _, Just stroke ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--             in
+--             { model | stroke = Just (Stroke.addPoint (Point.fromCoordinates scaledPos) stroke) }
+--
+--         ( PointerUpAt _, _, _ ) ->
+--             { model | dragState = NoDrag }
+--
+--         _ ->
+--             model
+--
+--
+--
+-- updateOutline : PointerMsg -> Model -> Model
+-- updateOutline pointerMsg model =
+--     case ( pointerMsg, model.dragState, model.outline ) of
+--         ( PointerDownAt pos, NoDrag, _ ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--
+--                 dragState =
+--                     DraggingFrom scaledPos
+--
+--                 point =
+--                     Point.fromCoordinates scaledPos
+--
+--                 outline =
+--                     DrawingOutline (Stroke.fromPoints [ point ])
+--             in
+--             { model | dragState = dragState, outline = outline }
+--
+--         ( PointerMoveAt pos, DraggingFrom _, DrawingOutline stroke ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--
+--                 point =
+--                     Point.fromCoordinates scaledPos
+--
+--                 outline =
+--                     DrawingOutline (Stroke.fromPoints <| point :: Stroke.points stroke)
+--             in
+--             { model | outline = outline }
+--
+--         ( PointerUpAt pos, DraggingFrom _, DrawingOutline stroke ) ->
+--             { model | dragState = NoDrag, outline = EndedOutline (Stroke.close stroke) }
+--
+--         _ ->
+--             model
+--
+--
+-- updateContour : PointerMsg -> Model -> Model
+-- updateContour pointerMsg model =
+--     case ( pointerMsg, model.dragState, model.contour ) of
+--         ( PointerDownAt pos, NoDrag, _ ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--
+--                 dragState =
+--                     DraggingFrom scaledPos
+--
+--                 point =
+--                     Point.fromCoordinates scaledPos
+--
+--                 ( startPos, newStroke ) =
+--                     case model.contour of
+--                         DrawingStartedAt scaledStartPos stroke ->
+--                             ( scaledStartPos, Stroke.addPoint point stroke )
+--
+--                         _ ->
+--                             ( scaledPos, Stroke.fromPoints [ point ] )
+--
+--                 contour =
+--                     DrawingStartedAt startPos newStroke
+--             in
+--             { model | dragState = dragState, contour = contour }
+--
+--         ( PointerMoveAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
+--             let
+--                 scaledPos =
+--                     Viewer.positionIn model.viewer pos
+--
+--                 point =
+--                     Point.fromCoordinates scaledPos
+--
+--                 ( startPos, newStroke ) =
+--                     case Stroke.points stroke of
+--                         _ :: [] ->
+--                             ( scaledPos, Stroke.fromPoints [ point ] )
+--
+--                         _ :: rest ->
+--                             ( scaledStartPos, Stroke.fromPoints (point :: rest) )
+--
+--                         _ ->
+--                             ( scaledStartPos, stroke )
+--
+--                 contour =
+--                     DrawingStartedAt startPos newStroke
+--             in
+--             { model | contour = contour }
+--
+--         ( PointerUpAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
+--             case Stroke.points stroke of
+--                 startPoint :: [] ->
+--                     { model | dragState = NoDrag }
+--
+--                 endPoint :: rest ->
+--                     let
+--                         scaledEndPos =
+--                             Viewer.positionIn model.viewer pos
+--
+--                         distance ( x1, x2 ) ( y1, y2 ) =
+--                             abs (x1 - y1) + abs (x2 - y2)
+--                     in
+--                     if distance scaledEndPos scaledStartPos > (30 / model.viewer.zoom) then
+--                         { model | dragState = NoDrag }
+--                     else
+--                         { model
+--                             | dragState = NoDrag
+--                             , contour = Ended (Stroke.close <| Stroke.fromPoints rest)
+--                         }
+--
+--                 _ ->
+--                     { model | dragState = NoDrag }
+--
+--         _ ->
+--             model
 
 
 updateZoom : ZoomMsg -> Model -> Model

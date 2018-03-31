@@ -11,15 +11,17 @@ import Element exposing (Element)
 import Element.Attributes
 import Html.Attributes
 import Image exposing (Image)
+import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
+import Svg.Lazy
 import Time
 import Tool exposing (Tool)
 import Types exposing (..)
 
 
-imageViewer : Viewer -> Maybe Image -> List Tool.Data -> Element Style variation Msg
+imageViewer : Viewer -> Maybe Image -> Zipper Tool.Data -> Element Style variation Msg
 imageViewer viewer maybeImage toolsData =
     let
         attributes =
@@ -30,27 +32,33 @@ imageViewer viewer maybeImage toolsData =
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
     in
-    toolsData
-        |> List.map (viewAnnotationData viewer)
-        |> (::) (viewImage maybeImage)
-        |> Svg.g []
+    Svg.Lazy.lazy3 annotationsWithImage viewer.zoom maybeImage toolsData
         |> Viewer.viewInWithDetails attributes viewer
         |> Element.html
         |> Element.el Style.Viewer
             [ Element.Attributes.height Element.Attributes.fill ]
 
 
-viewAnnotationData : Viewer -> Tool.Data -> Svg msg
-viewAnnotationData viewer toolData =
+annotationsWithImage : Float -> Maybe Image -> Zipper Tool.Data -> Svg msg
+annotationsWithImage zoom maybeImage toolsData =
+    Zipper.getAll toolsData
+        |> List.drop 1
+        |> List.map (Svg.Lazy.lazy2 viewAnnotationData zoom)
+        |> (::) (viewImage maybeImage)
+        |> Svg.g []
+
+
+viewAnnotationData : Float -> Tool.Data -> Svg msg
+viewAnnotationData zoom toolData =
     case toolData.tool of
         Tool.Move ->
             Svg.text "Move tool"
 
         Tool.Annotation (Annotation.Point pointDrawings) ->
-            viewPoint viewer.zoom Color.blue pointDrawings
+            viewPoint zoom Color.blue pointDrawings
 
         Tool.Annotation (Annotation.BBox bboxDrawings) ->
-            viewBBox viewer.zoom Color.purple bboxDrawings
+            viewBBox zoom Color.purple bboxDrawings
 
 
 viewImage : Maybe Image -> Svg msg

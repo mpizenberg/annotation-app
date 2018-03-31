@@ -3,7 +3,6 @@ module View exposing (view)
 import Element exposing (Element)
 import Element.Attributes as Attributes exposing (fill)
 import Html exposing (Html)
-import Packages.Zipper as Zipper exposing (Zipper)
 import StyleSheet as Style exposing (Style)
 import Types exposing (..)
 import View.ActionBar
@@ -34,13 +33,9 @@ responsiveLayout model =
             , hasImage = model.image /= Nothing
             , toolsData = model.toolsData
             }
-
-        toolsDataList =
-            Zipper.getAll model.toolsData
-                |> List.drop 1
     in
     Element.column Style.None
         [ Attributes.height fill ]
         [ View.ActionBar.deviceActionBar actionBarParameters
-        , View.ImageAnnotations.imageViewer model.viewer model.image toolsDataList
+        , View.ImageAnnotations.imageViewer model.viewer model.image model.toolsData
         ]

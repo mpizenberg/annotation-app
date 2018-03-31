@@ -6,13 +6,14 @@ import Control exposing (Control)
 import Device exposing (Device)
 import Image exposing (Image)
 import Json.Encode as Encode
-import Tool exposing (Tool)
+import Tool exposing (Tool, ToolBis)
 
 
 type alias Model =
     { device : Device
     , layout : PageLayout
     , tool : Tool
+    , toolBis : ( Maybe Int, ToolBis )
     , toolDropdownOpen : Bool
     , currentDropdownTool : Tool
     , bbox : Maybe BoundingBox
@@ -69,6 +70,7 @@ init sizeFlag =
     { device = device
     , layout = layout
     , tool = Tool.Move
+    , toolBis = ( Just -1, Tool.MoveBis )
     , toolDropdownOpen = False
     , currentDropdownTool = Tool.BBox
     , bbox = Nothing
@@ -123,7 +125,7 @@ deviceActionBarHeight device =
 type Msg
     = NoOp
     | WindowResizesMsg Device.Size
-    | SelectTool Tool
+    | SelectTool ( Maybe Int, ToolBis )
     | ToggleToolDropdown
     | PointerMsg PointerMsg
     | MoveThrottle (Control Msg)

@@ -10,6 +10,7 @@ type Style
     = None
     | Button ButtonState
     | Viewer
+    | ToolIcon
 
 
 type ButtonState
@@ -34,11 +35,10 @@ sheet =
             Color.background (Color.rgba 255 255 255 0.8)
                 :: Style.hover [ Color.background Color.lightGrey, Style.cursor "pointer" ]
                 :: preventCommon
-                ++ colorVariations
         , Style.style (Button Selected) <|
             Color.background Color.grey
                 :: preventCommon
-                ++ colorVariations
+        , Style.style ToolIcon colorVariations
         , Style.style Viewer preventCommon
         ]
 

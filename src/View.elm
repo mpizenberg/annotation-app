@@ -1,10 +1,12 @@
 module View exposing (view)
 
+import Annotation
 import Annotation.Geometry.Stroke as Stroke
 import Annotation.Geometry.Types exposing (..)
 import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
+import Array exposing (Array)
 import Button exposing (Button)
 import Color
 import Control.Throttle as Throttle
@@ -22,7 +24,7 @@ import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Time
-import Tool exposing (Tool)
+import Tool exposing (Tool, ToolBis)
 import Types exposing (..)
 
 
@@ -42,6 +44,9 @@ responsiveLayout model =
                 || (model.outline /= NoOutline)
                 || (model.contour /= NoContour)
 
+        ( currentToolId, currentTool ) =
+            model.toolBis
+
         actionBarParameters =
             { device = model.device
             , currentTool = model.tool
@@ -50,6 +55,14 @@ responsiveLayout model =
             , size = model.layout.actionBarSize
             , canClearAnnotations = hasAnnotation
             , hasImage = model.image /= Nothing
+            , currentToolId = currentToolId
+            , chosenTools =
+                Array.fromList
+                    [ Tool.DrawTool Annotation.Point (Just 0)
+                    , Tool.DrawTool Annotation.Point (Just 1)
+                    , Tool.DrawTool Annotation.Polygone (Just 0)
+                    , Tool.DrawTool Annotation.Polygone (Just 1)
+                    ]
             }
     in
     Element.column Style.None
@@ -67,6 +80,8 @@ type alias ActionBarParameters =
     , size : ( Float, Float )
     , canClearAnnotations : Bool
     , hasImage : Bool
+    , currentToolId : Maybe Int
+    , chosenTools : Array ToolBis
     }
 
 
@@ -79,6 +94,16 @@ deviceActionBar param =
         filler =
             el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
 
+        oneToolButton tool id =
+            toolButtonBis height (param.currentToolId == Just id) tool id
+
+        toolButtonAccum tool ( id, buttons ) =
+            ( id + 1, oneToolButton tool id :: buttons )
+
+        drawToolsButtons =
+            Array.foldr toolButtonAccum ( 0, [] ) param.chosenTools
+                |> Tuple.second
+
         toolButtons =
             case param.device.kind of
                 Device.Phone ->
@@ -88,8 +113,8 @@ deviceActionBar param =
                     ]
 
                 _ ->
-                    (Tool.Move :: Tool.allAnnotationTools)
-                        |> List.map (toolButton height param.currentTool)
+                    oneToolButton Tool.MoveBis -1
+                        :: drawToolsButtons
 
         actionButtons =
             [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
@@ -198,6 +223,27 @@ toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
             )
 
 
+toolButtonBis : Float -> Bool -> ToolBis -> Int -> Element Style Style.ColorVariations Msg
+toolButtonBis size isSelected tool toolId =
+    Button.view
+        { actionability =
+            if isSelected then
+                Button.Abled Button.Active
+            else
+                Button.Abled Button.Inactive
+        , action = Pointer.onDown (always <| SelectTool ( Just toolId, tool )) |> Attributes.toAttr
+        , innerElement = Tool.toolSvg (0.6 * size) tool
+        , innerStyle = Style.None
+        , size = ( size, size )
+        , outerStyle =
+            if isSelected then
+                Style.Button Style.Selected
+            else
+                Style.Button Style.Abled
+        , otherAttributes = []
+        }
+
+
 toolButton : Float -> Tool -> Tool -> Element Style Style.ColorVariations Msg
 toolButton size currentTool tool =
     Button.view
@@ -208,8 +254,8 @@ toolButton size currentTool tool =
                  else
                     Button.Inactive
                 )
-        , action = Pointer.onDown (always <| SelectTool tool) |> Attributes.toAttr
-        , innerElement = Tool.svgElement (0.6 * size) tool
+        , action = Pointer.onDown (always <| NoOp) |> Attributes.toAttr
+        , innerElement = Element.html (Tool.svgElement (0.6 * size) tool)
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle =

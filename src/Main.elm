@@ -72,15 +72,16 @@ update msg model =
             , Cmd.none
             )
 
-        SelectTool tool ->
+        SelectTool pairIdTool ->
             ( { model
-                | tool = tool
-                , toolDropdownOpen = False
-                , currentDropdownTool =
-                    if tool /= Tool.Move then
-                        tool
-                    else
-                        model.currentDropdownTool
+                | toolBis = pairIdTool
+
+                -- , toolDropdownOpen = False
+                -- , currentDropdownTool =
+                --     if tool /= Tool.Move then
+                --         tool
+                --     else
+                --         model.currentDropdownTool
               }
             , Cmd.none
             )

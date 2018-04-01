@@ -55,8 +55,8 @@ deviceActionBar param =
 
         actionButtons =
             [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
-            , loadFileInput height LoadConfigFile Icons.settings
-            , loadFileInput height LoadImageFile Icons.image
+            , loadFileInput height "config-loader" LoadConfigFile Icons.settings
+            , loadFileInput height "image-loader" LoadImageFile Icons.image
             ]
 
         zoomActions =
@@ -102,12 +102,12 @@ actionButton size clickable sendMsg innerSvg =
         }
 
 
-loadFileInput : Float -> (Decode.Value -> msg) -> List (Svg msg) -> Element Style Style.ColorVariations msg
-loadFileInput size tagger innerSvg =
+loadFileInput : Float -> String -> (Decode.Value -> msg) -> List (Svg msg) -> Element Style Style.ColorVariations msg
+loadFileInput size stringId tagger innerSvg =
     let
         invisibleInput =
             Html.input
-                [ Html.Attributes.id "file-input"
+                [ Html.Attributes.id stringId
                 , Html.Attributes.type_ "file"
                 , Html.Attributes.style [ ( "display", "none" ) ]
                 , loadFileEvent tagger
@@ -117,7 +117,7 @@ loadFileInput size tagger innerSvg =
         labelButton =
             Button.view
                 { actionability = Button.Abled Button.Inactive
-                , action = Html.Attributes.for "file-input" |> Attributes.toAttr
+                , action = Html.Attributes.for stringId |> Attributes.toAttr
                 , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
                 , innerStyle = Style.None
                 , size = ( size, size )

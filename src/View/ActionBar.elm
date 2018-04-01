@@ -2,11 +2,7 @@ module View.ActionBar exposing (..)
 
 import Element exposing (Element, below, el, empty, node)
 import Element.Attributes as Attributes exposing (alignRight, fill, px)
-import Html exposing (Html)
-import Html.Attributes
-import Html.Events
 import Html.Lazy exposing (lazy2)
-import Json.Decode as Decode
 import Packages.Button as Button exposing (Button)
 import Packages.Device as Device exposing (Device)
 import Packages.Zipper as Zipper exposing (Zipper)
@@ -55,8 +51,22 @@ deviceActionBar param =
 
         actionButtons =
             [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
-            , loadFileInput height "config-loader" LoadConfigFile Icons.settings
-            , loadFileInput height "image-loader" LoadImageFile Icons.image
+            , Button.loadFileInput
+                { msgTagger = LoadConfigFile
+                , uniqueId = "config-loader"
+                , innerElement = Element.html (lazy2 Icons.sized (0.6 * height) Icons.settings)
+                , size = height
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
+            , Button.loadFileInput
+                { msgTagger = LoadImageFile
+                , uniqueId = "image-loader"
+                , innerElement = Element.html (lazy2 Icons.sized (0.6 * height) Icons.image)
+                , size = height
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
             ]
 
         zoomActions =
@@ -100,46 +110,6 @@ actionButton size clickable sendMsg innerSvg =
                 Style.Button Style.Disabled
         , otherAttributes = []
         }
-
-
-loadFileInput : Float -> String -> (Decode.Value -> msg) -> List (Svg msg) -> Element Style Style.ColorVariations msg
-loadFileInput size stringId tagger innerSvg =
-    let
-        invisibleInput =
-            Html.input
-                [ Html.Attributes.id stringId
-                , Html.Attributes.type_ "file"
-                , Html.Attributes.style [ ( "display", "none" ) ]
-                , loadFileEvent tagger
-                ]
-                []
-
-        labelButton =
-            Button.view
-                { actionability = Button.Abled Button.Inactive
-                , action = Html.Attributes.for stringId |> Attributes.toAttr
-                , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
-                , innerStyle = Style.None
-                , size = ( size, size )
-                , outerStyle = Style.Button Style.Abled
-                , otherAttributes = []
-                }
-    in
-    Element.row Style.None [] [ Element.html invisibleInput, node "label" labelButton ]
-
-
-loadFileEvent : (Decode.Value -> msg) -> Html.Attribute msg
-loadFileEvent tagger =
-    Decode.at [ "target", "files", "0" ] Decode.value
-        |> Decode.map tagger
-        |> Html.Events.onWithOptions "change" stopAndPrevent
-
-
-stopAndPrevent : Html.Events.Options
-stopAndPrevent =
-    { stopPropagation = True
-    , preventDefault = True
-    }
 
 
 

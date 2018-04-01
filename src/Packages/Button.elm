@@ -7,6 +7,10 @@ module Packages.Button exposing (..)
 
 import Element exposing (Element, el)
 import Element.Attributes as Attributes exposing (center, px, verticalCenter)
+import Html
+import Html.Attributes
+import Html.Events
+import Json.Decode as Decode
 
 
 type alias Button style variation msg =
@@ -51,3 +55,53 @@ view button =
             el button.innerStyle [ center, verticalCenter ] button.innerElement
     in
     el button.outerStyle attributes innerButton
+
+
+type alias FileLoader style variation msg =
+    { msgTagger : Decode.Value -> msg
+    , uniqueId : String
+    , innerElement : Element style variation msg
+    , size : Float
+    , noStyle : style
+    , outerStyle : style
+    }
+
+
+loadFileInput : FileLoader style var msg -> Element style var msg
+loadFileInput config =
+    let
+        invisibleInput =
+            Html.input
+                [ Html.Attributes.id config.uniqueId
+                , Html.Attributes.type_ "file"
+                , Html.Attributes.style [ ( "display", "none" ) ]
+                , loadFileEvent config.msgTagger
+                ]
+                []
+
+        labelButton =
+            view
+                { actionability = Abled Inactive
+                , action = Html.Attributes.for config.uniqueId |> Attributes.toAttr
+                , innerElement = config.innerElement
+                , innerStyle = config.noStyle
+                , size = ( config.size, config.size )
+                , outerStyle = config.outerStyle
+                , otherAttributes = []
+                }
+    in
+    Element.row config.noStyle [] [ Element.html invisibleInput, Element.node "label" labelButton ]
+
+
+loadFileEvent : (Decode.Value -> msg) -> Html.Attribute msg
+loadFileEvent tagger =
+    Decode.at [ "target", "files", "0" ] Decode.value
+        |> Decode.map tagger
+        |> Html.Events.onWithOptions "change" stopAndPrevent
+
+
+stopAndPrevent : Html.Events.Options
+stopAndPrevent =
+    { stopPropagation = True
+    , preventDefault = True
+    }

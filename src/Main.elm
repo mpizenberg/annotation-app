@@ -5,8 +5,8 @@
 
 module Main exposing (..)
 
-import Annotation
-import Annotation.Viewer as Viewer
+import Annotation exposing (Annotations, DragState(..), PointerMsg(..), Position)
+import Annotation.Viewer as Viewer exposing (Viewer)
 import Control
 import Html exposing (Html)
 import Image exposing (Image)
@@ -128,27 +128,41 @@ updateWithPointer pointerMsg model =
     let
         toolData =
             Zipper.getC model.toolsData
-
-        ( newToolData, newDragState ) =
-            Tool.updateData (Viewer.positionIn model.viewer) pointerMsg model.dragState toolData
     in
-    { model | toolsData = Zipper.setC newToolData model.toolsData, dragState = newDragState }
+    case toolData.tool of
+        Tool.Move ->
+            let
+                ( newViewer, newDragState ) =
+                    updateMove pointerMsg model.dragState model.viewer
+            in
+            { model | viewer = newViewer, dragState = newDragState }
+
+        _ ->
+            let
+                ( newToolData, newDragState ) =
+                    Tool.updateData (Viewer.positionIn model.viewer) pointerMsg model.dragState toolData
+            in
+            { model | toolsData = Zipper.setC newToolData model.toolsData, dragState = newDragState }
+
+
+updateMove : PointerMsg -> DragState -> Viewer -> ( Viewer, DragState )
+updateMove pointerMsg dragState viewer =
+    case ( pointerMsg, dragState ) of
+        ( PointerDownAt pos, _ ) ->
+            ( viewer, DraggingFrom pos )
+
+        ( PointerMoveAt ( x, y ), DraggingFrom ( ox, oy ) ) ->
+            ( Viewer.grabMove ( x - ox, y - oy ) viewer, DraggingFrom ( x, y ) )
+
+        ( PointerUpAt _, _ ) ->
+            ( viewer, NoDrag )
+
+        _ ->
+            ( viewer, dragState )
 
 
 
 -- case ( pointerMsg, model.tool, model.dragState ) of
---     ( PointerDownAt pos, Tool.Move, _ ) ->
---         { model | dragState = DraggingFrom pos }
---
---     ( PointerMoveAt ( x, y ), Tool.Move, DraggingFrom ( ox, oy ) ) ->
---         { model
---             | dragState = DraggingFrom ( x, y )
---             , viewer = Viewer.grabMove ( x - ox, y - oy ) model.viewer
---         }
---
---     ( PointerUpAt _, Tool.Move, _ ) ->
---         { model | dragState = NoDrag }
---
 --     ( PointerDownAt pos, Tool.BBox, _ ) ->
 --         { model
 --             | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)

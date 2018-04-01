@@ -1,4 +1,4 @@
-module View exposing (view)
+module View.Main exposing (view)
 
 import Element exposing (Element)
 import Element.Attributes as Attributes exposing (fill)

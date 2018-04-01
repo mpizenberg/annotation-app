@@ -6,7 +6,6 @@ import Html exposing (Html)
 import Html.Attributes
 import Html.Events
 import Html.Lazy exposing (lazy2)
-import Icons
 import Json.Decode as Decode
 import Packages.Button as Button exposing (Button)
 import Packages.Device as Device exposing (Device)
@@ -16,6 +15,7 @@ import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Tool
 import Types exposing (..)
+import View.Icons as Icons
 
 
 type alias ActionBarParameters =

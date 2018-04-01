@@ -13,7 +13,7 @@ import Json.Encode as Encode
 import Packages.Device as Device exposing (Device)
 import Tool exposing (Tool)
 import Types exposing (..)
-import View
+import View.Main
 
 
 main : Program Device.Size Model Msg
@@ -386,4 +386,4 @@ subscriptions model =
 
 view : Model -> Html Msg
 view =
-    View.view
+    View.Main.view

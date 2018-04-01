@@ -12,6 +12,16 @@ emptyConfig =
     }
 
 
+defaultConfig : Config
+defaultConfig =
+    { classes = [ "cat", "dog" ]
+    , kinds =
+        [ Kind PointType [ "fg", "bg" ]
+        , Kind BBoxType []
+        ]
+    }
+
+
 type alias Config =
     { classes : List String
     , kinds : List Kind

@@ -13,6 +13,7 @@ import Tool exposing (Tool)
 type alias Model =
     { device : Device
     , layout : PageLayout
+    , config : Annotation.Config
     , toolsData : Zipper Tool.Data
     , dragState : Annotation.DragState
     , moveThrottleState : Control.State Msg
@@ -41,7 +42,8 @@ init sizeFlag =
     in
     { device = device
     , layout = layout
-    , toolsData = Tool.fromConfig Annotation.emptyConfig
+    , config = Annotation.defaultConfig
+    , toolsData = Tool.fromConfig Annotation.defaultConfig
     , dragState = Annotation.NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer

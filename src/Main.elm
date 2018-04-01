@@ -10,6 +10,7 @@ import Annotation.Viewer as Viewer exposing (Viewer)
 import Control
 import Html exposing (Html)
 import Image exposing (Image)
+import Json.Decode as Decode
 import Packages.Device as Device exposing (Device)
 import Packages.Zipper as Zipper
 import Ports
@@ -102,7 +103,12 @@ update msg model =
             ( model, Ports.loadConfigFile jsValue )
 
         ConfigLoaded configString ->
-            ( { model | toolsData = Tool.fromConfigString configString }, Cmd.none )
+            let
+                config =
+                    Decode.decodeString Annotation.configDecoder configString
+                        |> Result.withDefault Annotation.emptyConfig
+            in
+            ( { model | config = config, toolsData = Tool.fromConfig config }, Cmd.none )
 
 
 resetImage : Image -> Model -> Model

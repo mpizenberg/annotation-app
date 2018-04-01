@@ -1,14 +1,15 @@
 module View.Main exposing (view)
 
 import Annotation
-import Element exposing (Element)
-import Element.Attributes as Attributes exposing (fill)
+import Element exposing (Element, below, column, el, empty)
+import Element.Attributes as Attributes exposing (alignLeft, fill)
 import Html exposing (Html)
 import Packages.Zipper as Zipper
 import StyleSheet as Style exposing (Style)
 import Tool
 import Types exposing (..)
 import View.ActionBar
+import View.Classes
 import View.ImageAnnotations
 
 
@@ -36,9 +37,14 @@ responsiveLayout model =
             , hasImage = model.image /= Nothing
             , toolsData = model.toolsData
             }
+
+        classesView =
+            View.Classes.view model.config.classes
+                |> el Style.None [ alignLeft ]
     in
     Element.column Style.None
         [ Attributes.height fill ]
         [ View.ActionBar.deviceActionBar actionBarParameters
+            |> below [ classesView ]
         , View.ImageAnnotations.imageViewer model.viewer model.image model.toolsData
         ]

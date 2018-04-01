@@ -9,7 +9,6 @@ import Annotation exposing (Annotations, DragState, PointerMsg, Position)
 import Element exposing (Element)
 import Element.Attributes exposing (vary)
 import Html.Lazy exposing (lazy2)
-import Json.Decode as Decode
 import Packages.Zipper as Zipper exposing (Zipper)
 import StyleSheet as Style exposing (Style)
 import View.Icons as Icons
@@ -95,13 +94,6 @@ fromConfig config =
     in
     List.foldl addKind zipperWithOnlyMove config.kinds
         |> Zipper.goStart
-
-
-fromConfigString : String -> Zipper Data
-fromConfigString =
-    Decode.decodeString Annotation.configDecoder
-        >> Result.withDefault Annotation.emptyConfig
-        >> fromConfig
 
 
 svgElement : Float -> Data -> Element Style Style.ColorVariations msg

@@ -3,14 +3,14 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-port module Main exposing (..)
+module Main exposing (..)
 
 import Annotation.Viewer as Viewer
 import Control
 import Html exposing (Html)
 import Image exposing (Image)
-import Json.Encode as Encode
 import Packages.Device as Device exposing (Device)
+import Ports
 import Tool exposing (Tool)
 import Types exposing (..)
 import View.Main
@@ -21,28 +21,13 @@ main =
     Html.programWithFlags
         { init = init
         , update = update
-        , view = view
+        , view = View.Main.view
         , subscriptions = subscriptions
         }
 
 
 
 -- MODEL #############################################################
-
-
-port resizes : (Device.Size -> msg) -> Sub msg
-
-
-port loadImageFile : Encode.Value -> Cmd msg
-
-
-port imageLoaded : (( String, Int, Int ) -> msg) -> Sub msg
-
-
-port loadConfigFile : Encode.Value -> Cmd msg
-
-
-port configLoaded : (String -> msg) -> Sub msg
 
 
 init : Device.Size -> ( Model, Cmd Msg )
@@ -104,13 +89,13 @@ update msg model =
                     ( Types.init model.device.size, Cmd.none )
 
         LoadImageFile jsValue ->
-            ( model, loadImageFile jsValue )
+            ( model, Ports.loadImageFile jsValue )
 
         ImageLoaded ( src, width, height ) ->
             ( resetImage (Image src width height) model, Cmd.none )
 
         LoadConfigFile jsValue ->
-            ( model, loadConfigFile jsValue )
+            ( model, Ports.loadConfigFile jsValue )
 
         ConfigLoaded configString ->
             ( { model | toolsData = Tool.fromConfigString configString }, Cmd.none )
@@ -374,16 +359,7 @@ updateZoom zoomMsg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ resizes WindowResizesMsg
-        , imageLoaded ImageLoaded
-        , configLoaded ConfigLoaded
+        [ Ports.resizes WindowResizesMsg
+        , Ports.imageLoaded ImageLoaded
+        , Ports.configLoaded ConfigLoaded
         ]
-
-
-
--- VIEW ##############################################################
-
-
-view : Model -> Html Msg
-view =
-    View.Main.view

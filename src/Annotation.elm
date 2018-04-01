@@ -116,9 +116,30 @@ typeFromString str =
 
 
 
+-- Utils
+
+
+hasAnnotation : Annotations -> Bool
+hasAnnotation annotations =
+    case annotations of
+        Point drawings ->
+            not (List.isEmpty drawings)
+
+        BBox drawings ->
+            not (List.isEmpty drawings)
+
+        Stroke drawings ->
+            not (List.isEmpty drawings)
+
+        Outline drawings ->
+            not (List.isEmpty drawings)
+
+        Polygon drawings ->
+            not (List.isEmpty drawings)
+
+
+
 -- Updates
--- type alias PointDrawings =
---     List Point
 
 
 type DragState
@@ -154,3 +175,8 @@ updatePoints scaling pointerMsg dragState drawings =
 
         _ ->
             ( drawings, dragState )
+
+
+updateBBox : (Position -> Position) -> PointerMsg -> DragState -> PointDrawings -> ( PointDrawings, DragState )
+updateBBox scaling pointerMsg dragState drawings =
+    Debug.crash "TODO"

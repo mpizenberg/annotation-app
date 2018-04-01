@@ -5,7 +5,7 @@
 
 module Tool exposing (..)
 
-import Annotation exposing (Annotations)
+import Annotation exposing (Annotations, DragState, PointerMsg, Position)
 import Element exposing (Element)
 import Element.Attributes exposing (vary)
 import Html.Lazy exposing (lazy2)
@@ -130,3 +130,24 @@ svgElement size toolData =
     lazy2 Icons.sized size svgIcon
         |> Element.html
         |> Element.el Style.ToolIcon [ vary (Style.FromPalette toolData.colorId) True ]
+
+
+
+-- Update
+
+
+updateData : (Position -> Position) -> PointerMsg -> DragState -> Data -> ( Data, DragState )
+updateData scaling pointerMsg dragState data =
+    case data.tool of
+        Annotation (Annotation.Point drawings) ->
+            let
+                ( newDrawings, newDragState ) =
+                    Annotation.updatePoints scaling pointerMsg dragState drawings
+            in
+            ( { data | tool = Annotation (Annotation.Point newDrawings) }
+            , newDragState
+            )
+
+        _ ->
+            -- Debug.crash "TODO"
+            ( data, dragState )

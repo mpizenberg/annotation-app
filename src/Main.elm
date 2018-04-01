@@ -5,11 +5,13 @@
 
 module Main exposing (..)
 
+import Annotation
 import Annotation.Viewer as Viewer
 import Control
 import Html exposing (Html)
 import Image exposing (Image)
 import Packages.Device as Device exposing (Device)
+import Packages.Zipper as Zipper
 import Ports
 import Tool exposing (Tool)
 import Types exposing (..)
@@ -121,80 +123,62 @@ resizeViewer size model =
             { model | viewer = Viewer.setSize size model.viewer |> Viewer.fitImage 0.8 image }
 
 
-updateWithPointer : PointerMsg -> Model -> Model
+updateWithPointer : Annotation.PointerMsg -> Model -> Model
 updateWithPointer pointerMsg model =
-    -- case ( pointerMsg, model.tool, model.dragState ) of
-    --     ( PointerDownAt pos, Tool.Move, _ ) ->
-    --         { model | dragState = DraggingFrom pos }
-    --
-    --     ( PointerMoveAt ( x, y ), Tool.Move, DraggingFrom ( ox, oy ) ) ->
-    --         { model
-    --             | dragState = DraggingFrom ( x, y )
-    --             , viewer = Viewer.grabMove ( x - ox, y - oy ) model.viewer
-    --         }
-    --
-    --     ( PointerUpAt _, Tool.Move, _ ) ->
-    --         { model | dragState = NoDrag }
-    --
-    --     ( PointerDownAt pos, Tool.BBox, _ ) ->
-    --         { model
-    --             | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)
-    --             , bbox = Nothing
-    --         }
-    --
-    --     ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
-    --         let
-    --             ( startPoint, point ) =
-    --                 ( Point.fromCoordinates startPos
-    --                 , Point.fromCoordinates (Viewer.positionIn model.viewer pos)
-    --                 )
-    --         in
-    --         { model | bbox = Just (BBox.fromPair ( startPoint, point )) }
-    --
-    --     ( PointerUpAt _, Tool.BBox, _ ) ->
-    --         { model | dragState = NoDrag }
-    --
-    --     ( _, Tool.Contour, _ ) ->
-    --         updateContour pointerMsg model
-    --
-    --     ( _, Tool.Point, _ ) ->
-    --         updatePoint pointerMsg model
-    --
-    --     ( _, Tool.Stroke, _ ) ->
-    --         updateStroke pointerMsg model
-    --
-    --     ( _, Tool.Outline, _ ) ->
-    --         updateOutline pointerMsg model
-    --     _ ->
-    model
+    let
+        toolData =
+            Zipper.getC model.toolsData
+
+        ( newToolData, newDragState ) =
+            Tool.updateData (Viewer.positionIn model.viewer) pointerMsg model.dragState toolData
+    in
+    { model | toolsData = Zipper.setC newToolData model.toolsData, dragState = newDragState }
 
 
 
--- updatePoint : PointerMsg -> Model -> Model
--- updatePoint pointerMsg model =
---     case ( pointerMsg, model.dragState ) of
---         ( PointerDownAt pos, NoDrag ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---             in
---             { model
---                 | point = Just (Point.fromCoordinates scaledPos)
---                 , dragState = DraggingFrom scaledPos
---             }
+-- case ( pointerMsg, model.tool, model.dragState ) of
+--     ( PointerDownAt pos, Tool.Move, _ ) ->
+--         { model | dragState = DraggingFrom pos }
 --
---         ( PointerMoveAt pos, DraggingFrom _ ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---             in
---             { model | point = Just (Point.fromCoordinates scaledPos) }
+--     ( PointerMoveAt ( x, y ), Tool.Move, DraggingFrom ( ox, oy ) ) ->
+--         { model
+--             | dragState = DraggingFrom ( x, y )
+--             , viewer = Viewer.grabMove ( x - ox, y - oy ) model.viewer
+--         }
 --
---         ( PointerUpAt _, _ ) ->
---             { model | dragState = NoDrag }
+--     ( PointerUpAt _, Tool.Move, _ ) ->
+--         { model | dragState = NoDrag }
 --
---         _ ->
---             model
+--     ( PointerDownAt pos, Tool.BBox, _ ) ->
+--         { model
+--             | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)
+--             , bbox = Nothing
+--         }
+--
+--     ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
+--         let
+--             ( startPoint, point ) =
+--                 ( Point.fromCoordinates startPos
+--                 , Point.fromCoordinates (Viewer.positionIn model.viewer pos)
+--                 )
+--         in
+--         { model | bbox = Just (BBox.fromPair ( startPoint, point )) }
+--
+--     ( PointerUpAt _, Tool.BBox, _ ) ->
+--         { model | dragState = NoDrag }
+--
+--     ( _, Tool.Contour, _ ) ->
+--         updateContour pointerMsg model
+--
+--     ( _, Tool.Point, _ ) ->
+--         updatePoint pointerMsg model
+--
+--     ( _, Tool.Stroke, _ ) ->
+--         updateStroke pointerMsg model
+--
+--     ( _, Tool.Outline, _ ) ->
+--         updateOutline pointerMsg model
+--     _ ->
 --
 --
 -- updateStroke : PointerMsg -> Model -> Model

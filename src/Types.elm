@@ -14,7 +14,7 @@ type alias Model =
     { device : Device
     , layout : PageLayout
     , toolsData : Zipper Tool.Data
-    , dragState : DragState
+    , dragState : Annotation.DragState
     , moveThrottleState : Control.State Msg
     , viewer : Viewer
     , image : Maybe Image
@@ -25,15 +25,6 @@ type alias PageLayout =
     { actionBarSize : ( Float, Float )
     , viewerSize : ( Float, Float )
     }
-
-
-type DragState
-    = NoDrag
-    | DraggingFrom Position
-
-
-type alias Position =
-    ( Float, Float )
 
 
 init : Device.Size -> Model
@@ -51,7 +42,7 @@ init sizeFlag =
     { device = device
     , layout = layout
     , toolsData = Tool.fromConfig Annotation.emptyConfig
-    , dragState = NoDrag
+    , dragState = Annotation.NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer
     , image = Nothing
@@ -114,7 +105,7 @@ type Msg
     | WindowResizesMsg Device.Size
     | SelectTool Int
     | ToggleToolDropdown
-    | PointerMsg PointerMsg
+    | PointerMsg Annotation.PointerMsg
     | MoveThrottle (Control Msg)
     | ZoomMsg ZoomMsg
     | ClearAnnotations
@@ -122,12 +113,6 @@ type Msg
     | ImageLoaded ( String, Int, Int )
     | LoadConfigFile Encode.Value
     | ConfigLoaded String
-
-
-type PointerMsg
-    = PointerDownAt Position
-    | PointerMoveAt Position
-    | PointerUpAt Position
 
 
 type ZoomMsg

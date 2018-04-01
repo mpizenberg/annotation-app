@@ -1,5 +1,6 @@
 module Annotation exposing (..)
 
+import Annotation.Geometry.Point as Point
 import Annotation.Geometry.Types exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 
@@ -112,3 +113,44 @@ typeFromString str =
 
         _ ->
             PointType
+
+
+
+-- Updates
+-- type alias PointDrawings =
+--     List Point
+
+
+type DragState
+    = NoDrag
+    | DraggingFrom ( Float, Float )
+
+
+type alias Position =
+    ( Float, Float )
+
+
+type PointerMsg
+    = PointerDownAt ( Float, Float )
+    | PointerMoveAt ( Float, Float )
+    | PointerUpAt ( Float, Float )
+
+
+updatePoints : (Position -> Position) -> PointerMsg -> DragState -> PointDrawings -> ( PointDrawings, DragState )
+updatePoints scaling pointerMsg dragState drawings =
+    case ( pointerMsg, dragState, drawings ) of
+        ( PointerDownAt pos, NoDrag, _ ) ->
+            let
+                scaledPos =
+                    scaling pos
+            in
+            ( Point.fromCoordinates scaledPos :: drawings, DraggingFrom scaledPos )
+
+        ( PointerMoveAt pos, DraggingFrom _, point :: points ) ->
+            ( Point.fromCoordinates (scaling pos) :: points, dragState )
+
+        ( PointerUpAt _, _, _ ) ->
+            ( drawings, NoDrag )
+
+        _ ->
+            ( drawings, dragState )

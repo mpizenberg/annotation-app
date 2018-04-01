@@ -1,6 +1,6 @@
 module View.ImageAnnotations exposing (..)
 
-import Annotation
+import Annotation exposing (PointerMsg(..))
 import Annotation.Geometry.Stroke as Stroke
 import Annotation.Style as Style
 import Annotation.Svg as Svg

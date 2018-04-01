@@ -136,6 +136,16 @@ svgElement size toolData =
 -- Update
 
 
+removeLatestAnnotation : Tool -> Tool
+removeLatestAnnotation tool =
+    case tool of
+        Move ->
+            Move
+
+        Annotation annotations ->
+            Annotation (Annotation.removeLast annotations)
+
+
 updateData : (Position -> Position) -> PointerMsg -> DragState -> Data -> ( Data, DragState )
 updateData scaling pointerMsg dragState data =
     case data.tool of

@@ -83,12 +83,14 @@ update msg model =
             ( updateZoom zoomMsg model, Cmd.none )
 
         ClearAnnotations ->
-            case model.image of
-                Just image ->
-                    ( resetImage image model, Cmd.none )
+            let
+                toolData =
+                    Zipper.getC model.toolsData
 
-                Nothing ->
-                    ( Types.init model.device.size, Cmd.none )
+                newToolData =
+                    { toolData | tool = Tool.removeLatestAnnotation toolData.tool }
+            in
+            ( { model | toolsData = Zipper.setC newToolData model.toolsData }, Cmd.none )
 
         LoadImageFile jsValue ->
             ( model, Ports.loadImageFile jsValue )

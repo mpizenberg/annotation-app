@@ -138,6 +138,25 @@ hasAnnotation annotations =
             not (List.isEmpty drawings)
 
 
+removeLast : Annotations -> Annotations
+removeLast annotations =
+    case annotations of
+        Point drawings ->
+            Point <| List.drop 1 drawings
+
+        BBox drawings ->
+            BBox <| List.drop 1 drawings
+
+        Stroke drawings ->
+            Stroke <| List.drop 1 drawings
+
+        Outline drawings ->
+            Outline <| List.drop 1 drawings
+
+        Polygon drawings ->
+            Polygon <| List.drop 1 drawings
+
+
 
 -- Updates
 

@@ -150,6 +150,15 @@ updateData scaling pointerMsg dragState data =
             , newDragState
             )
 
+        Annotation (Annotation.BBox drawings) ->
+            let
+                ( newDrawings, newDragState ) =
+                    Annotation.updateBBox scaling pointerMsg dragState drawings
+            in
+            ( { data | tool = Annotation (Annotation.BBox newDrawings) }
+            , newDragState
+            )
+
         _ ->
             -- Debug.crash "TODO"
             ( data, dragState )

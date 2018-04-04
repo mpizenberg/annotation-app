@@ -1,5 +1,6 @@
 module Annotation exposing (..)
 
+import Annotation.Geometry.BoundingBox as BoundingBox
 import Annotation.Geometry.Point as Point
 import Annotation.Geometry.Types exposing (..)
 import Json.Decode as Decode exposing (Decoder)
@@ -231,6 +232,32 @@ updatePoints scaling pointerMsg dragState drawings =
             ( drawings, dragState )
 
 
-updateBBox : (Position -> Position) -> PointerMsg -> DragState -> PointDrawings -> ( PointDrawings, DragState )
+updateBBox : (Position -> Position) -> PointerMsg -> DragState -> BBoxDrawings -> ( BBoxDrawings, DragState )
 updateBBox scaling pointerMsg dragState drawings =
-    Debug.crash "TODO"
+    case ( pointerMsg, dragState, drawings ) of
+        ( PointerDownAt pos, NoDrag, _ ) ->
+            let
+                scaledPos =
+                    scaling pos
+
+                point =
+                    Point.fromCoordinates scaledPos
+            in
+            ( BoundingBox.fromPair ( point, point ) :: drawings
+            , DraggingFrom scaledPos
+            )
+
+        ( PointerMoveAt pos, DraggingFrom scaledFirstCorner, bbox :: bboxes ) ->
+            ( BoundingBox.fromPair
+                ( Point.fromCoordinates scaledFirstCorner
+                , Point.fromCoordinates (scaling pos)
+                )
+                :: bboxes
+            , dragState
+            )
+
+        ( PointerUpAt _, _, _ ) ->
+            ( drawings, NoDrag )
+
+        _ ->
+            ( drawings, dragState )

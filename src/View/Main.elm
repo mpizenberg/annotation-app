@@ -22,20 +22,44 @@ view model =
 responsiveLayout : Model -> Element Style Style.ColorVariations Msg
 responsiveLayout model =
     let
-        hasAnnotation =
-            case .tool (Zipper.getC model.toolsData) of
-                Tool.Move ->
+        currentImageData =
+            Zipper.getC model.imagesData
+
+        hasImage =
+            case currentImageData of
+                Loaded _ _ _ _ ->
+                    True
+
+                _ ->
                     False
 
-                Tool.Annotation annotations ->
-                    Annotation.hasAnnotation annotations
+        hasAnnotation =
+            case currentImageData of
+                Loaded _ _ _ toolsData ->
+                    case .tool (Zipper.getC toolsData) of
+                        Tool.Move ->
+                            False
+
+                        Tool.Annotation annotations ->
+                            Annotation.hasAnnotation annotations
+
+                _ ->
+                    False
+
+        toolsData =
+            case currentImageData of
+                Loaded _ _ _ toolsData ->
+                    toolsData
+
+                _ ->
+                    Zipper.init [] (Tool.Data 0 Tool.Move 0) []
 
         actionBarParameters =
             { device = model.device
             , size = model.layout.actionBarSize
             , canClearAnnotations = hasAnnotation
-            , hasImage = model.image /= Nothing
-            , toolsData = model.toolsData
+            , hasImage = hasImage
+            , toolsData = toolsData
             }
 
         classesView =
@@ -48,7 +72,6 @@ responsiveLayout model =
             |> below [ classesView ]
         , View.ImageAnnotations.imageViewer
             model.viewer
-            model.image
             model.classesData.selectedKey
-            model.toolsData
+            currentImageData
         ]

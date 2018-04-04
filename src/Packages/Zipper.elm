@@ -68,6 +68,16 @@ goStart ((Zipper left center right) as zipper) =
             goStart (Zipper xs x (center :: right))
 
 
+goEnd : Zipper a -> Zipper a
+goEnd ((Zipper left center right) as zipper) =
+    case right of
+        [] ->
+            zipper
+
+        x :: xs ->
+            goEnd (Zipper (center :: left) x xs)
+
+
 
 -- GET #####################################################
 
@@ -116,9 +126,23 @@ setR right (Zipper left center _) =
     Zipper left center right
 
 
+
+-- UPDATE ##################################################
+
+
 updateC : (a -> a) -> Zipper a -> Zipper a
 updateC f (Zipper left center right) =
     Zipper left (f center) right
+
+
+moveMapStart : (a -> a) -> Zipper a -> Zipper a
+moveMapStart f (Zipper left center right) =
+    case left of
+        [] ->
+            Zipper [] (f center) right
+
+        x :: xs ->
+            moveMapStart f (Zipper xs x <| f center :: right)
 
 
 

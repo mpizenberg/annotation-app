@@ -59,8 +59,8 @@ deviceActionBar param =
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
                 }
-            , Button.loadFileInput
-                { msgTagger = LoadImageFile
+            , Button.loadMultipleFilesInput
+                { msgTagger = LoadImages
                 , uniqueId = "image-loader"
                 , innerElement = Element.html (lazy2 Icons.sized (0.6 * height) Icons.image)
                 , size = height

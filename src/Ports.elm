@@ -12,10 +12,10 @@ import Packages.Device as Device exposing (Device)
 port resizes : (Device.Size -> msg) -> Sub msg
 
 
-port loadImageFile : Encode.Value -> Cmd msg
+port loadImageFile : ( Int, Encode.Value ) -> Cmd msg
 
 
-port imageLoaded : (( String, Int, Int ) -> msg) -> Sub msg
+port imageLoaded : (( Int, String, Int, Int ) -> msg) -> Sub msg
 
 
 port loadConfigFile : Encode.Value -> Cmd msg

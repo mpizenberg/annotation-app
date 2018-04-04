@@ -10,7 +10,7 @@ import Element.Attributes as Attributes exposing (center, px, verticalCenter)
 import Html
 import Html.Attributes
 import Html.Events
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 
 
 type alias Button style variation msg =
@@ -91,6 +91,81 @@ loadFileInput config =
                 }
     in
     Element.row config.noStyle [] [ Element.html invisibleInput, Element.node "label" labelButton ]
+
+
+type alias MultipleFilesLoader style variation msg =
+    { msgTagger : List ( String, Decode.Value ) -> msg
+    , uniqueId : String
+    , innerElement : Element style variation msg
+    , size : Float
+    , noStyle : style
+    , outerStyle : style
+    }
+
+
+loadMultipleFilesInput : MultipleFilesLoader style var msg -> Element style var msg
+loadMultipleFilesInput config =
+    let
+        invisibleInput =
+            Html.input
+                [ Html.Attributes.id config.uniqueId
+                , Html.Attributes.type_ "file"
+                , Html.Attributes.multiple True
+                , Html.Attributes.style [ ( "display", "none" ) ]
+                , loadMultipleFilesEvent config.msgTagger
+                ]
+                []
+
+        labelButton =
+            view
+                { actionability = Abled Inactive
+                , action = Html.Attributes.for config.uniqueId |> Attributes.toAttr
+                , innerElement = config.innerElement
+                , innerStyle = config.noStyle
+                , size = ( config.size, config.size )
+                , outerStyle = config.outerStyle
+                , otherAttributes = []
+                }
+    in
+    Element.row config.noStyle [] [ Element.html invisibleInput, Element.node "label" labelButton ]
+
+
+loadMultipleFilesEvent : (List File -> msg) -> Html.Attribute msg
+loadMultipleFilesEvent tagger =
+    Decode.at [ "target", "files" ] (dynamicListOf fileDecoder)
+        |> Decode.map tagger
+        |> Html.Events.onWithOptions "change" stopAndPrevent
+
+
+fileDecoder : Decoder File
+fileDecoder =
+    Decode.map2 (,)
+        (Decode.field "name" Decode.string)
+        Decode.value
+
+
+type alias File =
+    ( String, Decode.Value )
+
+
+dynamicListOf : Decoder a -> Decoder (List a)
+dynamicListOf itemDecoder =
+    let
+        decodeN n =
+            List.range 0 (n - 1)
+                |> List.map decodeOne
+                |> decodeAll
+
+        decodeOne n =
+            Decode.field (toString n) itemDecoder
+    in
+    Decode.field "length" Decode.int
+        |> Decode.andThen decodeN
+
+
+decodeAll : List (Decoder a) -> Decoder (List a)
+decodeAll =
+    List.foldr (Decode.map2 (::)) (Decode.succeed [])
 
 
 loadFileEvent : (Decode.Value -> msg) -> Html.Attribute msg

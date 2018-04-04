@@ -16,12 +16,17 @@ type alias Model =
     , layout : PageLayout
     , config : Annotation.Config
     , classesData : { selectedKey : Int, classes : Classes }
-    , toolsData : Zipper Tool.Data
+    , imagesData : Zipper ImageData
     , dragState : Annotation.DragState
     , moveThrottleState : Control.State Msg
     , viewer : Viewer
-    , image : Maybe Image
     }
+
+
+type ImageData
+    = EmptyImageData
+    | Loading Int String
+    | Loaded Int String Image (Zipper Tool.Data)
 
 
 type alias PageLayout =
@@ -51,11 +56,10 @@ initWithConfig config size =
     , layout = layout
     , config = config
     , classesData = { selectedKey = 0, classes = Class.fromConfig config }
-    , toolsData = Tool.fromConfig config
+    , imagesData = Zipper.init [] EmptyImageData []
     , dragState = Annotation.NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer
-    , image = Nothing
     }
 
 
@@ -120,8 +124,8 @@ type Msg
     | MoveThrottle (Control Msg)
     | ZoomMsg ZoomMsg
     | ClearAnnotations
-    | LoadImageFile Encode.Value
-    | ImageLoaded ( String, Int, Int )
+    | LoadImages (List ( String, Encode.Value ))
+    | ImageLoaded ( Int, String, Int, Int )
     | LoadConfigFile Encode.Value
     | ConfigLoaded String
 

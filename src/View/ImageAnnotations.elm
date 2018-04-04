@@ -21,8 +21,8 @@ import Tool exposing (Tool)
 import Types exposing (..)
 
 
-imageViewer : Viewer -> Maybe Image -> Int -> Zipper Tool.Data -> Element Style variation Msg
-imageViewer viewer maybeImage selectedClass toolsData =
+imageViewer : Viewer -> Int -> ImageData -> Element Style variation Msg
+imageViewer viewer selectedClass imageData =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
@@ -34,6 +34,14 @@ imageViewer viewer maybeImage selectedClass toolsData =
                 |> Html.Attributes.map (Throttle.both MoveThrottle <| Time.second / 35)
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
+
+        ( maybeImage, toolsData ) =
+            case imageData of
+                Loaded _ _ image toolsData ->
+                    ( Just image, toolsData )
+
+                _ ->
+                    ( Nothing, Zipper.init [] (Tool.Data 0 Tool.Move 0) [] )
     in
     annotationsWithImage viewer.zoom maybeImage selectedClass toolsData
         |> Viewer.viewInWithDetails attributes viewer

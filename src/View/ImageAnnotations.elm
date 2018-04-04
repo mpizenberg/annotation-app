@@ -26,6 +26,9 @@ imageViewer viewer maybeImage toolsData =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
+
+            -- pointer capture hack to continue "globally" the event anywhere on document
+            , Html.Attributes.attribute "onpointerdown" "event.target.setPointerCapture(event.pointerId);"
             , Pointer.onDown (.pointer >> .offsetPos >> PointerDownAt >> PointerMsg)
             , Pointer.onMove (.pointer >> .offsetPos >> PointerMoveAt >> PointerMsg)
                 |> Html.Attributes.map (Throttle.both MoveThrottle <| Time.second / 35)

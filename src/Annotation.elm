@@ -14,7 +14,16 @@ emptyConfig =
 
 defaultConfig : Config
 defaultConfig =
-    { classes = [ "cat", "dog" ]
+    { classes =
+        [ ClassItem "mineral"
+        , ClassCategory "living"
+            [ ClassItem "plant"
+            , ClassCategory "animal"
+                [ ClassItem "cat"
+                , ClassItem "dog"
+                ]
+            ]
+        ]
     , kinds =
         [ Kind PointType [ "fg", "bg" ]
         , Kind BBoxType []
@@ -23,9 +32,14 @@ defaultConfig =
 
 
 type alias Config =
-    { classes : List String
+    { classes : List ClassesConfig
     , kinds : List Kind
     }
+
+
+type ClassesConfig
+    = ClassItem String
+    | ClassCategory String (List ClassesConfig)
 
 
 type alias Kind =
@@ -87,8 +101,19 @@ type PolygonDrawing
 configDecoder : Decoder Config
 configDecoder =
     Decode.map2 Config
-        (Decode.field "classes" <| Decode.list Decode.string)
+        (Decode.field "classes" <| Decode.list classesDecoder)
         (Decode.field "kinds" <| Decode.list kindDecoder)
+
+
+classesDecoder : Decoder ClassesConfig
+classesDecoder =
+    Decode.oneOf
+        [ Decode.map ClassItem Decode.string
+        , Decode.map2 ClassCategory (Decode.field "category" Decode.string) <|
+            Decode.field "items" <|
+                Decode.list <|
+                    Decode.lazy (\_ -> classesDecoder)
+        ]
 
 
 kindDecoder : Decoder Kind

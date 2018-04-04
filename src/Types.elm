@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Annotation
 import Annotation.Viewer as Viewer exposing (Viewer)
+import Class exposing (Classes)
 import Control exposing (Control)
 import Image exposing (Image)
 import Json.Encode as Encode
@@ -14,6 +15,7 @@ type alias Model =
     { device : Device
     , layout : PageLayout
     , config : Annotation.Config
+    , classesData : { selectedKey : Int, classes : Classes }
     , toolsData : Zipper Tool.Data
     , dragState : Annotation.DragState
     , moveThrottleState : Control.State Msg
@@ -43,6 +45,7 @@ init sizeFlag =
     { device = device
     , layout = layout
     , config = Annotation.defaultConfig
+    , classesData = { selectedKey = 0, classes = Class.fromConfig Annotation.defaultConfig }
     , toolsData = Tool.fromConfig Annotation.defaultConfig
     , dragState = Annotation.NoDrag
     , moveThrottleState = Control.initialState
@@ -106,6 +109,7 @@ type Msg
     = NoOp
     | WindowResizesMsg Device.Size
     | SelectTool Int
+    | SelectClass Int
     | ToggleToolDropdown
     | PointerMsg Annotation.PointerMsg
     | MoveThrottle (Control Msg)

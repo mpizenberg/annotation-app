@@ -1,6 +1,7 @@
 module View.Main exposing (view)
 
 import Annotation
+import Class
 import Element exposing (Element, below, column, el, empty)
 import Element.Attributes as Attributes exposing (alignLeft, fill)
 import Html exposing (Html)
@@ -9,7 +10,6 @@ import StyleSheet as Style exposing (Style)
 import Tool
 import Types exposing (..)
 import View.ActionBar
-import View.Classes
 import View.ImageAnnotations
 
 
@@ -39,7 +39,7 @@ responsiveLayout model =
             }
 
         classesView =
-            View.Classes.view model.config.classes
+            Class.viewAll SelectClass model.classesData.selectedKey model.classesData.classes
                 |> el Style.None [ alignLeft ]
     in
     Element.column Style.None

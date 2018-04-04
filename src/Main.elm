@@ -63,6 +63,15 @@ update msg model =
             , Cmd.none
             )
 
+        SelectClass classKey ->
+            let
+                classesData =
+                    model.classesData
+            in
+            ( { model | classesData = { classesData | selectedKey = classKey } }
+            , Cmd.none
+            )
+
         SelectTool toolId ->
             ( { model | toolsData = Types.selectTool toolId model.toolsData }
             , Cmd.none

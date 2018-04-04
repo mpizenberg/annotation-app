@@ -3,7 +3,7 @@ module View.Main exposing (view)
 import Annotation
 import Class
 import Element exposing (Element, below, column, el, empty)
-import Element.Attributes as Attributes exposing (alignLeft, fill)
+import Element.Attributes as Attributes exposing (alignLeft, fill, paddingTop)
 import Html exposing (Html)
 import Packages.Zipper as Zipper
 import StyleSheet as Style exposing (Style)
@@ -40,7 +40,7 @@ responsiveLayout model =
 
         classesView =
             Class.viewAll SelectClass model.classesData.selectedKey model.classesData.classes
-                |> el Style.None [ alignLeft ]
+                |> el Style.ClassesSidebar [ alignLeft, paddingTop 10 ]
     in
     Element.column Style.None
         [ Attributes.height fill ]

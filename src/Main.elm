@@ -7,6 +7,7 @@ module Main exposing (..)
 
 import Annotation exposing (Annotations, DragState(..), PointerMsg(..), Position)
 import Annotation.Viewer as Viewer exposing (Viewer)
+import Class
 import Control
 import Html exposing (Html)
 import Image exposing (Image)
@@ -117,7 +118,13 @@ update msg model =
                     Decode.decodeString Annotation.configDecoder configString
                         |> Result.withDefault Annotation.emptyConfig
             in
-            ( { model | config = config, toolsData = Tool.fromConfig config }, Cmd.none )
+            ( { model
+                | config = config
+                , toolsData = Tool.fromConfig config
+                , classesData = { selectedKey = 0, classes = Class.fromConfig config }
+              }
+            , Cmd.none
+            )
 
 
 resetImage : Image -> Model -> Model

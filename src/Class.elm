@@ -2,7 +2,7 @@ module Class exposing (..)
 
 import Annotation
 import Element exposing (Element, below, column, el, empty, row, text)
-import Element.Attributes as Attributes exposing (alignLeft, fill, toAttr)
+import Element.Attributes as Attributes exposing (alignLeft, fill, padding, paddingLeft, spacing, toAttr)
 import Packages.StaticTreeMap as StaticTreeMap exposing (Foldable, StaticTreeMap)
 import Pointer
 import StyleSheet as Style exposing (Style)
@@ -38,14 +38,22 @@ view msgTagger selectedKey foldableItem =
 
         attributes =
             if itemKey == selectedKey then
-                []
+                [ padding 10 ]
             else
-                [ toAttr <| Pointer.onDown (always <| msgTagger itemKey) ]
+                [ padding 10, toAttr <| Pointer.onDown (always <| msgTagger itemKey) ]
+
+        textContent =
+            if foldableItem.folded then
+                text ("+ " ++ foldableItem.item)
+            else
+                text foldableItem.item
     in
-    if foldableItem.folded then
-        el Style.None attributes (text foldableItem.item)
+    if itemKey == 0 then
+        empty
+    else if itemKey == selectedKey then
+        el (Style.ClassItem Style.SelectedClass) attributes textContent
     else
-        el Style.None attributes (text foldableItem.item)
+        el (Style.ClassItem Style.NonSelectedClass) attributes textContent
 
 
 viewAll : (Int -> msg) -> Int -> Classes -> Element Style var msg
@@ -58,10 +66,17 @@ viewAll msgTagger selectedKey classes =
             view msgTagger selectedKey
 
         toListItems classElement children =
-            column Style.None
-                []
-                [ classElement
-                , column Style.None [] children
-                ]
+            case children of
+                [] ->
+                    classElement
+
+                _ ->
+                    column Style.None
+                        []
+                        [ classElement
+                        , column Style.None [ paddingLeft 40 ] children
+                        ]
     in
-    Tree.restructure classView toListItems foldedClasses
+    Tree.children foldedClasses
+        |> List.map (Tree.restructure classView toListItems)
+        |> column Style.None []

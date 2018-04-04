@@ -21,8 +21,8 @@ import Tool exposing (Tool)
 import Types exposing (..)
 
 
-imageViewer : Viewer -> Maybe Image -> Zipper Tool.Data -> Element Style variation Msg
-imageViewer viewer maybeImage toolsData =
+imageViewer : Viewer -> Maybe Image -> Int -> Zipper Tool.Data -> Element Style variation Msg
+imageViewer viewer maybeImage selectedClass toolsData =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
@@ -35,24 +35,24 @@ imageViewer viewer maybeImage toolsData =
             , Pointer.onUp (.pointer >> .offsetPos >> PointerUpAt >> PointerMsg)
             ]
     in
-    Svg.Lazy.lazy3 annotationsWithImage viewer.zoom maybeImage toolsData
+    annotationsWithImage viewer.zoom maybeImage selectedClass toolsData
         |> Viewer.viewInWithDetails attributes viewer
         |> Element.html
         |> Element.el Style.Viewer
             [ Element.Attributes.height Element.Attributes.fill ]
 
 
-annotationsWithImage : Float -> Maybe Image -> Zipper Tool.Data -> Svg msg
-annotationsWithImage zoom maybeImage toolsData =
+annotationsWithImage : Float -> Maybe Image -> Int -> Zipper Tool.Data -> Svg msg
+annotationsWithImage zoom maybeImage selectedClass toolsData =
     Zipper.getAll toolsData
         |> List.drop 1
-        |> List.map (Svg.Lazy.lazy2 viewAnnotationData zoom)
+        |> List.map (viewAnnotationData True zoom selectedClass)
         |> (::) (viewImage maybeImage)
         |> Svg.g []
 
 
-viewAnnotationData : Float -> Tool.Data -> Svg msg
-viewAnnotationData zoom toolData =
+viewAnnotationData : Bool -> Float -> Int -> Tool.Data -> Svg msg
+viewAnnotationData highlight zoom selectedClass toolData =
     case toolData.tool of
         Tool.Move ->
             Svg.text "Move tool"
@@ -61,7 +61,7 @@ viewAnnotationData zoom toolData =
             viewPoint zoom Color.blue pointDrawings
 
         Tool.Annotation (Annotation.BBox bboxDrawings) ->
-            viewBBox zoom Color.purple bboxDrawings
+            viewBBox zoom (Color.rgba 255 255 255 0.4) selectedClass bboxDrawings
 
         Tool.Annotation (Annotation.Stroke drawings) ->
             viewStroke zoom Color.purple drawings
@@ -97,14 +97,42 @@ viewStroke zoom color strokeDrawings =
         |> Svg.g []
 
 
-viewBBox : Float -> Color -> Annotation.BBoxDrawings -> Svg msg
-viewBBox zoom color bboxDrawings =
+twiceOpaque : Color -> Color
+twiceOpaque color =
     let
-        strokeStyle =
-            Style.Stroke (2 / zoom) color
+        rgba =
+            Color.toRgb color
+
+        newAlpha =
+            0.5 * (1 + rgba.alpha)
+    in
+    Color.rgba rgba.red rgba.green rgba.blue newAlpha
+
+
+viewBBox : Float -> Color -> Int -> Annotation.BBoxDrawings -> Svg msg
+viewBBox zoom color selectedClass bboxDrawings =
+    let
+        viewOneBBox ( id, bbox ) =
+            let
+                highlight =
+                    id == selectedClass
+
+                strokeStyle =
+                    if highlight then
+                        Style.Stroke (4 / zoom) Color.black
+                    else
+                        Style.NoLine
+
+                fillStyle =
+                    if highlight then
+                        Style.Fill (twiceOpaque color)
+                    else
+                        Style.Fill color
+            in
+            Svg.boundingBoxStyled strokeStyle fillStyle bbox
     in
     bboxDrawings
-        |> List.map (Svg.boundingBoxStyled strokeStyle Style.fillDefault)
+        |> List.map viewOneBBox
         |> Svg.g []
 
 

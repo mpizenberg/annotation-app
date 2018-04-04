@@ -138,8 +138,8 @@ removeLatestAnnotation tool =
             Annotation (Annotation.removeLast annotations)
 
 
-updateData : (Position -> Position) -> PointerMsg -> DragState -> Data -> ( Data, DragState )
-updateData scaling pointerMsg dragState data =
+updateData : Int -> (Position -> Position) -> PointerMsg -> DragState -> Data -> ( Data, DragState )
+updateData classId scaling pointerMsg dragState data =
     case data.tool of
         Annotation (Annotation.Point drawings) ->
             let
@@ -153,7 +153,7 @@ updateData scaling pointerMsg dragState data =
         Annotation (Annotation.BBox drawings) ->
             let
                 ( newDrawings, newDragState ) =
-                    Annotation.updateBBox scaling pointerMsg dragState drawings
+                    Annotation.updateBBox classId scaling pointerMsg dragState drawings
             in
             ( { data | tool = Annotation (Annotation.BBox newDrawings) }
             , newDragState

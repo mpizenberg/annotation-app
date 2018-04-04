@@ -46,5 +46,9 @@ responsiveLayout model =
         [ Attributes.height fill ]
         [ View.ActionBar.deviceActionBar actionBarParameters
             |> below [ classesView ]
-        , View.ImageAnnotations.imageViewer model.viewer model.image model.toolsData
+        , View.ImageAnnotations.imageViewer
+            model.viewer
+            model.image
+            model.classesData.selectedKey
+            model.toolsData
         ]

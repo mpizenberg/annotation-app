@@ -74,7 +74,7 @@ type alias StrokeDrawings =
 
 
 type alias BBoxDrawings =
-    List BoundingBox
+    List ( Int, BoundingBox )
 
 
 type alias OutlineDrawings =
@@ -232,8 +232,8 @@ updatePoints scaling pointerMsg dragState drawings =
             ( drawings, dragState )
 
 
-updateBBox : (Position -> Position) -> PointerMsg -> DragState -> BBoxDrawings -> ( BBoxDrawings, DragState )
-updateBBox scaling pointerMsg dragState drawings =
+updateBBox : Int -> (Position -> Position) -> PointerMsg -> DragState -> BBoxDrawings -> ( BBoxDrawings, DragState )
+updateBBox classId scaling pointerMsg dragState drawings =
     case ( pointerMsg, dragState, drawings ) of
         ( PointerDownAt pos, NoDrag, _ ) ->
             let
@@ -243,15 +243,17 @@ updateBBox scaling pointerMsg dragState drawings =
                 point =
                     Point.fromCoordinates scaledPos
             in
-            ( BoundingBox.fromPair ( point, point ) :: drawings
+            ( ( classId, BoundingBox.fromPair ( point, point ) ) :: drawings
             , DraggingFrom scaledPos
             )
 
-        ( PointerMoveAt pos, DraggingFrom scaledFirstCorner, bbox :: bboxes ) ->
-            ( BoundingBox.fromPair
-                ( Point.fromCoordinates scaledFirstCorner
-                , Point.fromCoordinates (scaling pos)
-                )
+        ( PointerMoveAt pos, DraggingFrom scaledFirstCorner, ( id, bbox ) :: bboxes ) ->
+            ( ( id
+              , BoundingBox.fromPair
+                    ( Point.fromCoordinates scaledFirstCorner
+                    , Point.fromCoordinates (scaling pos)
+                    )
+              )
                 :: bboxes
             , dragState
             )

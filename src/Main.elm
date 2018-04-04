@@ -164,7 +164,12 @@ updateWithPointer pointerMsg model =
         _ ->
             let
                 ( newToolData, newDragState ) =
-                    Tool.updateData (Viewer.positionIn model.viewer) pointerMsg model.dragState toolData
+                    Tool.updateData
+                        model.classesData.selectedKey
+                        (Viewer.positionIn model.viewer)
+                        pointerMsg
+                        model.dragState
+                        toolData
             in
             { model | toolsData = Zipper.setC newToolData model.toolsData, dragState = newDragState }
 

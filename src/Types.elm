@@ -31,10 +31,15 @@ type alias PageLayout =
 
 
 init : Device.Size -> Model
-init sizeFlag =
+init =
+    initWithConfig Annotation.defaultConfig
+
+
+initWithConfig : Annotation.Config -> Device.Size -> Model
+initWithConfig config size =
     let
         device =
-            Device.classify sizeFlag
+            Device.classify size
 
         layout =
             pageLayout device
@@ -44,9 +49,9 @@ init sizeFlag =
     in
     { device = device
     , layout = layout
-    , config = Annotation.defaultConfig
-    , classesData = { selectedKey = 0, classes = Class.fromConfig Annotation.defaultConfig }
-    , toolsData = Tool.fromConfig Annotation.defaultConfig
+    , config = config
+    , classesData = { selectedKey = 0, classes = Class.fromConfig config }
+    , toolsData = Tool.fromConfig config
     , dragState = Annotation.NoDrag
     , moveThrottleState = Control.initialState
     , viewer = viewer

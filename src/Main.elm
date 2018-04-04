@@ -131,7 +131,7 @@ resetImage : Image -> Model -> Model
 resetImage image model =
     let
         initialModel =
-            Types.init model.device.size
+            Types.initWithConfig model.config model.device.size
     in
     { initialModel | image = Just image }
         |> resizeViewer model.viewer.size

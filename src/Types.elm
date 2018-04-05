@@ -117,6 +117,7 @@ deviceActionBarHeight device =
 type Msg
     = NoOp
     | WindowResizesMsg Device.Size
+    | SelectImage Int
     | SelectTool Int
     | SelectClass Int
     | ToggleToolDropdown

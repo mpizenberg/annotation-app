@@ -64,6 +64,12 @@ update msg model =
             , Cmd.none
             )
 
+        SelectImage imageId ->
+            ( { model | imagesData = moveToId imageId model.imagesData }
+                |> resizeViewer model.viewer.size
+            , Cmd.none
+            )
+
         SelectClass classKey ->
             let
                 classesData =

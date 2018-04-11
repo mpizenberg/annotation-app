@@ -1,83 +1,152 @@
-module View.Main exposing (view)
+module View.Main exposing (..)
 
-import Annotation
-import Class
-import Dataset
-import Element exposing (Element, below, column, el, empty)
-import Element.Attributes as Attributes exposing (alignLeft, alignRight, fill, paddingTop)
+import Annotation.Viewer as Viewer exposing (Viewer)
+import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
+import Data.RawImage as RawImage exposing (RawImage)
+import Data.Tool as Tool exposing (Tool)
+import Element exposing (Element)
+import Element.Attributes as Attributes exposing (alignLeft, alignRight, fill, height, paddingTop)
 import Html exposing (Html)
-import Packages.Zipper as Zipper
-import StyleSheet as Style exposing (Style)
-import Tool
-import Types exposing (..)
-import View.ActionBar
-import View.ImageAnnotations
+import Packages.Device as Device exposing (Device)
+import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
+import Packages.Zipper as Zipper exposing (Zipper)
+import StyleSheet as Style exposing (ColorVariations, Style)
+import View.ActionBar as ActionBar
+import View.AnnotationsArea as AnnotationsArea
+import View.ClassesSideBar as ClassesSideBar
+import View.DatasetSideBar as DatasetSideBar
 
 
-view : Model -> Html Msg
-view model =
-    responsiveLayout model
-        |> Element.layout Style.sheet
+-- TYPES #############################################################
 
 
-responsiveLayout : Model -> Element Style Style.ColorVariations Msg
-responsiveLayout model =
+type alias Parameters msg =
+    { device : Device
+    , actionBar : ActionBar.Parameters msg
+    , annotationsArea : AnnotationsArea.Parameters msg
+    , selectClassMsg : Int -> msg
+    , selectImageMsg : Int -> msg
+    }
+
+
+
+-- FUNCTIONS #########################################################
+
+
+viewNothing : Parameters msg -> Html msg
+viewNothing params =
+    Element.layout Style.sheet <|
+        ActionBar.emptyView params.actionBar
+
+
+viewImages : Parameters msg -> Viewer -> Zipper RawImage -> Html msg
+viewImages params viewer images =
+    Element.layout Style.sheet <|
+        Element.column Style.None
+            [ Attributes.height fill ]
+            [ ActionBar.emptyView params.actionBar
+                |> Element.below [ datasetRawSideBar params.selectImageMsg images ]
+            , AnnotationsArea.viewImageOnly viewer (Zipper.getC images)
+            ]
+
+
+viewConfig : Parameters msg -> Zipper Tool -> { selected : Int, all : StaticTreeMap String } -> Html msg
+viewConfig params tools classes =
+    Element.layout Style.sheet <|
+        Element.el Style.None
+            [ Attributes.height fill ]
+            (ActionBar.view params.actionBar tools
+                |> Element.below [ classesSideBar params.selectClassMsg classes ]
+            )
+
+
+viewAll : Parameters msg -> Zipper Tool -> Viewer -> { selected : Int, all : StaticTreeMap String } -> Zipper AnnotatedImage -> Html msg
+viewAll params tools viewer ({ selected, all } as classes) annotatedImages =
+    Element.layout Style.sheet <|
+        Element.column Style.None
+            [ Attributes.height fill ]
+            [ ActionBar.view params.actionBar tools
+                |> Element.below [ classesSideBar params.selectClassMsg classes ]
+                |> Element.below [ datasetAnnotatedSideBar params.selectImageMsg annotatedImages ]
+            , AnnotationsArea.view params.annotationsArea viewer selected (Zipper.getC annotatedImages)
+            ]
+
+
+
+-- sub views helpers
+
+
+datasetRawSideBar : (Int -> msg) -> Zipper RawImage -> Element Style var msg
+datasetRawSideBar selectImageMsg images =
+    DatasetSideBar.viewRaw selectImageMsg images
+        |> Element.el Style.ClassesSidebar [ alignRight, paddingTop 10 ]
+
+
+datasetAnnotatedSideBar : (Int -> msg) -> Zipper AnnotatedImage -> Element Style var msg
+datasetAnnotatedSideBar selectImageMsg images =
+    DatasetSideBar.viewAnnotated selectImageMsg images
+        |> Element.el Style.ClassesSidebar [ alignRight, paddingTop 10 ]
+
+
+classesSideBar : (Int -> msg) -> { selected : Int, all : StaticTreeMap String } -> Element Style var msg
+classesSideBar selectClassMsg classes =
+    ClassesSideBar.view selectClassMsg classes
+        |> Element.el Style.ClassesSidebar [ alignLeft, paddingTop 10 ]
+
+
+
+-- update helpers
+
+
+markHasImage : Parameters msg -> Parameters msg
+markHasImage ({ actionBar } as params) =
+    { params | actionBar = { actionBar | hasImage = True } }
+
+
+markHasAnnotation : Bool -> Parameters msg -> Parameters msg
+markHasAnnotation hasAnnotations ({ actionBar } as params) =
+    if actionBar.hasAnnotations == hasAnnotations then
+        params
+    else
+        { params | actionBar = { actionBar | hasAnnotations = hasAnnotations } }
+
+
+pageLayout : Device -> { actionBarSize : ( Float, Float ), viewerSize : ( Float, Float ) }
+pageLayout device =
     let
-        currentImageData =
-            Zipper.getC model.imagesData
+        ( barWidth, barHeight ) =
+            ( device.size.width |> toFloat
+            , ActionBar.responsiveHeight device |> toFloat
+            )
 
-        hasImage =
-            case currentImageData of
-                Loaded _ _ _ _ ->
-                    True
-
-                _ ->
-                    False
-
-        hasAnnotation =
-            case currentImageData of
-                Loaded _ _ _ toolsData ->
-                    case .tool (Zipper.getC toolsData) of
-                        Tool.Move ->
-                            False
-
-                        Tool.Annotation annotations ->
-                            Annotation.hasAnnotation annotations
-
-                _ ->
-                    False
-
-        toolsData =
-            case currentImageData of
-                Loaded _ _ _ toolsData ->
-                    toolsData
-
-                _ ->
-                    Zipper.init [] (Tool.Data 0 Tool.Move 0) []
-
-        actionBarParameters =
-            { device = model.device
-            , size = model.layout.actionBarSize
-            , canClearAnnotations = hasAnnotation
-            , hasImage = hasImage
-            , toolsData = toolsData
-            }
-
-        classesView =
-            Class.viewAll SelectClass model.classesData.selectedKey model.classesData.classes
-                |> el Style.ClassesSidebar [ alignLeft, paddingTop 10 ]
-
-        datasetView =
-            Dataset.viewAll SelectImage model.imagesData
-                |> el Style.ClassesSidebar [ alignRight, paddingTop 10 ]
+        ( viewerWidth, viewerHeight ) =
+            ( device.size.width |> toFloat
+            , max 0 (toFloat device.size.height - barHeight)
+            )
     in
-    Element.column Style.None
-        [ Attributes.height fill ]
-        [ View.ActionBar.deviceActionBar actionBarParameters
-            |> below [ classesView ]
-            |> below [ datasetView ]
-        , View.ImageAnnotations.imageViewer
-            model.viewer
-            model.classesData.selectedKey
-            currentImageData
-        ]
+    { actionBarSize = ( barWidth, barHeight )
+    , viewerSize = ( viewerWidth, viewerHeight )
+    }
+
+
+updateLayout : Device.Size -> Parameters msg -> ( Parameters msg, ( Float, Float ) )
+updateLayout size params =
+    let
+        device =
+            Device.classify size
+
+        layout =
+            pageLayout device
+
+        updateSize newSize parameters =
+            { parameters | size = newSize }
+
+        actionBar =
+            updateSize layout.actionBarSize params.actionBar
+
+        annotationsArea =
+            updateSize layout.viewerSize params.annotationsArea
+    in
+    ( { params | device = device, actionBar = actionBar, annotationsArea = annotationsArea }
+    , layout.viewerSize
+    )

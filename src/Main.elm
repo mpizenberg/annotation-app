@@ -1,519 +1,458 @@
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/
-
-
 module Main exposing (..)
 
-import Annotation exposing (Annotations, DragState(..), PointerMsg(..), Position)
 import Annotation.Viewer as Viewer exposing (Viewer)
-import Class
-import Control
+import Control exposing (Control)
+import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
+import Data.Config as Config exposing (Config)
+import Data.Pointer as Pointer
+import Data.RawImage as RawImage exposing (RawImage)
+import Data.Tool as Tool exposing (Tool)
 import Html exposing (Html)
+import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Image exposing (Image)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Packages.Device as Device exposing (Device)
+import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Ports
-import Tool exposing (Tool)
-import Types exposing (..)
-import View.Main
+import View.Main as View
 
 
 main : Program Device.Size Model Msg
 main =
     Html.programWithFlags
         { init = init
+        , view = lazy view
         , update = update
-        , view = View.Main.view
         , subscriptions = subscriptions
         }
 
 
 
--- MODEL #############################################################
+-- TYPES #############################################################
+
+
+type alias Model =
+    { viewParameters : View.Parameters Msg
+    , state : State
+    , viewer : Viewer
+    , dragState : Pointer.DragState
+    , moveThrottleState : Control.State Msg
+    }
+
+
+type State
+    = NothingProvided
+    | ConfigProvided Config Classes (Zipper Tool)
+    | ImagesProvided (Zipper RawImage)
+    | AllProvided Config Classes (Zipper Tool) (Zipper AnnotatedImage)
+
+
+type alias Classes =
+    { selected : Int
+    , all : StaticTreeMap String
+    }
+
+
+type Msg
+    = WindowResizes Device.Size
+      -- pointer events
+    | PointerMsg Pointer.Msg
+    | MoveThrottle (Control Msg)
+      -- select things
+    | SelectImage Int
+    | SelectTool Int
+    | SelectClass Int
+      -- files
+    | LoadImages (List { name : String, file : Value })
+    | ImageLoaded { id : Int, url : String, width : Int, height : Int }
+    | LoadConfig Value
+    | ConfigLoaded String
+      -- other actions
+    | ZoomMsg ZoomMsg
+    | RemoveLatestAnnotation
+
+
+type ZoomMsg
+    = ZoomIn
+    | ZoomOut
+    | ZoomFit
+
+
+
+-- FUNCTIONS #########################################################
 
 
 init : Device.Size -> ( Model, Cmd Msg )
 init sizeFlag =
-    ( Types.init sizeFlag, Cmd.none )
+    let
+        device =
+            Device.classify sizeFlag
+
+        layout =
+            View.pageLayout device
+
+        viewer =
+            Viewer.setSize layout.viewerSize Viewer.default
+
+        actionBarParameters =
+            { size = layout.actionBarSize
+            , hasAnnotations = False
+            , hasImage = False
+            , removeLatestAnnotationMsg = RemoveLatestAnnotation
+            , selectToolMsg = SelectTool
+            , zoomInMsg = ZoomMsg ZoomIn
+            , zoomOutMsg = ZoomMsg ZoomOut
+            , zoomFitMsg = ZoomMsg ZoomFit
+            , loadConfigMsg = LoadConfig
+            , loadImagesMsg = LoadImages
+            }
+
+        annotationsAreaParameters =
+            { size = layout.viewerSize
+            , pointerDownMsg = PointerMsg << Pointer.DownAt
+            , pointerMoveMsg = PointerMsg << Pointer.MoveAt
+            , pointerUpMsg = PointerMsg << Pointer.UpAt
+            , throttleMsg = MoveThrottle
+            }
+
+        viewParameters =
+            { device = device
+            , actionBar = actionBarParameters
+            , annotationsArea = annotationsAreaParameters
+            , selectClassMsg = SelectClass
+            , selectImageMsg = SelectImage
+            }
+
+        model =
+            { viewParameters = viewParameters
+            , state = NothingProvided
+            , viewer = viewer
+            , dragState = Pointer.NoDrag
+            , moveThrottleState = Control.initialState
+            }
+    in
+    ( model, Cmd.none )
 
 
+view : Model -> Html Msg
+view model =
+    case model.state of
+        NothingProvided ->
+            View.viewNothing model.viewParameters
 
--- UPDATE ############################################################
+        ConfigProvided config classes tools ->
+            View.viewConfig model.viewParameters tools classes
+
+        ImagesProvided images ->
+            View.viewImages model.viewParameters model.viewer images
+
+        AllProvided config classes tools images ->
+            View.viewAll model.viewParameters tools model.viewer classes images
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
-        WindowResizesMsg size ->
+    case ( msg, model.state ) of
+        ( WindowResizes size, _ ) ->
             let
-                device =
-                    Device.classify size
-
-                layout =
-                    Types.pageLayout device
+                ( viewParameters, viewerSize ) =
+                    View.updateLayout size model.viewParameters
 
                 viewer =
-                    Viewer.setSize layout.viewerSize model.viewer
+                    Viewer.setSize viewerSize model.viewer
             in
-            ( { model | device = device, layout = layout, viewer = viewer }
+            ( { model | viewParameters = viewParameters, viewer = viewer }
+                |> fitImage
             , Cmd.none
             )
 
-        SelectImage imageId ->
-            ( { model | imagesData = moveToId imageId model.imagesData }
-                |> resizeViewer model.viewer.size
+        ( SelectImage imageId, ImagesProvided rawImages ) ->
+            ( { model | state = ImagesProvided (Zipper.goTo .id imageId rawImages) }
+                |> fitImage
             , Cmd.none
             )
 
-        SelectClass classKey ->
-            let
-                classesData =
-                    model.classesData
-            in
-            ( { model | classesData = { classesData | selectedKey = classKey } }
+        ( SelectImage imageId, AllProvided co cl t images ) ->
+            ( { model | state = AllProvided co cl t (Zipper.goTo .id imageId images) }
+                |> fitImage
             , Cmd.none
             )
 
-        SelectTool toolId ->
-            case Zipper.getC model.imagesData of
-                Loaded imageId imageName image toolsData ->
-                    let
-                        newImageData =
-                            Loaded imageId imageName image (Types.selectTool toolId toolsData)
-
-                        newModel =
-                            { model | imagesData = Zipper.setC newImageData model.imagesData }
-                    in
-                    ( newModel, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        ToggleToolDropdown ->
-            -- ( { model | toolDropdownOpen = not model.toolDropdownOpen }
-            ( model
+        ( SelectClass id, ConfigProvided config classes tools ) ->
+            let
+                _ =
+                    Debug.log "msg" msg
+            in
+            ( { model | state = ConfigProvided config { classes | selected = id } tools }
             , Cmd.none
             )
 
-        PointerMsg pointerMsg ->
-            ( updateWithPointer pointerMsg model, Cmd.none )
-
-        MoveThrottle throttleMsg ->
-            Control.update (\s -> { model | moveThrottleState = s }) model.moveThrottleState throttleMsg
-
-        ZoomMsg zoomMsg ->
-            ( updateZoom zoomMsg model, Cmd.none )
-
-        ClearAnnotations ->
-            case Zipper.getC model.imagesData of
-                Loaded id imageName image toolsData ->
-                    let
-                        toolData =
-                            Zipper.getC toolsData
-
-                        newToolData =
-                            { toolData | tool = Tool.removeLatestAnnotation toolData.tool }
-
-                        newImageData =
-                            Loaded id imageName image (Zipper.setC newToolData toolsData)
-
-                        newModel =
-                            { model | imagesData = Zipper.setC newImageData model.imagesData }
-                    in
-                    ( newModel, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        LoadImages files ->
-            let
-                ( newImagesData, cmds ) =
-                    prepareLoading files model.imagesData
-            in
-            ( { model | imagesData = newImagesData }
-            , cmds
-            )
-
-        ImageLoaded ( id, src, width, height ) ->
-            let
-                toolsData =
-                    Tool.fromConfig model.config
-
-                newImagesData =
-                    setLoadedImage id src ( width, height ) toolsData model.imagesData
-
-                loadedCurrentImage =
-                    case Zipper.getC newImagesData of
-                        Loaded currentId _ _ _ ->
-                            True
-
-                        _ ->
-                            False
-
-                newModel =
-                    { model | imagesData = newImagesData }
-            in
-            if loadedCurrentImage then
-                ( resizeViewer newModel.viewer.size newModel, Cmd.none )
-            else
-                ( newModel, Cmd.none )
-
-        LoadConfigFile jsValue ->
-            ( model, Ports.loadConfigFile jsValue )
-
-        ConfigLoaded configString ->
-            let
-                config =
-                    Decode.decodeString Annotation.configDecoder configString
-                        |> Result.withDefault Annotation.emptyConfig
-
-                toolsData =
-                    Tool.fromConfig config
-            in
+        ( SelectClass id, AllProvided config { selected, all } tools imgs ) ->
             ( { model
-                | config = config
-                , classesData = { selectedKey = 0, classes = Class.fromConfig config }
-                , imagesData = resetImagesDataWithTools toolsData model.imagesData
+                | state = AllProvided config { selected = id, all = all } tools imgs
               }
             , Cmd.none
             )
 
+        ( SelectTool toolId, ConfigProvided config classes tools ) ->
+            ( { model | state = ConfigProvided config classes (Zipper.goTo .id toolId tools) }, Cmd.none )
 
-moveToId : Int -> Zipper ImageData -> Zipper ImageData
-moveToId id zipper =
-    case Zipper.getC zipper of
-        Loading itemId _ ->
-            if itemId == id then
-                zipper
-            else if itemId < id then
-                Zipper.goR zipper
-                    |> moveToId id
-            else
-                Zipper.goL zipper
-                    |> moveToId id
-
-        _ ->
-            zipper
-
-
-prepareLoading : List ( String, Value ) -> Zipper ImageData -> ( Zipper ImageData, Cmd Msg )
-prepareLoading images imagesData =
-    List.foldl addPrepareImage ( Zipper.goEnd imagesData, Cmd.none ) images
-
-
-addPrepareImage : ( String, Value ) -> ( Zipper ImageData, Cmd Msg ) -> ( Zipper ImageData, Cmd Msg )
-addPrepareImage ( name, value ) ( zipper, cmds ) =
-    case Zipper.getC zipper of
-        EmptyImageData ->
-            ( Zipper.init [] (Loading 0 name) [], Ports.loadImageFile ( 0, value ) )
-
-        Loading id _ ->
-            ( Zipper.insertR (Loading (id + 1) name) zipper |> Zipper.goR
-            , Cmd.batch [ Ports.loadImageFile ( id + 1, value ), cmds ]
+        ( SelectTool toolId, AllProvided config classes tools imgs ) ->
+            ( { model
+                | state =
+                    AllProvided config
+                        classes
+                        (Zipper.goTo .id toolId tools)
+                        (Zipper.updateC (AnnotatedImage.selectTool toolId) imgs)
+              }
+            , Cmd.none
             )
 
-        Loaded id _ _ _ ->
-            ( Zipper.insertR (Loading (id + 1) name) zipper |> Zipper.goR
-            , Cmd.batch [ Ports.loadImageFile ( id + 1, value ), cmds ]
-            )
-
-
-markLoaded : String -> ( Int, Int ) -> Zipper Tool.Data -> ImageData -> ImageData
-markLoaded src ( width, height ) toolsData imagesData =
-    case imagesData of
-        Loading id imageName ->
-            Loaded id imageName (Image src width height) toolsData
-
-        _ ->
-            imagesData
-
-
-setLoadedImage : Int -> String -> ( Int, Int ) -> Zipper Tool.Data -> Zipper ImageData -> Zipper ImageData
-setLoadedImage imageId src size toolsData imagesData =
-    -- let
-    --     initialModel =
-    --         Types.initWithConfig model.config model.device.size
-    -- in
-    -- { initialModel | image = Just image }
-    --     |> resizeViewer model.viewer.size
-    case Zipper.getC imagesData of
-        EmptyImageData ->
-            imagesData
-
-        Loading currentId _ ->
-            moveToId imageId imagesData
-                |> Zipper.updateC (markLoaded src size toolsData)
-                |> moveToId currentId
-
-        Loaded currentId _ _ _ ->
-            moveToId imageId imagesData
-                |> Zipper.updateC (markLoaded src size toolsData)
-                |> moveToId currentId
-
-
-resetImagesDataWithTools : Zipper Tool.Data -> Zipper ImageData -> Zipper ImageData
-resetImagesDataWithTools toolsData imagesData =
-    Zipper.goEnd imagesData
-        |> Zipper.moveMapStart (resetImageWithTool toolsData)
-
-
-resetImageWithTool : Zipper Tool.Data -> ImageData -> ImageData
-resetImageWithTool toolsData imageData =
-    case imageData of
-        Loaded id imageName image _ ->
-            Loaded id imageName image toolsData
-
-        _ ->
-            imageData
-
-
-resizeViewer : ( Float, Float ) -> Model -> Model
-resizeViewer size model =
-    case Zipper.getC model.imagesData of
-        Loaded _ _ image toolsData ->
-            { model | viewer = Viewer.setSize size model.viewer |> Viewer.fitImage 0.8 image }
-
-        _ ->
-            model
-
-
-updateWithPointer : Annotation.PointerMsg -> Model -> Model
-updateWithPointer pointerMsg model =
-    case Zipper.getC model.imagesData of
-        Loaded id imageName image toolsData ->
-            let
-                toolData =
-                    Zipper.getC toolsData
-            in
-            case toolData.tool of
+        ( PointerMsg pointerMsg, AllProvided config classes tools imgs ) ->
+            case .type_ (Zipper.getC tools) of
                 Tool.Move ->
                     let
                         ( newViewer, newDragState ) =
                             updateMove pointerMsg model.dragState model.viewer
                     in
-                    { model | viewer = newViewer, dragState = newDragState }
+                    ( { model | viewer = newViewer, dragState = newDragState }, Cmd.none )
 
                 _ ->
                     let
-                        ( newToolData, newDragState ) =
-                            Tool.updateData
-                                model.classesData.selectedKey
-                                (Viewer.positionIn model.viewer)
-                                pointerMsg
-                                model.dragState
-                                toolData
+                        scaledPointerMsg =
+                            case pointerMsg of
+                                Pointer.DownAt pos ->
+                                    Pointer.DownAt (Viewer.positionIn model.viewer pos)
 
-                        newToolsData =
-                            Zipper.setC newToolData toolsData
+                                Pointer.MoveAt pos ->
+                                    Pointer.MoveAt (Viewer.positionIn model.viewer pos)
 
-                        newImagesData =
-                            Zipper.setC (Loaded id imageName image newToolsData) model.imagesData
+                                Pointer.UpAt pos ->
+                                    Pointer.UpAt (Viewer.positionIn model.viewer pos)
+
+                        img =
+                            Zipper.getC imgs
+
+                        ( newImg, newDragState, hasAnnotations ) =
+                            AnnotatedImage.updateWithPointer model.viewer.zoom classes.selected scaledPointerMsg model.dragState img
+
+                        viewParameters =
+                            View.markHasAnnotation hasAnnotations model.viewParameters
                     in
-                    { model | imagesData = newImagesData, dragState = newDragState }
+                    ( { model
+                        | dragState = newDragState
+                        , state = AllProvided config classes tools (Zipper.setC newImg imgs)
+                        , viewParameters = viewParameters
+                      }
+                    , Cmd.none
+                    )
+
+        ( MoveThrottle throttleMsg, AllProvided _ _ _ _ ) ->
+            Control.update (\s -> { model | moveThrottleState = s }) model.moveThrottleState throttleMsg
+
+        ( ZoomMsg zoomMsg, _ ) ->
+            ( updateZoom zoomMsg model, Cmd.none )
+
+        ( RemoveLatestAnnotation, AllProvided config classes tools imgs ) ->
+            let
+                newZipper =
+                    Zipper.updateC AnnotatedImage.removeLatestAnnotation imgs
+
+                newState =
+                    AllProvided config classes tools newZipper
+
+                hasAnnotations =
+                    AnnotatedImage.hasAnnotations (Zipper.getC newZipper)
+
+                viewParameters =
+                    View.markHasAnnotation hasAnnotations model.viewParameters
+            in
+            ( { model | state = newState, viewParameters = viewParameters }
+            , Cmd.none
+            )
+
+        ( LoadImages (f :: files), NothingProvided ) ->
+            let
+                ( firstImage, firstCmd ) =
+                    prepareOneRawLoading 0 f
+
+                ( otherImages, otherCmds ) =
+                    prepareRawLoading 1 files
+            in
+            ( { model | state = ImagesProvided (Zipper.init [] firstImage otherImages) }
+            , Cmd.batch (firstCmd :: otherCmds)
+            )
+
+        ( LoadImages (f :: files), ConfigProvided config classes tools ) ->
+            let
+                ( firstImage, firstCmd ) =
+                    prepareOneRawLoading 0 f
+
+                ( otherImages, otherCmds ) =
+                    prepareRawLoading 1 files
+
+                annotatedImages =
+                    Zipper.init []
+                        (AnnotatedImage.fromRaw tools firstImage)
+                        (List.map (AnnotatedImage.fromRaw tools) otherImages)
+            in
+            ( { model
+                | state = AllProvided config classes tools annotatedImages
+                , viewParameters = View.markHasImage model.viewParameters
+              }
+            , Cmd.batch (firstCmd :: otherCmds)
+            )
+
+        ( LoadImages files, ImagesProvided previousImages ) ->
+            let
+                startingId =
+                    1 + (.id << Zipper.getC) (Zipper.goEnd previousImages)
+
+                ( newImages, cmds ) =
+                    prepareRawLoading startingId files
+            in
+            ( { model | state = ImagesProvided (Zipper.append newImages previousImages) }
+            , Cmd.batch cmds
+            )
+
+        ( LoadImages files, AllProvided config classes tools previousImages ) ->
+            let
+                startingId =
+                    1 + (.id << Zipper.getC) (Zipper.goEnd previousImages)
+
+                ( newImages, cmds ) =
+                    prepareRawLoading startingId files
+
+                newAnnotatedImages =
+                    List.map (AnnotatedImage.fromRaw tools) newImages
+            in
+            ( { model | state = AllProvided config classes tools (Zipper.append newAnnotatedImages previousImages) }
+            , Cmd.batch cmds
+            )
+
+        ( ImageLoaded { id, url, width, height }, ImagesProvided images ) ->
+            let
+                img =
+                    Zipper.getC images
+
+                newStatus =
+                    RawImage.Loaded (Image url width height)
+            in
+            if id == img.id then
+                Zipper.setC { img | status = newStatus } images
+                    |> ImagesProvided
+                    |> (\state -> ( fitImage { model | state = state }, Cmd.none ))
+            else
+                Zipper.goTo .id id images
+                    |> Zipper.updateC (\img -> { img | status = newStatus })
+                    |> Zipper.goTo .id img.id
+                    |> ImagesProvided
+                    |> (\state -> ( { model | state = state }, Cmd.none ))
+
+        ( ImageLoaded { id, url, width, height }, AllProvided config classes tools images ) ->
+            let
+                img =
+                    Zipper.getC images
+
+                newStatus =
+                    AnnotatedImage.Loaded (Image url width height)
+                        (AnnotatedImage.annotationsFromTools tools)
+            in
+            if id == img.id then
+                Zipper.setC { img | status = newStatus } images
+                    |> AllProvided config classes tools
+                    |> (\state -> ( fitImage { model | state = state }, Cmd.none ))
+            else
+                Zipper.goTo .id id images
+                    |> Zipper.updateC (\img -> { img | status = newStatus })
+                    |> Zipper.goTo .id img.id
+                    |> AllProvided config classes tools
+                    |> (\state -> ( { model | state = state }, Cmd.none ))
+
+        ( LoadConfig jsValue, _ ) ->
+            ( model, Ports.loadConfigFile jsValue )
+
+        ( ConfigLoaded configString, _ ) ->
+            ( { model
+                | state = changeConfig configString model.state
+                , viewParameters = View.markHasImage model.viewParameters
+              }
+            , Cmd.none
+            )
 
         _ ->
-            model
+            ( model, Cmd.none )
 
 
-updateMove : PointerMsg -> DragState -> Viewer -> ( Viewer, DragState )
-updateMove pointerMsg dragState viewer =
-    case ( pointerMsg, dragState ) of
-        ( PointerDownAt pos, _ ) ->
-            ( viewer, DraggingFrom pos )
 
-        ( PointerMoveAt ( x, y ), DraggingFrom ( ox, oy ) ) ->
-            ( Viewer.grabMove ( x - ox, y - oy ) viewer, DraggingFrom ( x, y ) )
+-- Config loading
 
-        ( PointerUpAt _, _ ) ->
-            ( viewer, NoDrag )
+
+changeConfig : String -> State -> State
+changeConfig configString state =
+    let
+        ( config, classes, tools ) =
+            decodeConfig configString
+    in
+    case state of
+        ImagesProvided images ->
+            Zipper.mapAll (AnnotatedImage.fromRaw tools) images
+                |> AllProvided config classes tools
+
+        AllProvided _ _ _ images ->
+            Zipper.mapAll (AnnotatedImage.resetWithTools tools) images
+                |> AllProvided config classes tools
 
         _ ->
-            ( viewer, dragState )
+            ConfigProvided config classes tools
+
+
+decodeConfig : String -> ( Config, { selected : Int, all : StaticTreeMap String }, Zipper Tool )
+decodeConfig configString =
+    let
+        config =
+            Decode.decodeString Config.decoder configString
+                |> Result.withDefault Config.empty
+
+        selected =
+            if List.isEmpty config.classes then
+                0
+            else
+                1
+    in
+    ( config
+    , { selected = selected, all = Config.classesFrom config.classes }
+    , Config.toolsFrom config.annotations
+    )
 
 
 
--- case ( pointerMsg, model.tool, model.dragState ) of
---     ( PointerDownAt pos, Tool.BBox, _ ) ->
---         { model
---             | dragState = DraggingFrom (Viewer.positionIn model.viewer pos)
---             , bbox = Nothing
---         }
---
---     ( PointerMoveAt pos, Tool.BBox, DraggingFrom startPos ) ->
---         let
---             ( startPoint, point ) =
---                 ( Point.fromCoordinates startPos
---                 , Point.fromCoordinates (Viewer.positionIn model.viewer pos)
---                 )
---         in
---         { model | bbox = Just (BBox.fromPair ( startPoint, point )) }
---
---     ( PointerUpAt _, Tool.BBox, _ ) ->
---         { model | dragState = NoDrag }
---
---     ( _, Tool.Contour, _ ) ->
---         updateContour pointerMsg model
---
---     ( _, Tool.Point, _ ) ->
---         updatePoint pointerMsg model
---
---     ( _, Tool.Stroke, _ ) ->
---         updateStroke pointerMsg model
---
---     ( _, Tool.Outline, _ ) ->
---         updateOutline pointerMsg model
---     _ ->
---
---
--- updateStroke : PointerMsg -> Model -> Model
--- updateStroke pointerMsg model =
---     case ( pointerMsg, model.dragState, model.stroke ) of
---         ( PointerDownAt pos, NoDrag, _ ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---             in
---             { model
---                 | stroke = Just (Stroke.fromPoints [ Point.fromCoordinates scaledPos ])
---                 , dragState = DraggingFrom scaledPos
---             }
---
---         ( PointerMoveAt pos, DraggingFrom _, Just stroke ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---             in
---             { model | stroke = Just (Stroke.addPoint (Point.fromCoordinates scaledPos) stroke) }
---
---         ( PointerUpAt _, _, _ ) ->
---             { model | dragState = NoDrag }
---
---         _ ->
---             model
---
---
---
--- updateOutline : PointerMsg -> Model -> Model
--- updateOutline pointerMsg model =
---     case ( pointerMsg, model.dragState, model.outline ) of
---         ( PointerDownAt pos, NoDrag, _ ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---
---                 dragState =
---                     DraggingFrom scaledPos
---
---                 point =
---                     Point.fromCoordinates scaledPos
---
---                 outline =
---                     DrawingOutline (Stroke.fromPoints [ point ])
---             in
---             { model | dragState = dragState, outline = outline }
---
---         ( PointerMoveAt pos, DraggingFrom _, DrawingOutline stroke ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---
---                 point =
---                     Point.fromCoordinates scaledPos
---
---                 outline =
---                     DrawingOutline (Stroke.fromPoints <| point :: Stroke.points stroke)
---             in
---             { model | outline = outline }
---
---         ( PointerUpAt pos, DraggingFrom _, DrawingOutline stroke ) ->
---             { model | dragState = NoDrag, outline = EndedOutline (Stroke.close stroke) }
---
---         _ ->
---             model
---
---
--- updateContour : PointerMsg -> Model -> Model
--- updateContour pointerMsg model =
---     case ( pointerMsg, model.dragState, model.contour ) of
---         ( PointerDownAt pos, NoDrag, _ ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---
---                 dragState =
---                     DraggingFrom scaledPos
---
---                 point =
---                     Point.fromCoordinates scaledPos
---
---                 ( startPos, newStroke ) =
---                     case model.contour of
---                         DrawingStartedAt scaledStartPos stroke ->
---                             ( scaledStartPos, Stroke.addPoint point stroke )
---
---                         _ ->
---                             ( scaledPos, Stroke.fromPoints [ point ] )
---
---                 contour =
---                     DrawingStartedAt startPos newStroke
---             in
---             { model | dragState = dragState, contour = contour }
---
---         ( PointerMoveAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
---             let
---                 scaledPos =
---                     Viewer.positionIn model.viewer pos
---
---                 point =
---                     Point.fromCoordinates scaledPos
---
---                 ( startPos, newStroke ) =
---                     case Stroke.points stroke of
---                         _ :: [] ->
---                             ( scaledPos, Stroke.fromPoints [ point ] )
---
---                         _ :: rest ->
---                             ( scaledStartPos, Stroke.fromPoints (point :: rest) )
---
---                         _ ->
---                             ( scaledStartPos, stroke )
---
---                 contour =
---                     DrawingStartedAt startPos newStroke
---             in
---             { model | contour = contour }
---
---         ( PointerUpAt pos, DraggingFrom _, DrawingStartedAt scaledStartPos stroke ) ->
---             case Stroke.points stroke of
---                 startPoint :: [] ->
---                     { model | dragState = NoDrag }
---
---                 endPoint :: rest ->
---                     let
---                         scaledEndPos =
---                             Viewer.positionIn model.viewer pos
---
---                         distance ( x1, x2 ) ( y1, y2 ) =
---                             abs (x1 - y1) + abs (x2 - y2)
---                     in
---                     if distance scaledEndPos scaledStartPos > (30 / model.viewer.zoom) then
---                         { model | dragState = NoDrag }
---                     else
---                         { model
---                             | dragState = NoDrag
---                             , contour = Ended (Stroke.close <| Stroke.fromPoints rest)
---                         }
---
---                 _ ->
---                     { model | dragState = NoDrag }
---
---         _ ->
---             model
+-- Images loading
+
+
+prepareRawLoading : Int -> List { name : String, file : Value } -> ( List RawImage, List (Cmd Msg) )
+prepareRawLoading startId images =
+    let
+        nbImages =
+            List.length images
+
+        ids =
+            List.range startId (startId + nbImages)
+    in
+    List.map2 prepareOneRawLoading ids images
+        |> List.unzip
+
+
+prepareOneRawLoading : Int -> { name : String, file : Value } -> ( RawImage, Cmd Msg )
+prepareOneRawLoading id { name, file } =
+    ( { id = id, name = name, status = RawImage.Loading }
+    , Ports.loadImageFile ( id, file )
+    )
+
+
+
+-- Manage zooming
 
 
 updateZoom : ZoomMsg -> Model -> Model
@@ -526,13 +465,64 @@ updateZoom zoomMsg model =
             { model | viewer = Viewer.setZoomCentered (0.64 * model.viewer.zoom) model.viewer }
 
         ZoomFit ->
-            resizeViewer model.viewer.size model
+            fitImage model
+
+
+fitImage : Model -> Model
+fitImage ({ state } as model) =
+    case state of
+        ImagesProvided images ->
+            case .status (Zipper.getC images) of
+                RawImage.Loaded img ->
+                    { model | viewer = Viewer.fitImage 0.8 img model.viewer }
+
+                _ ->
+                    model
+
+        AllProvided _ _ _ images ->
+            case .status (Zipper.getC images) of
+                AnnotatedImage.Loaded img _ ->
+                    { model | viewer = Viewer.fitImage 0.8 img model.viewer }
+
+                _ ->
+                    model
+
+        _ ->
+            model
+
+
+
+-- Pointer movement
+
+
+updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> ( Viewer, Pointer.DragState )
+updateMove pointerMsg dragState viewer =
+    case ( pointerMsg, dragState ) of
+        ( Pointer.DownAt pos, _ ) ->
+            ( viewer, Pointer.DraggingFrom pos )
+
+        ( Pointer.MoveAt ( x, y ), Pointer.DraggingFrom ( ox, oy ) ) ->
+            let
+                movement =
+                    Viewer.sizeIn viewer ( x - ox, y - oy )
+            in
+            ( Viewer.grabMove movement viewer, Pointer.DraggingFrom ( x, y ) )
+
+        ( Pointer.UpAt _, _ ) ->
+            ( viewer, Pointer.NoDrag )
+
+        _ ->
+            ( viewer, dragState )
+
+
+
+-- Subscriptions
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Ports.resizes WindowResizesMsg
+        [ Ports.resizes WindowResizes
         , Ports.imageLoaded ImageLoaded
         , Ports.configLoaded ConfigLoaded
         ]

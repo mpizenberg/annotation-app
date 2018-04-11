@@ -5,20 +5,20 @@
 
 port module Ports exposing (..)
 
-import Json.Encode as Encode
+import Json.Encode exposing (Value)
 import Packages.Device as Device exposing (Device)
 
 
 port resizes : (Device.Size -> msg) -> Sub msg
 
 
-port loadImageFile : ( Int, Encode.Value ) -> Cmd msg
+port loadImageFile : ( Int, Value ) -> Cmd msg
 
 
-port imageLoaded : (( Int, String, Int, Int ) -> msg) -> Sub msg
+port imageLoaded : ({ id : Int, url : String, width : Int, height : Int } -> msg) -> Sub msg
 
 
-port loadConfigFile : Encode.Value -> Cmd msg
+port loadConfigFile : Value -> Cmd msg
 
 
 port configLoaded : (String -> msg) -> Sub msg

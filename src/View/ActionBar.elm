@@ -1,97 +1,262 @@
 module View.ActionBar exposing (..)
 
-import Element exposing (Element, below, el, empty, node)
-import Element.Attributes as Attributes exposing (alignRight, fill, px)
-import Html.Lazy exposing (lazy2)
-import Packages.Button as Button exposing (Button)
+import Data.Tool as Tool exposing (Tool)
+import Element exposing (Element, el, empty)
+import Element.Attributes as Attributes exposing (fill, height, px, vary, width)
+import Element.Keyed as Keyed
+import Json.Decode as Decode exposing (Decoder, Value)
+import Packages.Button as Button
 import Packages.Device as Device exposing (Device)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
-import StyleSheet as Style exposing (Style)
+import StyleSheet as Style exposing (ColorVariations, Style)
 import Svg exposing (Svg)
-import Tool
-import Types exposing (..)
-import View.Icons as Icons
+import View.Icon as Icon
 
 
-type alias ActionBarParameters =
-    { device : Device
-    , size : ( Float, Float )
-    , canClearAnnotations : Bool
+-- TYPES #############################################################
+
+
+type alias Parameters msg =
+    { size : ( Float, Float )
+    , hasAnnotations : Bool
     , hasImage : Bool
-    , toolsData : Zipper Tool.Data
+
+    -- events
+    , removeLatestAnnotationMsg : msg
+    , selectToolMsg : Int -> msg
+    , zoomInMsg : msg
+    , zoomOutMsg : msg
+    , zoomFitMsg : msg
+    , loadConfigMsg : Value -> msg
+    , loadImagesMsg : List { name : String, file : Value } -> msg
     }
 
 
-deviceActionBar : ActionBarParameters -> Element Style Style.ColorVariations Msg
-deviceActionBar param =
+
+-- FUNCTIONS #########################################################
+
+
+responsiveHeight : Device -> Int
+responsiveHeight device =
+    case ( device.kind, device.orientation ) of
+        ( Device.Phone, Device.Portrait ) ->
+            device.size.width // 7
+
+        ( Device.Phone, Device.Landscape ) ->
+            device.size.width // 13
+
+        ( Device.Tablet, Device.Portrait ) ->
+            device.size.width // 10
+
+        ( Device.Tablet, Device.Landscape ) ->
+            device.size.width // 16
+
+        _ ->
+            min 72 (device.size.width // 16)
+
+
+emptyView : Parameters msg -> Element Style ColorVariations msg
+emptyView params =
     let
-        ( width, height ) =
-            param.size
+        ( w, h ) =
+            params.size
 
         filler =
-            el Style.None [ Attributes.width fill, Attributes.height (px height) ] empty
-
-        selectedToolButton : Tool.Data -> Element Style Style.ColorVariations Msg
-        selectedToolButton =
-            toolButton height True
-
-        unselectedToolButton : Tool.Data -> Element Style Style.ColorVariations Msg
-        unselectedToolButton =
-            toolButton height False
-
-        toolButtons =
-            List.concat
-                [ Zipper.getL param.toolsData
-                    |> List.map unselectedToolButton
-                , [ selectedToolButton (Zipper.getC param.toolsData) ]
-                , Zipper.getR param.toolsData
-                    |> List.map unselectedToolButton
-                ]
+            el Style.None [ width fill, height (px h) ] empty
 
         actionButtons =
-            [ actionButton height param.canClearAnnotations ClearAnnotations Icons.trash2
+            [ actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
             , Button.loadFileInput
-                { msgTagger = LoadConfigFile
+                { msgTagger = params.loadConfigMsg
                 , uniqueId = "config-loader"
-                , innerElement = Element.html (lazy2 Icons.sized (0.6 * height) Icons.settings)
-                , size = height
+                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.settings)
+                , size = h
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
                 }
             , Button.loadMultipleFilesInput
-                { msgTagger = LoadImages
+                { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"
-                , innerElement = Element.html (lazy2 Icons.sized (0.6 * height) Icons.image)
-                , size = height
+                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.image)
+                , size = h
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
                 }
             ]
 
         zoomActions =
-            [ actionButton height True (ZoomMsg ZoomIn) Icons.zoomIn
-            , actionButton height True (ZoomMsg ZoomOut) Icons.zoomOut
-            , actionButton height param.hasImage (ZoomMsg ZoomFit) Icons.zoomFit
+            [ actionButton h params.hasImage params.zoomInMsg Icon.zoomIn
+            , actionButton h params.hasImage params.zoomOutMsg Icon.zoomOut
+            , actionButton h params.hasImage params.zoomFitMsg Icon.zoomFit
             ]
     in
-    case ( param.device.kind, param.device.orientation ) of
-        ( Device.Phone, Device.Portrait ) ->
-            (toolButtons ++ filler :: actionButtons)
-                |> Element.row Style.None []
-                |> below [ el Style.None [ alignRight ] (Element.row Style.None [] zoomActions) ]
-
-        ( Device.Tablet, Device.Portrait ) ->
-            (toolButtons ++ filler :: actionButtons)
-                |> Element.row Style.None []
-                |> below [ el Style.None [ alignRight ] (Element.row Style.None [] zoomActions) ]
-
-        _ ->
-            (toolButtons ++ filler :: actionButtons ++ filler :: zoomActions)
-                |> Element.row Style.None []
+    (actionButtons ++ filler :: zoomActions)
+        |> Element.row Style.None []
 
 
-actionButton : Float -> Bool -> Msg -> List (Svg Msg) -> Element Style Style.ColorVariations Msg
+view : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
+view params tools =
+    let
+        ( w, h ) =
+            params.size
+
+        filler =
+            el Style.None [ width fill, height (px h) ] empty
+
+        toolButtons =
+            List.concat
+                [ Zipper.getL tools
+                    |> List.map (toolButton params.selectToolMsg h False)
+                , [ toolButton params.selectToolMsg h True (Zipper.getC tools) ]
+                , Zipper.getR tools
+                    |> List.map (toolButton params.selectToolMsg h False)
+                ]
+
+        actionButtons =
+            [ actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
+            , Button.loadFileInput
+                { msgTagger = params.loadConfigMsg
+                , uniqueId = "config-loader"
+                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.settings)
+                , size = h
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
+            , Button.loadMultipleFilesInput
+                { msgTagger = params.loadImagesMsg
+                , uniqueId = "image-loader"
+                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.image)
+                , size = h
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
+            ]
+
+        zoomActions =
+            [ actionButton h params.hasImage params.zoomInMsg Icon.zoomIn
+            , actionButton h params.hasImage params.zoomOutMsg Icon.zoomOut
+            , actionButton h params.hasImage params.zoomFitMsg Icon.zoomFit
+            ]
+    in
+    (toolButtons ++ filler :: actionButtons ++ filler :: zoomActions)
+        |> Element.row Style.None []
+
+
+viewKeyed : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
+viewKeyed params tools =
+    let
+        ( w, h ) =
+            params.size
+
+        fillerKeyed str =
+            ( str, el Style.None [ width fill, height (px h) ] empty )
+
+        toolButtons =
+            List.concat
+                [ Zipper.getL tools
+                    |> List.map (toolButtonKeyed params.selectToolMsg h False)
+                , [ toolButtonKeyed params.selectToolMsg h True (Zipper.getC tools) ]
+                , Zipper.getR tools
+                    |> List.map (toolButtonKeyed params.selectToolMsg h False)
+                ]
+
+        actionButtons =
+            [ actionButtonKeyed h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
+            , ( "load-config"
+              , Button.loadFileInput
+                    { msgTagger = params.loadConfigMsg
+                    , uniqueId = "config-loader"
+                    , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.settings)
+                    , size = h
+                    , noStyle = Style.None
+                    , outerStyle = Style.Button Style.Abled
+                    }
+              )
+            , ( "load-images"
+              , Button.loadMultipleFilesInput
+                    { msgTagger = params.loadImagesMsg
+                    , uniqueId = "image-loader"
+                    , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.image)
+                    , size = h
+                    , noStyle = Style.None
+                    , outerStyle = Style.Button Style.Abled
+                    }
+              )
+            ]
+
+        zoomActions =
+            [ actionButtonKeyed h params.hasImage params.zoomInMsg Icon.zoomIn
+            , actionButtonKeyed h params.hasImage params.zoomOutMsg Icon.zoomOut
+            , actionButtonKeyed h params.hasImage params.zoomFitMsg Icon.zoomFit
+            ]
+    in
+    (toolButtons ++ fillerKeyed "filler1" :: actionButtons ++ fillerKeyed "filler2" :: zoomActions)
+        |> Keyed.row Style.None []
+
+
+toolButtonKeyed : (Int -> msg) -> Float -> Bool -> Tool -> ( String, Element Style ColorVariations msg )
+toolButtonKeyed selectToolMsg size isSelected tool =
+    ( toString tool.id, toolButton selectToolMsg size isSelected tool )
+
+
+toolButton : (Int -> msg) -> Float -> Bool -> Tool -> Element Style ColorVariations msg
+toolButton selectToolMsg size isSelected tool =
+    Button.view
+        { actionability =
+            if isSelected then
+                Button.Abled Button.Active
+            else
+                Button.Abled Button.Inactive
+        , action =
+            Pointer.onDown (always <| selectToolMsg tool.id)
+                |> Attributes.toAttr
+        , innerElement = toolIcon (0.6 * size) tool.variant tool.type_
+        , innerStyle = Style.None
+        , size = ( size, size )
+        , outerStyle =
+            if isSelected then
+                Style.Button Style.Selected
+            else
+                Style.Button Style.Abled
+        , otherAttributes = []
+        }
+
+
+toolIcon : Float -> Int -> Tool.Type -> Element Style ColorVariations msg
+toolIcon size variant type_ =
+    let
+        svgIcon =
+            case type_ of
+                Tool.Move ->
+                    Icon.move
+
+                Tool.Point ->
+                    Icon.point
+
+                Tool.BBox ->
+                    Icon.boundingBox
+
+                Tool.Stroke ->
+                    Icon.stroke
+
+                Tool.Outline ->
+                    Icon.outline
+
+                Tool.Polygon ->
+                    Icon.polygon
+    in
+    Icon.toHtml size svgIcon
+        |> Element.html
+        |> el Style.ToolIcon [ vary (Style.FromPalette variant) True ]
+
+
+actionButtonKeyed : Float -> Bool -> msg -> List (Svg msg) -> ( String, Element Style ColorVariations msg )
+actionButtonKeyed size clickable sendMsg innerSvg =
+    ( toString sendMsg, actionButton size clickable sendMsg innerSvg )
+
+
+actionButton : Float -> Bool -> msg -> List (Svg msg) -> Element Style ColorVariations msg
 actionButton size clickable sendMsg innerSvg =
     Button.view
         { actionability =
@@ -100,7 +265,7 @@ actionButton size clickable sendMsg innerSvg =
             else
                 Button.Disabled
         , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
-        , innerElement = Element.html (lazy2 Icons.sized (0.6 * size) innerSvg)
+        , innerElement = Element.html (Icon.toHtml (0.6 * size) innerSvg)
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle =
@@ -108,46 +273,5 @@ actionButton size clickable sendMsg innerSvg =
                 Style.Button Style.Abled
             else
                 Style.Button Style.Disabled
-        , otherAttributes = []
-        }
-
-
-
--- toolDropdown : Float -> Tool -> Tool -> Bool -> Element Style Style.ColorVariations Msg
--- toolDropdown size currentTool currentDropdownTool toolDropdownOpen =
---     let
---         downTools =
---             Tool.allAnnotationTools
---                 |> List.filter ((/=) currentDropdownTool)
---                 |> List.map (toolButton size currentTool)
---                 |> Element.column Style.None []
---                 |> List.singleton
---     in
---     el Style.None [] (toolButton size currentTool currentDropdownTool)
---         |> below
---             (if toolDropdownOpen then
---                 downTools
---              else
---                 []
---             )
-
-
-toolButton : Float -> Bool -> Tool.Data -> Element Style Style.ColorVariations Msg
-toolButton size isSelected toolData =
-    Button.view
-        { actionability =
-            if isSelected then
-                Button.Abled Button.Active
-            else
-                Button.Abled Button.Inactive
-        , action = Pointer.onDown (always <| SelectTool toolData.id) |> Attributes.toAttr
-        , innerElement = Tool.svgElement (0.6 * size) toolData
-        , innerStyle = Style.None
-        , size = ( size, size )
-        , outerStyle =
-            if isSelected then
-                Style.Button Style.Selected
-            else
-                Style.Button Style.Abled
         , otherAttributes = []
         }

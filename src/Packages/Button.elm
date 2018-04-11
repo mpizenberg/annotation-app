@@ -94,7 +94,7 @@ loadFileInput config =
 
 
 type alias MultipleFilesLoader style variation msg =
-    { msgTagger : List ( String, Decode.Value ) -> msg
+    { msgTagger : List File -> msg
     , uniqueId : String
     , innerElement : Element style variation msg
     , size : Float
@@ -139,13 +139,15 @@ loadMultipleFilesEvent tagger =
 
 fileDecoder : Decoder File
 fileDecoder =
-    Decode.map2 (,)
+    Decode.map2 File
         (Decode.field "name" Decode.string)
         Decode.value
 
 
 type alias File =
-    ( String, Decode.Value )
+    { name : String
+    , file : Decode.Value
+    }
 
 
 dynamicListOf : Decoder a -> Decoder (List a)

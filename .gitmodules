@@ -1,3 +1,6 @@
 [submodule "dependencies/elm-pep"]
 	path = dependencies/elm-pep
 	url = https://github.com/mpizenberg/elm-pep.git
+[submodule "dependencies/elm-image-annotation"]
+	path = dependencies/elm-image-annotation
+	url = https://github.com/mpizenberg/elm-image-annotation.git

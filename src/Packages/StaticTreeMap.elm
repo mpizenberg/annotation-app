@@ -15,6 +15,11 @@ type alias StaticTreeMap a =
     Tree (Foldable a)
 
 
+singleton : a -> StaticTreeMap a
+singleton a =
+    Tree.singleton (Foldable 0 True a)
+
+
 from : Tree a -> StaticTreeMap a
 from tree =
     Tree.indexedMap (\id a -> { key = id, folded = True, item = a }) tree

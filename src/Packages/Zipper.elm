@@ -48,6 +48,42 @@ goL ((Zipper left center right) as zipper) =
             Zipper xs x (center :: right)
 
 
+goTo : (a -> Int) -> Int -> Zipper a -> Zipper a
+goTo f targetId ((Zipper _ center _) as zipper) =
+    if f center < targetId then
+        goToR f targetId zipper
+    else if f center > targetId then
+        goToL f targetId zipper
+    else
+        zipper
+
+
+goToL : (a -> Int) -> Int -> Zipper a -> Zipper a
+goToL f targetId ((Zipper left center right) as zipper) =
+    if f center > targetId then
+        case left of
+            [] ->
+                zipper
+
+            x :: xs ->
+                goToL f targetId (Zipper xs x (center :: right))
+    else
+        zipper
+
+
+goToR : (a -> Int) -> Int -> Zipper a -> Zipper a
+goToR f targetId ((Zipper left center right) as zipper) =
+    if f center < targetId then
+        case right of
+            [] ->
+                zipper
+
+            x :: xs ->
+                goToR f targetId (Zipper (center :: left) x xs)
+    else
+        zipper
+
+
 goR : Zipper a -> Zipper a
 goR ((Zipper left center right) as zipper) =
     case right of
@@ -135,6 +171,14 @@ updateC f (Zipper left center right) =
     Zipper left (f center) right
 
 
+mapAll : (a -> b) -> Zipper a -> Zipper b
+mapAll f (Zipper left center right) =
+    Zipper
+        (List.map f left)
+        (f center)
+        (List.map f right)
+
+
 moveMapStart : (a -> a) -> Zipper a -> Zipper a
 moveMapStart f (Zipper left center right) =
     case left of
@@ -157,3 +201,8 @@ insertL value (Zipper left center right) =
 insertR : a -> Zipper a -> Zipper a
 insertR value (Zipper left center right) =
     Zipper left center (value :: right)
+
+
+append : List a -> Zipper a -> Zipper a
+append list (Zipper left center right) =
+    Zipper left center (right ++ list)

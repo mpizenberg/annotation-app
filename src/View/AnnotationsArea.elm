@@ -76,6 +76,11 @@ viewImageOnly viewer { id, name, status } =
             el Style.None [ center ] (text <| "Error with image " ++ name ++ ": " ++ error)
 
 
+pointerOffset : Pointer.Event -> ( Float, Float )
+pointerOffset =
+    .pointer >> .offsetPos
+
+
 view : Parameters msg -> Viewer -> AnnotatedImage -> Element Style var msg
 view params viewer { id, name, status } =
     let
@@ -84,9 +89,9 @@ view params viewer { id, name, status } =
 
             -- pointer capture hack to continue "globally" the event anywhere on document
             , Html.Attributes.attribute "onpointerdown" "event.target.setPointerCapture(event.pointerId);"
-            , Pointer.onDown (.pointer >> .offsetPos >> params.pointerDownMsg)
-            , Pointer.onMove (.pointer >> .offsetPos >> params.pointerMoveMsg)
-            , Pointer.onUp (.pointer >> .offsetPos >> params.pointerUpMsg)
+            , Pointer.onDown (pointerOffset >> params.pointerDownMsg)
+            , Pointer.onMove (pointerOffset >> params.pointerMoveMsg)
+            , Pointer.onUp (pointerOffset >> params.pointerUpMsg)
             ]
     in
     case status of

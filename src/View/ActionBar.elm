@@ -15,6 +15,7 @@ import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element, el, empty)
 import Element.Attributes as Attributes exposing (fill, height, px, vary, width)
 import Element.Keyed as Keyed
+import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Packages.Button as Button
 import Packages.Device as Device exposing (Device)
@@ -81,7 +82,7 @@ emptyView params =
             , Button.loadFileInput
                 { msgTagger = params.loadConfigMsg
                 , uniqueId = "config-loader"
-                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.settings)
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
                 , size = h
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
@@ -89,7 +90,7 @@ emptyView params =
             , Button.loadMultipleFilesInput
                 { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"
-                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.image)
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
                 , size = h
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
@@ -129,7 +130,7 @@ view params tools =
             , Button.loadFileInput
                 { msgTagger = params.loadConfigMsg
                 , uniqueId = "config-loader"
-                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.settings)
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
                 , size = h
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
@@ -137,7 +138,7 @@ view params tools =
             , Button.loadMultipleFilesInput
                 { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"
-                , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.image)
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
                 , size = h
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
@@ -178,7 +179,7 @@ viewKeyed params tools =
               , Button.loadFileInput
                     { msgTagger = params.loadConfigMsg
                     , uniqueId = "config-loader"
-                    , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.settings)
+                    , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
                     , size = h
                     , noStyle = Style.None
                     , outerStyle = Style.Button Style.Abled
@@ -188,7 +189,7 @@ viewKeyed params tools =
               , Button.loadMultipleFilesInput
                     { msgTagger = params.loadImagesMsg
                     , uniqueId = "image-loader"
-                    , innerElement = Element.html (Icon.toHtml (0.6 * h) Icon.image)
+                    , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
                     , size = h
                     , noStyle = Style.None
                     , outerStyle = Style.Button Style.Abled
@@ -257,7 +258,7 @@ toolIcon size variant type_ =
                 Tool.Polygon ->
                     Icon.polygon
     in
-    Icon.toHtml size svgIcon
+    lazy2 Icon.toHtml size svgIcon
         |> Element.html
         |> el Style.ToolIcon [ vary (Style.FromPalette variant) True ]
 
@@ -276,7 +277,7 @@ actionButton size clickable sendMsg innerSvg =
             else
                 Button.Disabled
         , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
-        , innerElement = Element.html (Icon.toHtml (0.6 * size) innerSvg)
+        , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * size) innerSvg)
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle =

@@ -171,12 +171,12 @@ removeLatest annotations =
 -- Pointer stuff
 
 
-addAnnotationsIndicator : (List a -> Annotations) -> ( List a, b ) -> ( Annotations, b, Bool )
-addAnnotationsIndicator type_ ( list, dragState ) =
-    ( type_ list, dragState, not (List.isEmpty list) )
+addAnnotationsIndicator : (List a -> Annotations) -> ( List a, b, c ) -> ( Annotations, b, Bool, c )
+addAnnotationsIndicator type_ ( list, dragState, hasChanged ) =
+    ( type_ list, dragState, not (List.isEmpty list), hasChanged )
 
 
-updateWithPointer : Float -> Int -> Pointer.Msg -> Pointer.DragState -> AnnotatedImage -> ( AnnotatedImage, Pointer.DragState, Bool )
+updateWithPointer : Float -> Int -> Pointer.Msg -> Pointer.DragState -> AnnotatedImage -> ( AnnotatedImage, Pointer.DragState, Bool, Bool )
 updateWithPointer zoom selectedClassId pointerMsg dragState ({ id, name, status } as annotatedImage) =
     case status of
         Loaded img zipper ->
@@ -184,7 +184,7 @@ updateWithPointer zoom selectedClassId pointerMsg dragState ({ id, name, status 
                 { toolId, annotations } =
                     Zipper.getC zipper
 
-                ( newAnnotations, newDragState, hasAnnotations ) =
+                ( newAnnotations, newDragState, hasAnnotations, hasChanged ) =
                     case annotations of
                         Points drawings ->
                             updatePoints selectedClassId pointerMsg dragState drawings
@@ -209,33 +209,35 @@ updateWithPointer zoom selectedClassId pointerMsg dragState ({ id, name, status 
                 newStatus =
                     Loaded img (Zipper.setC { toolId = toolId, annotations = newAnnotations } zipper)
             in
-            ( { annotatedImage | status = newStatus }, newDragState, hasAnnotations )
+            ( { annotatedImage | status = newStatus }, newDragState, hasAnnotations, hasChanged )
 
         _ ->
-            ( annotatedImage, dragState, False )
+            ( annotatedImage, dragState, False, False )
 
 
-updatePoints : Int -> Pointer.Msg -> Pointer.DragState -> PointDrawings -> ( PointDrawings, Pointer.DragState )
+updatePoints : Int -> Pointer.Msg -> Pointer.DragState -> PointDrawings -> ( PointDrawings, Pointer.DragState, Bool )
 updatePoints selectedClassId pointerMsg dragState drawings =
     case ( pointerMsg, dragState, drawings ) of
         ( Pointer.DownAt pos, Pointer.NoDrag, _ ) ->
             ( { classId = selectedClassId, drawing = Point.fromCoordinates pos } :: drawings
             , Pointer.DraggingFrom pos
+            , True
             )
 
         ( Pointer.MoveAt pos, Pointer.DraggingFrom _, d :: otherDrawings ) ->
             ( { d | drawing = Point.fromCoordinates pos } :: otherDrawings
             , dragState
+            , True
             )
 
         ( Pointer.UpAt pos, _, _ ) ->
-            ( drawings, Pointer.NoDrag )
+            ( drawings, Pointer.NoDrag, True )
 
         _ ->
-            ( drawings, dragState )
+            ( drawings, dragState, False )
 
 
-updateBBoxes : Int -> Pointer.Msg -> Pointer.DragState -> BBoxDrawings -> ( BBoxDrawings, Pointer.DragState )
+updateBBoxes : Int -> Pointer.Msg -> Pointer.DragState -> BBoxDrawings -> ( BBoxDrawings, Pointer.DragState, Bool )
 updateBBoxes selectedClassId pointerMsg dragState drawings =
     case ( pointerMsg, dragState, drawings ) of
         ( Pointer.DownAt pos, Pointer.NoDrag, _ ) ->
@@ -248,6 +250,7 @@ updateBBoxes selectedClassId pointerMsg dragState drawings =
             in
             ( { classId = selectedClassId, drawing = bbox } :: drawings
             , Pointer.DraggingFrom pos
+            , True
             )
 
         ( Pointer.MoveAt pos, Pointer.DraggingFrom corner, d :: otherDrawings ) ->
@@ -260,19 +263,20 @@ updateBBoxes selectedClassId pointerMsg dragState drawings =
             in
             ( { d | drawing = bbox } :: otherDrawings
             , dragState
+            , True
             )
 
         ( Pointer.UpAt ( x1, y1 ), Pointer.DraggingFrom ( x2, y2 ), d :: otherDrawings ) ->
             if x1 == x2 || y1 == y2 then
-                ( otherDrawings, Pointer.NoDrag )
+                ( otherDrawings, Pointer.NoDrag, True )
             else
-                ( drawings, Pointer.NoDrag )
+                ( drawings, Pointer.NoDrag, True )
 
         _ ->
-            ( drawings, dragState )
+            ( drawings, dragState, False )
 
 
-updateStrokes : Int -> Pointer.Msg -> Pointer.DragState -> StrokeDrawings -> ( StrokeDrawings, Pointer.DragState )
+updateStrokes : Int -> Pointer.Msg -> Pointer.DragState -> StrokeDrawings -> ( StrokeDrawings, Pointer.DragState, Bool )
 updateStrokes selectedClassId pointerMsg dragState drawings =
     case ( pointerMsg, dragState, drawings ) of
         ( Pointer.DownAt pos, Pointer.NoDrag, _ ) ->
@@ -282,6 +286,7 @@ updateStrokes selectedClassId pointerMsg dragState drawings =
             in
             ( { classId = selectedClassId, drawing = stroke } :: drawings
             , Pointer.DraggingFrom pos
+            , True
             )
 
         ( Pointer.MoveAt pos, Pointer.DraggingFrom _, d :: otherDrawings ) ->
@@ -291,16 +296,17 @@ updateStrokes selectedClassId pointerMsg dragState drawings =
             in
             ( { d | drawing = stroke } :: otherDrawings
             , dragState
+            , True
             )
 
         ( Pointer.UpAt _, Pointer.DraggingFrom _, d :: otherDrawings ) ->
-            ( drawings, Pointer.NoDrag )
+            ( drawings, Pointer.NoDrag, True )
 
         _ ->
-            ( drawings, dragState )
+            ( drawings, dragState, False )
 
 
-updateOutlines : Int -> Pointer.Msg -> Pointer.DragState -> OutlineDrawings -> ( OutlineDrawings, Pointer.DragState )
+updateOutlines : Int -> Pointer.Msg -> Pointer.DragState -> OutlineDrawings -> ( OutlineDrawings, Pointer.DragState, Bool )
 updateOutlines selectedClassId pointerMsg dragState drawings =
     case ( pointerMsg, dragState, drawings ) of
         ( Pointer.DownAt pos, Pointer.NoDrag, _ ) ->
@@ -310,6 +316,7 @@ updateOutlines selectedClassId pointerMsg dragState drawings =
             in
             ( { classId = selectedClassId, drawing = outline } :: drawings
             , Pointer.DraggingFrom pos
+            , True
             )
 
         ( Pointer.MoveAt pos, Pointer.DraggingFrom _, d :: otherDrawings ) ->
@@ -321,26 +328,28 @@ updateOutlines selectedClassId pointerMsg dragState drawings =
                     in
                     ( { d | drawing = outline } :: otherDrawings
                     , dragState
+                    , True
                     )
 
                 _ ->
-                    ( drawings, dragState )
+                    ( drawings, dragState, False )
 
         ( Pointer.UpAt _, Pointer.DraggingFrom _, d :: otherDrawings ) ->
             case d.drawing of
                 DrawingOutline stroke ->
                     ( { d | drawing = EndedOutline (Stroke.close stroke) } :: otherDrawings
                     , Pointer.NoDrag
+                    , True
                     )
 
                 _ ->
-                    ( drawings, dragState )
+                    ( drawings, dragState, False )
 
         _ ->
-            ( drawings, dragState )
+            ( drawings, dragState, False )
 
 
-updatePolygons : Float -> Int -> Pointer.Msg -> Pointer.DragState -> PolygonDrawings -> ( PolygonDrawings, Pointer.DragState )
+updatePolygons : Float -> Int -> Pointer.Msg -> Pointer.DragState -> PolygonDrawings -> ( PolygonDrawings, Pointer.DragState, Bool )
 updatePolygons zoom selectedClassId pointerMsg dragState drawings =
     case ( pointerMsg, dragState, drawings ) of
         ( Pointer.DownAt pos, Pointer.NoDrag, [] ) ->
@@ -353,6 +362,7 @@ updatePolygons zoom selectedClassId pointerMsg dragState drawings =
             in
             ( { classId = selectedClassId, drawing = polygon } :: []
             , Pointer.DraggingFrom pos
+            , True
             )
 
         ( Pointer.DownAt pos, Pointer.NoDrag, d :: otherDrawings ) ->
@@ -367,6 +377,7 @@ updatePolygons zoom selectedClassId pointerMsg dragState drawings =
                     in
                     ( { classId = selectedClassId, drawing = polygon } :: drawings
                     , Pointer.DraggingFrom pos
+                    , True
                     )
 
                 PolygonStartedAt startPos stroke ->
@@ -379,6 +390,7 @@ updatePolygons zoom selectedClassId pointerMsg dragState drawings =
                     in
                     ( { d | drawing = polygon } :: otherDrawings
                     , Pointer.DraggingFrom pos
+                    , True
                     )
 
         ( Pointer.MoveAt pos, Pointer.DraggingFrom _, d :: otherDrawings ) ->
@@ -404,22 +416,23 @@ updatePolygons zoom selectedClassId pointerMsg dragState drawings =
                     in
                     ( { d | drawing = polygon } :: otherDrawings
                     , dragState
+                    , True
                     )
 
                 _ ->
-                    ( drawings, dragState )
+                    ( drawings, dragState, False )
 
         ( Pointer.UpAt pos, Pointer.DraggingFrom _, d :: otherDrawings ) ->
             case d.drawing of
                 PolygonStartedAt startPos stroke ->
                     case Stroke.points stroke of
                         _ :: [] ->
-                            ( drawings, Pointer.NoDrag )
+                            ( drawings, Pointer.NoDrag, True )
 
                         point :: rest ->
                             -- Should use model.viewer.zoom here
                             if distance pos startPos > (30 / zoom) then
-                                ( drawings, Pointer.NoDrag )
+                                ( drawings, Pointer.NoDrag, True )
                             else
                                 let
                                     polygon =
@@ -427,16 +440,17 @@ updatePolygons zoom selectedClassId pointerMsg dragState drawings =
                                 in
                                 ( { d | drawing = polygon } :: otherDrawings
                                 , Pointer.NoDrag
+                                , True
                                 )
 
                         [] ->
-                            ( drawings, Pointer.NoDrag )
+                            ( drawings, Pointer.NoDrag, True )
 
                 _ ->
-                    ( drawings, dragState )
+                    ( drawings, dragState, False )
 
         _ ->
-            ( drawings, dragState )
+            ( drawings, dragState, False )
 
 
 distance : ( Float, Float ) -> ( Float, Float ) -> Float

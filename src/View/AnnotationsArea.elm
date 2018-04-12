@@ -6,6 +6,7 @@
 module View.AnnotationsArea
     exposing
         ( Parameters
+        , annotationsWithImage
         , view
         , viewImageOnly
         )
@@ -16,8 +17,6 @@ import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Color exposing (Color)
-import Control exposing (Control)
-import Control.Throttle as Throttle
 import Data.AnnotatedImage as AnnotatedImage
     exposing
         ( AnnotatedImage
@@ -38,18 +37,27 @@ import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
-import Time
+import Svg.Lazy exposing (lazy, lazy2, lazy3)
+
+
+-- TYPES #############################################################
 
 
 type alias Parameters msg =
     { size : ( Float, Float )
 
+    -- depends on: zoom, image, selectedClassId, annotations zipper
+    , annotationsWithImage : Maybe (Svg msg)
+
     -- events
     , pointerDownMsg : ( Float, Float ) -> msg
     , pointerMoveMsg : ( Float, Float ) -> msg
     , pointerUpMsg : ( Float, Float ) -> msg
-    , throttleMsg : Control msg -> msg
     }
+
+
+
+-- FUNCTIONS #########################################################
 
 
 viewImageOnly : Viewer -> RawImage -> Element Style var msg
@@ -68,8 +76,8 @@ viewImageOnly viewer { id, name, status } =
             el Style.None [ center ] (text <| "Error with image " ++ name ++ ": " ++ error)
 
 
-view : Parameters msg -> Viewer -> Int -> AnnotatedImage -> Element Style var msg
-view params viewer selectedClassId { id, name, status } =
+view : Parameters msg -> Viewer -> AnnotatedImage -> Element Style var msg
+view params viewer { id, name, status } =
     let
         attributes =
             [ Html.Attributes.style [ ( "height", "100%" ) ]
@@ -78,7 +86,6 @@ view params viewer selectedClassId { id, name, status } =
             , Html.Attributes.attribute "onpointerdown" "event.target.setPointerCapture(event.pointerId);"
             , Pointer.onDown (.pointer >> .offsetPos >> params.pointerDownMsg)
             , Pointer.onMove (.pointer >> .offsetPos >> params.pointerMoveMsg)
-                |> Html.Attributes.map (Throttle.both params.throttleMsg <| Time.second / 35)
             , Pointer.onUp (.pointer >> .offsetPos >> params.pointerUpMsg)
             ]
     in
@@ -87,7 +94,8 @@ view params viewer selectedClassId { id, name, status } =
             el Style.None [ center ] (text <| "Loading image " ++ name)
 
         Loaded image annotations ->
-            annotationsWithImage viewer.zoom image selectedClassId annotations
+            params.annotationsWithImage
+                |> Maybe.withDefault (Svg.text "Oups annotationsWithImage should exist")
                 |> Viewer.viewInWithDetails attributes viewer
                 |> Element.html
                 |> el Style.Viewer [ height fill ]
@@ -98,9 +106,16 @@ view params viewer selectedClassId { id, name, status } =
 
 annotationsWithImage : Float -> Image -> Int -> Zipper { toolId : Int, annotations : Annotations } -> Svg msg
 annotationsWithImage zoom image selectedClassId zipper =
+    lazy3 allAnnotations zoom selectedClassId zipper
+        |> List.singleton
+        |> (::) (lazy2 Image.viewSvg [] image)
+        |> Svg.g []
+
+
+allAnnotations : Float -> Int -> Zipper { toolId : Int, annotations : Annotations } -> Svg msg
+allAnnotations zoom selectedClassId zipper =
     Zipper.getAll zipper
-        |> List.map (viewAnnotations zoom selectedClassId)
-        |> (::) (Image.viewSvg [] image)
+        |> List.map (lazy3 viewAnnotations zoom selectedClassId)
         |> Svg.g []
 
 

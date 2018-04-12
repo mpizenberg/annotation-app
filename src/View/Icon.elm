@@ -33,8 +33,8 @@ import Svg.Attributes exposing (..)
 
 
 toHtml : Float -> List (Svg msg) -> Html msg
-toHtml size =
-    svg (width (toString size) :: height (toString size) :: defaultAttributes)
+toHtml size icon =
+    svg (width (toString size) :: height (toString size) :: defaultAttributes) icon
 
 
 defaultAttributes : List (Svg.Attribute msg)

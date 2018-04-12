@@ -9,6 +9,7 @@ module View.Main
         , markHasAnnotation
         , markHasImage
         , pageLayout
+        , updateAnnotationsWithImage
         , updateLayout
         , viewAll
         , viewConfig
@@ -17,12 +18,13 @@ module View.Main
         )
 
 import Annotation.Viewer as Viewer exposing (Viewer)
-import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
+import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage, Annotations)
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element)
 import Element.Attributes as Attributes exposing (alignLeft, alignRight, fill, height, paddingTop)
 import Html exposing (Html)
+import Image exposing (Image)
 import Packages.Device as Device exposing (Device)
 import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
 import Packages.Zipper as Zipper exposing (Zipper)
@@ -84,7 +86,7 @@ viewAll params tools viewer ({ selected, all } as classes) annotatedImages =
             [ ActionBar.view params.actionBar tools
                 |> Element.below [ classesSideBar params.selectClassMsg classes ]
                 |> Element.below [ datasetAnnotatedSideBar params.selectImageMsg annotatedImages ]
-            , AnnotationsArea.view params.annotationsArea viewer selected (Zipper.getC annotatedImages)
+            , AnnotationsArea.view params.annotationsArea viewer (Zipper.getC annotatedImages)
             ]
 
 
@@ -166,3 +168,12 @@ updateLayout size params =
     ( { params | device = device, actionBar = actionBar, annotationsArea = annotationsArea }
     , layout.viewerSize
     )
+
+
+updateAnnotationsWithImage : Float -> Image -> Int -> Zipper { toolId : Int, annotations : Annotations } -> Parameters msg -> Parameters msg
+updateAnnotationsWithImage zoom image selectedClassId annotations ({ annotationsArea } as params) =
+    let
+        newAnnotationsWithImage =
+            AnnotationsArea.annotationsWithImage zoom image selectedClassId annotations
+    in
+    { params | annotationsArea = { annotationsArea | annotationsWithImage = Just newAnnotationsWithImage } }

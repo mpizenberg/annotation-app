@@ -6,7 +6,6 @@
 module Main exposing (main)
 
 import Annotation.Viewer as Viewer exposing (Viewer)
-import Control exposing (Control)
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.Config as Config exposing (Config)
 import Data.Pointer as Pointer
@@ -43,7 +42,6 @@ type alias Model =
     , state : State
     , viewer : Viewer
     , dragState : Pointer.DragState
-    , moveThrottleState : Control.State Msg
     }
 
 
@@ -64,7 +62,6 @@ type Msg
     = WindowResizes Device.Size
       -- pointer events
     | PointerMsg Pointer.Msg
-    | MoveThrottle (Control Msg)
       -- select things
     | SelectImage Int
     | SelectTool Int
@@ -119,10 +116,10 @@ init sizeFlag =
                 }
             , annotationsArea =
                 { size = layout.viewerSize
+                , annotationsWithImage = Nothing
                 , pointerDownMsg = PointerMsg << Pointer.DownAt
                 , pointerMoveMsg = PointerMsg << Pointer.MoveAt
                 , pointerUpMsg = PointerMsg << Pointer.UpAt
-                , throttleMsg = MoveThrottle
                 }
             }
 
@@ -131,7 +128,6 @@ init sizeFlag =
             , state = NothingProvided
             , viewer = viewer
             , dragState = Pointer.NoDrag
-            , moveThrottleState = Control.initialState
             }
     in
     ( model, Cmd.none )
@@ -168,6 +164,7 @@ update msg model =
             in
             ( { model | viewParameters = viewParameters, viewer = viewer }
                 |> fitImage
+                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
@@ -180,22 +177,18 @@ update msg model =
         ( SelectImage imageId, AllProvided co cl t images ) ->
             ( { model | state = AllProvided co cl t (Zipper.goTo .id imageId images) }
                 |> fitImage
+                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
         ( SelectClass id, ConfigProvided config classes tools ) ->
-            let
-                _ =
-                    Debug.log "msg" msg
-            in
             ( { model | state = ConfigProvided config { classes | selected = id } tools }
             , Cmd.none
             )
 
         ( SelectClass id, AllProvided config { selected, all } tools imgs ) ->
-            ( { model
-                | state = AllProvided config { selected = id, all = all } tools imgs
-              }
+            ( { model | state = AllProvided config { selected = id, all = all } tools imgs }
+                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
@@ -210,6 +203,7 @@ update msg model =
                         (Zipper.goTo .id toolId tools)
                         (Zipper.updateC (AnnotatedImage.selectTool toolId) imgs)
               }
+                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
@@ -217,10 +211,13 @@ update msg model =
             case .type_ (Zipper.getC tools) of
                 Tool.Move ->
                     let
-                        ( newViewer, newDragState ) =
+                        ( newViewer, newDragState, hasChanged ) =
                             updateMove pointerMsg model.dragState model.viewer
                     in
-                    ( { model | viewer = newViewer, dragState = newDragState }, Cmd.none )
+                    if hasChanged then
+                        ( { model | viewer = newViewer, dragState = newDragState }, Cmd.none )
+                    else
+                        ( model, Cmd.none )
 
                 _ ->
                     let
@@ -238,25 +235,26 @@ update msg model =
                         img =
                             Zipper.getC imgs
 
-                        ( newImg, newDragState, hasAnnotations ) =
+                        ( newImg, newDragState, hasAnnotations, hasChanged ) =
                             AnnotatedImage.updateWithPointer model.viewer.zoom classes.selected scaledPointerMsg model.dragState img
 
                         viewParameters =
                             View.markHasAnnotation hasAnnotations model.viewParameters
                     in
-                    ( { model
-                        | dragState = newDragState
-                        , state = AllProvided config classes tools (Zipper.setC newImg imgs)
-                        , viewParameters = viewParameters
-                      }
-                    , Cmd.none
-                    )
-
-        ( MoveThrottle throttleMsg, AllProvided _ _ _ _ ) ->
-            Control.update (\s -> { model | moveThrottleState = s }) model.moveThrottleState throttleMsg
+                    if hasChanged then
+                        ( { model
+                            | dragState = newDragState
+                            , state = AllProvided config classes tools (Zipper.setC newImg imgs)
+                            , viewParameters = viewParameters
+                          }
+                            |> updateAnnotationsWithImage
+                        , Cmd.none
+                        )
+                    else
+                        ( model, Cmd.none )
 
         ( ZoomMsg zoomMsg, _ ) ->
-            ( updateZoom zoomMsg model, Cmd.none )
+            ( updateZoom zoomMsg model |> updateAnnotationsWithImage, Cmd.none )
 
         ( RemoveLatestAnnotation, AllProvided config classes tools imgs ) ->
             let
@@ -273,6 +271,7 @@ update msg model =
                     View.markHasAnnotation hasAnnotations model.viewParameters
             in
             ( { model | state = newState, viewParameters = viewParameters }
+                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
@@ -305,6 +304,7 @@ update msg model =
                 | state = AllProvided config classes tools annotatedImages
                 , viewParameters = View.markHasImage model.viewParameters
               }
+                |> updateAnnotationsWithImage
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
@@ -332,6 +332,7 @@ update msg model =
                     List.map (AnnotatedImage.fromRaw tools) newImages
             in
             ( { model | state = AllProvided config classes tools (Zipper.append newAnnotatedImages previousImages) }
+                |> updateAnnotationsWithImage
             , Cmd.batch cmds
             )
 
@@ -366,7 +367,9 @@ update msg model =
             if id == img.id then
                 Zipper.setC { img | status = newStatus } images
                     |> AllProvided config classes tools
-                    |> (\state -> ( fitImage { model | state = state }, Cmd.none ))
+                    |> (\state -> fitImage { model | state = state })
+                    |> updateAnnotationsWithImage
+                    |> (\model -> ( model, Cmd.none ))
             else
                 Zipper.goTo .id id images
                     |> Zipper.updateC (\img -> { img | status = newStatus })
@@ -382,11 +385,39 @@ update msg model =
                 | state = changeConfig configString model.state
                 , viewParameters = View.markHasImage model.viewParameters
               }
+                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
         _ ->
             ( model, Cmd.none )
+
+
+
+-- Update helper due to limitations of 3 parameters for html lazy
+
+
+updateAnnotationsWithImage : Model -> Model
+updateAnnotationsWithImage model =
+    case model.state of
+        AllProvided config classes tools images ->
+            case .status (Zipper.getC images) of
+                AnnotatedImage.Loaded image annotationsZipper ->
+                    { model
+                        | viewParameters =
+                            View.updateAnnotationsWithImage
+                                model.viewer.zoom
+                                image
+                                classes.selected
+                                annotationsZipper
+                                model.viewParameters
+                    }
+
+                _ ->
+                    model
+
+        _ ->
+            model
 
 
 
@@ -499,24 +530,24 @@ fitImage ({ state } as model) =
 -- Pointer movement
 
 
-updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> ( Viewer, Pointer.DragState )
+updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> ( Viewer, Pointer.DragState, Bool )
 updateMove pointerMsg dragState viewer =
     case ( pointerMsg, dragState ) of
         ( Pointer.DownAt pos, _ ) ->
-            ( viewer, Pointer.DraggingFrom pos )
+            ( viewer, Pointer.DraggingFrom pos, True )
 
         ( Pointer.MoveAt ( x, y ), Pointer.DraggingFrom ( ox, oy ) ) ->
             let
                 movement =
                     Viewer.sizeIn viewer ( x - ox, y - oy )
             in
-            ( Viewer.grabMove movement viewer, Pointer.DraggingFrom ( x, y ) )
+            ( Viewer.grabMove movement viewer, Pointer.DraggingFrom ( x, y ), True )
 
         ( Pointer.UpAt _, _ ) ->
-            ( viewer, Pointer.NoDrag )
+            ( viewer, Pointer.NoDrag, True )
 
         _ ->
-            ( viewer, dragState )
+            ( viewer, dragState, False )
 
 
 

@@ -13,6 +13,7 @@ import Data.Pointer as Pointer
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
 import Html exposing (Html)
+import Html.Attributes as Attributes
 import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Image exposing (Image)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -138,18 +139,20 @@ init sizeFlag =
 
 view : Model -> Html Msg
 view model =
-    case model.state of
-        NothingProvided ->
-            View.viewNothing model.viewParameters
+    Html.div [ Attributes.style [ ( "height", "100%" ) ] ]
+        [ case model.state of
+            NothingProvided ->
+                lazy View.viewNothing model.viewParameters
 
-        ConfigProvided config classes tools ->
-            View.viewConfig model.viewParameters tools classes
+            ConfigProvided config classes tools ->
+                lazy3 View.viewConfig model.viewParameters tools classes
 
-        ImagesProvided images ->
-            View.viewImages model.viewParameters model.viewer images
+            ImagesProvided images ->
+                lazy3 View.viewImages model.viewParameters model.viewer images
 
-        AllProvided config classes tools images ->
-            View.viewAll model.viewParameters tools model.viewer classes images
+            AllProvided config classes tools images ->
+                View.viewAll model.viewParameters tools model.viewer classes images
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

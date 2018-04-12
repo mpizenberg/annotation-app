@@ -7,7 +7,6 @@ module View.ClassesSideBar exposing (view)
 
 import Element exposing (Element, column, el, empty, text)
 import Element.Attributes as Attributes exposing (padding, paddingLeft)
-import Element.Keyed as Keyed
 import Packages.StaticTreeMap as StaticTreeMap exposing (Foldable, StaticTreeMap)
 import Pointer
 import StyleSheet as Style exposing (Style)
@@ -18,29 +17,22 @@ view : (Int -> msg) -> { selected : Int, all : StaticTreeMap String } -> Element
 view selectClassMsg { selected, all } =
     StaticTreeMap.foldedTree selected all
         |> Tree.children
-        |> List.map (Tree.restructure (viewClassKeyed selectClassMsg selected) toListItemsKeyed)
-        |> Keyed.column Style.None []
+        |> List.map (Tree.restructure (viewClass selectClassMsg selected) toListItems)
+        |> column Style.None []
 
 
-toListItemsKeyed : ( String, Element Style var msg ) -> List ( String, Element Style var msg ) -> ( String, Element Style var msg )
-toListItemsKeyed (( key, classElement ) as pair) children =
+toListItems : Element Style var msg -> List (Element Style var msg) -> Element Style var msg
+toListItems classElement children =
     case children of
         [] ->
-            pair
+            classElement
 
         _ ->
-            ( key
-            , column Style.None
+            column Style.None
                 []
                 [ classElement
-                , Keyed.column Style.None [ paddingLeft 40 ] children
+                , column Style.None [ paddingLeft 40 ] children
                 ]
-            )
-
-
-viewClassKeyed : (Int -> msg) -> Int -> Foldable String -> ( String, Element Style var msg )
-viewClassKeyed selectClassMsg selectedClassId foldableItem =
-    ( toString foldableItem.key, viewClass selectClassMsg selectedClassId foldableItem )
 
 
 viewClass : (Int -> msg) -> Int -> Foldable String -> Element Style var msg

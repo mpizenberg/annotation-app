@@ -162,8 +162,9 @@ viewAll params tools =
         removeLatestButton =
             actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
 
-        configAndDatasetButtons =
-            [ Button.loadMultipleFilesInput
+        optionsButtons =
+            [ actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.save
+            , Button.loadMultipleFilesInput
                 { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"
                 , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
@@ -187,7 +188,7 @@ viewAll params tools =
             , actionButton h True params.zoomFitMsg Icon.zoomFit
             ]
     in
-    (toolButtons ++ filler :: removeLatestButton :: filler :: zoomActions ++ filler :: configAndDatasetButtons)
+    (toolButtons ++ filler :: removeLatestButton :: filler :: zoomActions ++ filler :: optionsButtons)
         |> Element.row Style.None []
 
 

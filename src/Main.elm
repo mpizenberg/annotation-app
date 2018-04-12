@@ -196,12 +196,25 @@ update msg model =
             ( { model | state = ConfigProvided config classes (Zipper.goTo .id toolId tools) }, Cmd.none )
 
         ( SelectTool toolId, AllProvided config classes tools imgs ) ->
+            let
+                newTools =
+                    Zipper.goTo .id toolId tools
+
+                newAnnotatedImages =
+                    Zipper.updateC (AnnotatedImage.selectTool toolId) imgs
+
+                newState =
+                    AllProvided config classes newTools newAnnotatedImages
+
+                hasAnnotations =
+                    AnnotatedImage.hasAnnotations (Zipper.getC newAnnotatedImages)
+
+                viewParameters =
+                    View.markHasAnnotation hasAnnotations model.viewParameters
+            in
             ( { model
-                | state =
-                    AllProvided config
-                        classes
-                        (Zipper.goTo .id toolId tools)
-                        (Zipper.updateC (AnnotatedImage.selectTool toolId) imgs)
+                | state = newState
+                , viewParameters = viewParameters
               }
                 |> updateAnnotationsWithImage
             , Cmd.none

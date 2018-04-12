@@ -3,7 +3,15 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Packages.Device exposing (..)
+module Packages.Device
+    exposing
+        ( Device
+        , Kind(..)
+        , Orientation(..)
+        , Size
+        , classify
+        , default
+        )
 
 
 type alias Device =

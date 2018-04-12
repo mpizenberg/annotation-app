@@ -1,4 +1,10 @@
-module View.ActionBar exposing (..)
+module View.ActionBar
+    exposing
+        ( Parameters
+        , emptyView
+        , responsiveHeight
+        , view
+        )
 
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element, el, empty)

@@ -1,4 +1,15 @@
-module View.Main exposing (..)
+module View.Main
+    exposing
+        ( Parameters
+        , markHasAnnotation
+        , markHasImage
+        , pageLayout
+        , updateLayout
+        , viewAll
+        , viewConfig
+        , viewImages
+        , viewNothing
+        )
 
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)

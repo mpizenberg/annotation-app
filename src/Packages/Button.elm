@@ -3,7 +3,18 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Packages.Button exposing (..)
+module Packages.Button
+    exposing
+        ( Actionability(..)
+        , Button
+        , File
+        , FileLoader
+        , MultipleFilesLoader
+        , State(..)
+        , loadFileInput
+        , loadMultipleFilesInput
+        , view
+        )
 
 import Element exposing (Element, el)
 import Element.Attributes as Attributes exposing (center, px, verticalCenter)

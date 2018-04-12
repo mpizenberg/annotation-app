@@ -1,4 +1,4 @@
-module View.ClassesSideBar exposing (..)
+module View.ClassesSideBar exposing (view)
 
 import Element exposing (Element, column, el, empty, text)
 import Element.Attributes as Attributes exposing (padding, paddingLeft)

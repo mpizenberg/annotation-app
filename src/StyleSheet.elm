@@ -1,4 +1,11 @@
-module StyleSheet exposing (..)
+module StyleSheet
+    exposing
+        ( ButtonState(..)
+        , ClassState(..)
+        , ColorVariations(..)
+        , Style(..)
+        , sheet
+        )
 
 import Annotation.Color as Color
 import Color

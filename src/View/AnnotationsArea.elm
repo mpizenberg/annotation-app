@@ -1,4 +1,9 @@
-module View.AnnotationsArea exposing (..)
+module View.AnnotationsArea
+    exposing
+        ( Parameters
+        , view
+        , viewImageOnly
+        )
 
 import Annotation.Geometry.Contour as Contour
 import Annotation.Geometry.Stroke as Stroke

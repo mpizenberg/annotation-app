@@ -1,4 +1,4 @@
-module Data.Annotation exposing (..)
+module Data.Annotation exposing (Type(..), typeDecoder, typeFromString)
 
 import Json.Decode as Decode exposing (Decoder)
 

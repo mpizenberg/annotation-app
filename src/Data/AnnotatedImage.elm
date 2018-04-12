@@ -1,4 +1,23 @@
-module Data.AnnotatedImage exposing (..)
+module Data.AnnotatedImage
+    exposing
+        ( AnnotatedImage
+        , Annotations(..)
+        , BBoxDrawings
+        , OneOutlineDrawing(..)
+        , OnePolygonDrawing(..)
+        , OutlineDrawings
+        , PointDrawings
+        , PolygonDrawings
+        , Status(..)
+        , StrokeDrawings
+        , annotationsFromTools
+        , fromRaw
+        , hasAnnotations
+        , removeLatestAnnotation
+        , resetWithTools
+        , selectTool
+        , updateWithPointer
+        )
 
 import Annotation.Geometry.BoundingBox as BoundingBox
 import Annotation.Geometry.Point as Point

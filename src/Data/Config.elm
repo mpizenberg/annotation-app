@@ -1,4 +1,12 @@
-module Data.Config exposing (..)
+module Data.Config
+    exposing
+        ( Config
+        , classesFrom
+        , decoder
+        , empty
+        , pascal
+        , toolsFrom
+        )
 
 import Data.Annotation as Annotation
 import Data.Tool as Tool exposing (Tool)

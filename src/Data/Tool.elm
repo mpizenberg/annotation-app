@@ -1,4 +1,4 @@
-module Data.Tool exposing (..)
+module Data.Tool exposing (Tool, Type(..))
 
 -- TYPES #############################################################
 

@@ -1,4 +1,4 @@
-module Data.Pointer exposing (..)
+module Data.Pointer exposing (DragState(..), Msg(..))
 
 
 type DragState

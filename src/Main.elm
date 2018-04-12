@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Control exposing (Control)

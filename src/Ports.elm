@@ -3,7 +3,14 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-port module Ports exposing (..)
+port module Ports
+    exposing
+        ( configLoaded
+        , imageLoaded
+        , loadConfigFile
+        , loadImageFile
+        , resizes
+        )
 
 import Json.Encode exposing (Value)
 import Packages.Device as Device exposing (Device)

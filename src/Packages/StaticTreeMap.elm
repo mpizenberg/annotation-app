@@ -1,4 +1,12 @@
-module Packages.StaticTreeMap exposing (..)
+module Packages.StaticTreeMap
+    exposing
+        ( Foldable
+        , StaticTreeMap
+        , StaticTreeMapZipper
+        , foldedTree
+        , from
+        , singleton
+        )
 
 import Tree exposing (Tree)
 import Tree.Zipper as Zipper exposing (Zipper)
@@ -97,45 +105,3 @@ purgePreviousSiblings zipper =
         Just previousSibling ->
             purgeZipper previousSibling
                 |> purgePreviousSiblings
-
-
-
--- viewLabel : (Int -> msg) -> Int -> Foldable String -> Html msg
--- viewLabel msgTagger selectedKey foldableItem =
---     let
---         itemKey =
---             foldableItem.key
---
---         attributes =
---             if itemKey == selectedKey then
---                 []
---             else
---                 [ onClick (msgTagger itemKey) ]
---
---         textContent =
---             if foldableItem.folded then
---                 "+ " ++ foldableItem.item
---             else
---                 foldableItem.item
---     in
---     span attributes [ text textContent ]
---
---
--- view : Model -> Html Msg
--- view model =
---     let
---         foldedTree =
---             StaticTreeMap.foldedTree model.selected model.treeFromRoot
---
---         labelToHtml =
---             StaticTreeMap.viewLabel Select model.selected
---
---         toListItems : Html msg -> List (Html msg) -> Html msg
---         toListItems htmlLabel children =
---             Html.li []
---                 [ htmlLabel
---                 , Html.ul [] children
---                 ]
---     in
---     Tree.restructure labelToHtml toListItems foldedTree
---         |> (\root -> Html.ul [] [ root ])

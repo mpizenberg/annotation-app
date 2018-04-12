@@ -1,4 +1,4 @@
-module View.DatasetSideBar exposing (..)
+module View.DatasetSideBar exposing (viewAnnotated, viewRaw)
 
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.RawImage as RawImage exposing (RawImage)

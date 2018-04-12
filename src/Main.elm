@@ -173,12 +173,14 @@ update msg model =
             , Cmd.none
             )
 
-        ( SelectImage imageId, AllProvided co cl t images ) ->
-            ( { model | state = AllProvided co cl t (Zipper.goTo .id imageId images) }
+        ( SelectImage imageId, AllProvided config classes tools images ) ->
+            let
+                newImages =
+                    Zipper.goTo .id imageId images
+            in
+            { model | state = AllProvided config classes tools newImages }
                 |> fitImage
-                |> updateAnnotationsWithImage
-            , Cmd.none
-            )
+                |> update (SelectTool (.id <| Zipper.getC tools))
 
         ( SelectClass id, ConfigProvided config classes tools ) ->
             ( { model | state = ConfigProvided config { classes | selected = id } tools }

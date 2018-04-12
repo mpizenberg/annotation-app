@@ -105,7 +105,6 @@ init sizeFlag =
             , actionBar =
                 { size = layout.actionBarSize
                 , hasAnnotations = False
-                , hasImage = False
                 , removeLatestAnnotationMsg = RemoveLatestAnnotation
                 , selectToolMsg = SelectTool
                 , zoomInMsg = ZoomMsg ZoomIn
@@ -313,10 +312,7 @@ update msg model =
                         (AnnotatedImage.fromRaw tools firstImage)
                         (List.map (AnnotatedImage.fromRaw tools) otherImages)
             in
-            ( { model
-                | state = AllProvided config classes tools annotatedImages
-                , viewParameters = View.markHasImage model.viewParameters
-              }
+            ( { model | state = AllProvided config classes tools annotatedImages }
                 |> updateAnnotationsWithImage
             , Cmd.batch (firstCmd :: otherCmds)
             )
@@ -394,19 +390,7 @@ update msg model =
             ( model, Ports.loadConfigFile jsValue )
 
         ( ConfigLoaded configString, _ ) ->
-            let
-                newState =
-                    changeConfig configString model.state
-
-                newViewParameters =
-                    case newState of
-                        AllProvided _ _ _ _ ->
-                            View.markHasImage model.viewParameters
-
-                        _ ->
-                            model.viewParameters
-            in
-            ( { model | state = newState, viewParameters = newViewParameters }
+            ( { model | state = changeConfig configString model.state }
                 |> updateAnnotationsWithImage
             , Cmd.none
             )

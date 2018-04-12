@@ -8,7 +8,8 @@ module View.ActionBar
         ( Parameters
         , emptyView
         , responsiveHeight
-        , view
+        , viewAll
+        , viewConfig
         )
 
 import Data.Tool as Tool exposing (Tool)
@@ -31,7 +32,6 @@ import View.Icon as Icon
 type alias Parameters msg =
     { size : ( Float, Float )
     , hasAnnotations : Bool
-    , hasImage : Bool
 
     -- events
     , removeLatestAnnotationMsg : msg
@@ -76,8 +76,15 @@ emptyView params =
         filler =
             el Style.None [ width fill, height (px h) ] empty
 
-        actionButtons =
-            [ actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
+        configAndDatasetButtons =
+            [ Button.loadMultipleFilesInput
+                { msgTagger = params.loadImagesMsg
+                , uniqueId = "image-loader"
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
+                , size = h
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
             , Button.loadFileInput
                 { msgTagger = params.loadConfigMsg
                 , uniqueId = "config-loader"
@@ -86,7 +93,33 @@ emptyView params =
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
                 }
-            , Button.loadMultipleFilesInput
+            ]
+    in
+    filler
+        :: configAndDatasetButtons
+        |> Element.row Style.None []
+
+
+viewConfig : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
+viewConfig params tools =
+    let
+        ( w, h ) =
+            params.size
+
+        filler =
+            el Style.None [ width fill, height (px h) ] empty
+
+        toolButtons =
+            List.concat
+                [ Zipper.getL tools
+                    |> List.map (disabledToolButton h)
+                , [ disabledToolButton h (Zipper.getC tools) ]
+                , Zipper.getR tools
+                    |> List.map (disabledToolButton h)
+                ]
+
+        configAndDatasetButtons =
+            [ Button.loadMultipleFilesInput
                 { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"
                 , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
@@ -94,20 +127,22 @@ emptyView params =
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
                 }
-            ]
-
-        zoomActions =
-            [ actionButton h params.hasImage params.zoomInMsg Icon.zoomIn
-            , actionButton h params.hasImage params.zoomOutMsg Icon.zoomOut
-            , actionButton h params.hasImage params.zoomFitMsg Icon.zoomFit
+            , Button.loadFileInput
+                { msgTagger = params.loadConfigMsg
+                , uniqueId = "config-loader"
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
+                , size = h
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
             ]
     in
-    (actionButtons ++ filler :: zoomActions)
+    (toolButtons ++ filler :: configAndDatasetButtons)
         |> Element.row Style.None []
 
 
-view : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
-view params tools =
+viewAll : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
+viewAll params tools =
     let
         ( w, h ) =
             params.size
@@ -124,8 +159,18 @@ view params tools =
                     |> List.map (toolButton params.selectToolMsg h False)
                 ]
 
-        actionButtons =
-            [ actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
+        removeLatestButton =
+            actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
+
+        configAndDatasetButtons =
+            [ Button.loadMultipleFilesInput
+                { msgTagger = params.loadImagesMsg
+                , uniqueId = "image-loader"
+                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
+                , size = h
+                , noStyle = Style.None
+                , outerStyle = Style.Button Style.Abled
+                }
             , Button.loadFileInput
                 { msgTagger = params.loadConfigMsg
                 , uniqueId = "config-loader"
@@ -134,23 +179,15 @@ view params tools =
                 , noStyle = Style.None
                 , outerStyle = Style.Button Style.Abled
                 }
-            , Button.loadMultipleFilesInput
-                { msgTagger = params.loadImagesMsg
-                , uniqueId = "image-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
             ]
 
         zoomActions =
-            [ actionButton h params.hasImage params.zoomInMsg Icon.zoomIn
-            , actionButton h params.hasImage params.zoomOutMsg Icon.zoomOut
-            , actionButton h params.hasImage params.zoomFitMsg Icon.zoomFit
+            [ actionButton h True params.zoomInMsg Icon.zoomIn
+            , actionButton h True params.zoomOutMsg Icon.zoomOut
+            , actionButton h True params.zoomFitMsg Icon.zoomFit
             ]
     in
-    (toolButtons ++ filler :: actionButtons ++ filler :: zoomActions)
+    (toolButtons ++ filler :: removeLatestButton :: filler :: zoomActions ++ filler :: configAndDatasetButtons)
         |> Element.row Style.None []
 
 
@@ -173,6 +210,19 @@ toolButton selectToolMsg size isSelected tool =
                 Style.Button Style.Selected
             else
                 Style.Button Style.Abled
+        , otherAttributes = []
+        }
+
+
+disabledToolButton : Float -> Tool -> Element Style ColorVariations msg
+disabledToolButton size tool =
+    Button.view
+        { actionability = Button.Disabled
+        , action = Attributes.class ""
+        , innerElement = toolIcon (0.6 * size) tool.variant tool.type_
+        , innerStyle = Style.None
+        , size = ( size, size )
+        , outerStyle = Style.Button Style.Disabled
         , otherAttributes = []
         }
 

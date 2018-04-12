@@ -7,7 +7,6 @@ module View.Main
     exposing
         ( Parameters
         , markHasAnnotation
-        , markHasImage
         , pageLayout
         , updateAnnotationsWithImage
         , updateLayout
@@ -73,7 +72,7 @@ viewConfig params tools classes =
     Element.layout Style.sheet <|
         Element.el Style.None
             [ Attributes.height fill ]
-            (ActionBar.view params.actionBar tools
+            (ActionBar.viewConfig params.actionBar tools
                 |> Element.below [ classesSideBar params.selectClassMsg classes ]
             )
 
@@ -83,7 +82,7 @@ viewAll params tools viewer ({ selected, all } as classes) annotatedImages =
     Element.layout Style.sheet <|
         Element.column Style.None
             [ Attributes.height fill ]
-            [ ActionBar.view params.actionBar tools
+            [ ActionBar.viewAll params.actionBar tools
                 |> Element.below [ classesSideBar params.selectClassMsg classes ]
                 |> Element.below [ datasetAnnotatedSideBar params.selectImageMsg annotatedImages ]
             , AnnotationsArea.view params.annotationsArea viewer (Zipper.getC annotatedImages)
@@ -114,11 +113,6 @@ classesSideBar selectClassMsg classes =
 
 
 -- update helpers
-
-
-markHasImage : Parameters msg -> Parameters msg
-markHasImage ({ actionBar } as params) =
-    { params | actionBar = { actionBar | hasImage = True } }
 
 
 markHasAnnotation : Bool -> Parameters msg -> Parameters msg

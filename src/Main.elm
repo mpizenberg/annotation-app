@@ -394,10 +394,19 @@ update msg model =
             ( model, Ports.loadConfigFile jsValue )
 
         ( ConfigLoaded configString, _ ) ->
-            ( { model
-                | state = changeConfig configString model.state
-                , viewParameters = View.markHasImage model.viewParameters
-              }
+            let
+                newState =
+                    changeConfig configString model.state
+
+                newViewParameters =
+                    case newState of
+                        AllProvided _ _ _ _ ->
+                            View.markHasImage model.viewParameters
+
+                        _ ->
+                            model.viewParameters
+            in
+            ( { model | state = newState, viewParameters = newViewParameters }
                 |> updateAnnotationsWithImage
             , Cmd.none
             )

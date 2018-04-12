@@ -100,33 +100,29 @@ init sizeFlag =
         viewer =
             Viewer.setSize layout.viewerSize Viewer.default
 
-        actionBarParameters =
-            { size = layout.actionBarSize
-            , hasAnnotations = False
-            , hasImage = False
-            , removeLatestAnnotationMsg = RemoveLatestAnnotation
-            , selectToolMsg = SelectTool
-            , zoomInMsg = ZoomMsg ZoomIn
-            , zoomOutMsg = ZoomMsg ZoomOut
-            , zoomFitMsg = ZoomMsg ZoomFit
-            , loadConfigMsg = LoadConfig
-            , loadImagesMsg = LoadImages
-            }
-
-        annotationsAreaParameters =
-            { size = layout.viewerSize
-            , pointerDownMsg = PointerMsg << Pointer.DownAt
-            , pointerMoveMsg = PointerMsg << Pointer.MoveAt
-            , pointerUpMsg = PointerMsg << Pointer.UpAt
-            , throttleMsg = MoveThrottle
-            }
-
         viewParameters =
             { device = device
-            , actionBar = actionBarParameters
-            , annotationsArea = annotationsAreaParameters
             , selectClassMsg = SelectClass
             , selectImageMsg = SelectImage
+            , actionBar =
+                { size = layout.actionBarSize
+                , hasAnnotations = False
+                , hasImage = False
+                , removeLatestAnnotationMsg = RemoveLatestAnnotation
+                , selectToolMsg = SelectTool
+                , zoomInMsg = ZoomMsg ZoomIn
+                , zoomOutMsg = ZoomMsg ZoomOut
+                , zoomFitMsg = ZoomMsg ZoomFit
+                , loadConfigMsg = LoadConfig
+                , loadImagesMsg = LoadImages
+                }
+            , annotationsArea =
+                { size = layout.viewerSize
+                , pointerDownMsg = PointerMsg << Pointer.DownAt
+                , pointerMoveMsg = PointerMsg << Pointer.MoveAt
+                , pointerUpMsg = PointerMsg << Pointer.UpAt
+                , throttleMsg = MoveThrottle
+                }
             }
 
         model =

@@ -624,7 +624,11 @@ encodePolygonDrawing drawing =
 
 encodeWithClass : (a -> Value) -> { classId : Int, drawing : a } -> Value
 encodeWithClass encodeDrawing { classId, drawing } =
-    Encode.object
-        [ ( "classId", Encode.int classId )
-        , ( "annotation", encodeDrawing drawing )
-        ]
+    -- if classId is 0, it means there are no classes
+    if classId == 0 then
+        encodeDrawing drawing
+    else
+        Encode.object
+            [ ( "classId", Encode.int classId )
+            , ( "annotation", encodeDrawing drawing )
+            ]

@@ -164,7 +164,7 @@ viewAll params tools =
             actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
 
         optionsButtons =
-            [ actionButton h params.hasAnnotations params.exportMsg Icon.save
+            [ actionButton h True params.exportMsg Icon.save
             , Button.loadMultipleFilesInput
                 { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"

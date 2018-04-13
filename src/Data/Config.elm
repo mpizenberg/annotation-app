@@ -6,9 +6,11 @@
 module Data.Config
     exposing
         ( Config
+        , annotationsInfoFrom
         , classesFrom
         , decoder
         , empty
+        , encode
         , pascal
         , toolsFrom
         )
@@ -16,6 +18,7 @@ module Data.Config
 import Data.Annotation as Annotation
 import Data.Tool as Tool exposing (Tool)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Tree exposing (Tree)
@@ -104,6 +107,23 @@ classesFrom classes =
     Category "classes-root" classes
         |> Tree.unfold convertNode
         |> StaticTreeMap.from
+
+
+annotationsInfoFrom : List AnnotationConfig -> List Annotation.Info
+annotationsInfoFrom configs =
+    let
+        variantsOf : AnnotationConfig -> List Annotation.Info
+        variantsOf annotation =
+            case annotation of
+                Type type_ ->
+                    [ Annotation.Info type_ Nothing ]
+
+                TypeWithVariations type_ variations ->
+                    variations
+                        |> List.map Just
+                        |> List.map (Annotation.Info type_)
+    in
+    List.concatMap variantsOf configs
 
 
 toolsFrom : List AnnotationConfig -> Zipper Tool
@@ -205,3 +225,41 @@ annotationDecoder =
             (Decode.field "type" Annotation.typeDecoder)
             (Decode.field "variations" <| Decode.list Decode.string)
         ]
+
+
+
+-- Encoders
+
+
+encode : Config -> Value
+encode config =
+    Encode.object
+        [ ( "classes", Encode.list <| List.map encodeClass config.classes )
+        , ( "annotations", Encode.list <| List.map encodeAnnotation config.annotations )
+        ]
+
+
+encodeClass : ClassConfig -> Value
+encodeClass class =
+    case class of
+        Label name ->
+            Encode.string name
+
+        Category name classes ->
+            Encode.object
+                [ ( "category", Encode.string name )
+                , ( "classes", Encode.list <| List.map encodeClass classes )
+                ]
+
+
+encodeAnnotation : AnnotationConfig -> Value
+encodeAnnotation annotation =
+    case annotation of
+        Type type_ ->
+            Encode.string (Annotation.typeToString type_)
+
+        TypeWithVariations type_ variations ->
+            Encode.object
+                [ ( "type", Encode.string (Annotation.typeToString type_) )
+                , ( "variations", Encode.list <| List.map Encode.string variations )
+                ]

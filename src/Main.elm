@@ -11,11 +11,13 @@ import Data.Config as Config exposing (Config)
 import Data.Pointer as Pointer
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
+import Dict as Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Image exposing (Image)
 import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Encode as Encode
 import Packages.Device as Device exposing (Device)
 import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
 import Packages.Zipper as Zipper exposing (Zipper)
@@ -71,6 +73,7 @@ type Msg
     | ImageLoaded { id : Int, url : String, width : Int, height : Int }
     | LoadConfig Value
     | ConfigLoaded String
+    | Export
       -- other actions
     | ZoomMsg ZoomMsg
     | RemoveLatestAnnotation
@@ -112,6 +115,7 @@ init sizeFlag =
                 , zoomFitMsg = ZoomMsg ZoomFit
                 , loadConfigMsg = LoadConfig
                 , loadImagesMsg = LoadImages
+                , exportMsg = Export
                 }
             , annotationsArea =
                 { size = layout.viewerSize
@@ -397,6 +401,9 @@ update msg model =
             , Cmd.none
             )
 
+        ( Export, AllProvided config _ _ images ) ->
+            ( model, Ports.export <| encode config <| Zipper.getAll images )
+
         _ ->
             ( model, Cmd.none )
 
@@ -556,6 +563,24 @@ updateMove pointerMsg dragState viewer =
 
         _ ->
             ( viewer, dragState, False )
+
+
+
+-- Export / save annotations
+
+
+encode : Config -> List AnnotatedImage -> Value
+encode config images =
+    let
+        annotationsDict =
+            Config.annotationsInfoFrom config.annotations
+                |> List.indexedMap (\id ann -> ( id + 1, ann ))
+                |> Dict.fromList
+    in
+    Encode.object
+        [ ( "config", Config.encode config )
+        , ( "images", Encode.list <| List.map (AnnotatedImage.encode annotationsDict) images )
+        ]
 
 
 

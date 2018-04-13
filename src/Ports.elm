@@ -6,6 +6,7 @@
 port module Ports
     exposing
         ( configLoaded
+        , export
         , imageLoaded
         , loadConfigFile
         , loadImageFile
@@ -29,3 +30,6 @@ port loadConfigFile : Value -> Cmd msg
 
 
 port configLoaded : (String -> msg) -> Sub msg
+
+
+port export : Value -> Cmd msg

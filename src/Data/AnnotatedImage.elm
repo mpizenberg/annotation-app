@@ -16,6 +16,7 @@ module Data.AnnotatedImage
         , Status(..)
         , StrokeDrawings
         , annotationsFromTools
+        , encode
         , fromRaw
         , hasAnnotations
         , removeLatestAnnotation
@@ -28,10 +29,13 @@ import Annotation.Geometry.BoundingBox as BoundingBox
 import Annotation.Geometry.Point as Point
 import Annotation.Geometry.Stroke as Stroke
 import Annotation.Geometry.Types exposing (BoundingBox, Contour, Outline, Point, Stroke)
+import Data.Annotation as Annotation
 import Data.Pointer as Pointer
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
+import Dict exposing (Dict)
 import Image exposing (Image)
+import Json.Encode as Encode exposing (Value)
 import Packages.Zipper as Zipper exposing (Zipper)
 
 
@@ -526,3 +530,93 @@ annotationsFromTools tools =
 
         tool :: otherTools ->
             Zipper.init [] (fromTool tool) (List.map fromTool otherTools)
+
+
+
+-- Encoders
+
+
+encode : Dict Int Annotation.Info -> AnnotatedImage -> Value
+encode annotationsDict annotatedImage =
+    Encode.object
+        [ ( "image", Encode.string annotatedImage.name )
+        , ( "annotations", encodeStatus annotationsDict annotatedImage.status )
+        ]
+
+
+encodeStatus : Dict Int Annotation.Info -> Status -> Value
+encodeStatus annotationsDict status =
+    case status of
+        Loaded _ zipper ->
+            Zipper.getAll zipper
+                |> List.map (encodePairIdAnnotations annotationsDict)
+                |> Encode.list
+
+        _ ->
+            Encode.null
+
+
+encodePairIdAnnotations : Dict Int Annotation.Info -> { toolId : Int, annotations : Annotations } -> Value
+encodePairIdAnnotations annotationsDict { toolId, annotations } =
+    let
+        encodeItem : Annotation.Info -> Value
+        encodeItem { type_, variant } =
+            Encode.object
+                [ ( "type", Encode.string <| Annotation.typeToString type_ )
+                , ( "variant", Maybe.map Encode.string variant |> Maybe.withDefault Encode.null )
+                , ( "annotations", encodeAnnotations annotations )
+                ]
+    in
+    Dict.get toolId annotationsDict
+        |> Maybe.map encodeItem
+        |> Maybe.withDefault Encode.null
+
+
+encodeAnnotations : Annotations -> Value
+encodeAnnotations annotations =
+    Encode.list <|
+        case annotations of
+            Points drawings ->
+                List.map (encodeWithClass Annotation.encodePoint) drawings
+
+            BBoxes drawings ->
+                List.map (encodeWithClass Annotation.encodeBBox) drawings
+
+            Strokes drawings ->
+                List.map (encodeWithClass Annotation.encodeStroke) drawings
+
+            Outlines drawings ->
+                -- TODO filter instead of this
+                List.map (encodeWithClass encodeOutlineDrawing) drawings
+
+            Polygons drawings ->
+                -- TODO filter instead of this
+                List.map (encodeWithClass encodePolygonDrawing) drawings
+
+
+encodeOutlineDrawing : OneOutlineDrawing -> Value
+encodeOutlineDrawing drawing =
+    case drawing of
+        DrawingOutline stroke ->
+            Encode.object [ ( "not-finished", Annotation.encodeStroke stroke ) ]
+
+        EndedOutline outline ->
+            Annotation.encodeOutline outline
+
+
+encodePolygonDrawing : OnePolygonDrawing -> Value
+encodePolygonDrawing drawing =
+    case drawing of
+        PolygonStartedAt _ stroke ->
+            Encode.object [ ( "not-finished", Annotation.encodeStroke stroke ) ]
+
+        EndedPolygon polygon ->
+            Annotation.encodePolygon polygon
+
+
+encodeWithClass : (a -> Value) -> { classId : Int, drawing : a } -> Value
+encodeWithClass encodeDrawing { classId, drawing } =
+    Encode.object
+        [ ( "classId", Encode.int classId )
+        , ( "annotation", encodeDrawing drawing )
+        ]

@@ -41,6 +41,7 @@ type alias Parameters msg =
     , zoomFitMsg : msg
     , loadConfigMsg : Value -> msg
     , loadImagesMsg : List { name : String, file : Value } -> msg
+    , exportMsg : msg
     }
 
 
@@ -163,7 +164,7 @@ viewAll params tools =
             actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
 
         optionsButtons =
-            [ actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.save
+            [ actionButton h params.hasAnnotations params.exportMsg Icon.save
             , Button.loadMultipleFilesInput
                 { msgTagger = params.loadImagesMsg
                 , uniqueId = "image-loader"

@@ -561,11 +561,19 @@ encodePairIdAnnotations annotationsDict { toolId, annotations } =
     let
         encodeItem : Annotation.Info -> Value
         encodeItem { type_, variant } =
-            Encode.object
-                [ ( "type", Encode.string <| Annotation.typeToString type_ )
-                , ( "variant", Maybe.map Encode.string variant |> Maybe.withDefault Encode.null )
-                , ( "annotations", encodeAnnotations annotations )
-                ]
+            case variant of
+                Nothing ->
+                    Encode.object
+                        [ ( "type", Encode.string <| Annotation.typeToString type_ )
+                        , ( "annotations", encodeAnnotations annotations )
+                        ]
+
+                Just variantName ->
+                    Encode.object
+                        [ ( "type", Encode.string <| Annotation.typeToString type_ )
+                        , ( "variant", Encode.string variantName )
+                        , ( "annotations", encodeAnnotations annotations )
+                        ]
     in
     Dict.get toolId annotationsDict
         |> Maybe.map encodeItem

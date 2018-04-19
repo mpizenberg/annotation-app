@@ -35,8 +35,11 @@
 		}
 
 		app.ports.loadConfigFile.subscribe( (file) => {
-			if ( file.type === "application/json" ) {
+			if ( file.name.match( /.*json/ ) ) {
+			// if ( file.type === "application/json" ) { // ubuntu chrome returns "" ...
 				sendLoadedConfig( file, app.ports.configLoaded )
+			} else {
+				console.log( "Incorrect file type, please load JSON file." )
 			}
 		})
 

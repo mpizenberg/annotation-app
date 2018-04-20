@@ -1,5 +1,6 @@
 # Configuration
 SERVER_CONFIG_FILE = .env
+SERVER_PORT = 8003
 BUILD_DIR = "dist"
 STATIC_FILES = src/index.html src/ports.js src/utils.js dependencies/elm-pep/elm-pep.js
 
@@ -29,7 +30,7 @@ start : config
 
 # Rewrite server config
 config :
-	echo "SERVER_PORT=8888" > $(SERVER_CONFIG_FILE)
+	echo "SERVER_PORT=$(SERVER_PORT)" > $(SERVER_CONFIG_FILE)
 	echo "BUILD_DIR=$(BUILD_DIR)" >> $(SERVER_CONFIG_FILE)
 
 # Clean packages and build

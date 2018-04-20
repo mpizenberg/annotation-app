@@ -20,7 +20,7 @@ import Packages.Device as Device exposing (Device)
 port resizes : (Device.Size -> msg) -> Sub msg
 
 
-port loadImageFile : ( Int, Value ) -> Cmd msg
+port loadImageFile : { id : Int, file : Value } -> Cmd msg
 
 
 port imageLoaded : ({ id : Int, url : String, width : Int, height : Int } -> msg) -> Sub msg

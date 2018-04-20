@@ -497,7 +497,7 @@ prepareRawLoading startId images =
 prepareOneRawLoading : Int -> { name : String, file : Value } -> ( RawImage, Cmd Msg )
 prepareOneRawLoading id { name, file } =
     ( { id = id, name = name, status = RawImage.Loading }
-    , Ports.loadImageFile ( id, file )
+    , Ports.loadImageFile { id = id, file = file }
     )
 
 

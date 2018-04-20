@@ -1,5 +1,5 @@
-# Main.elm target -> Main.js
-Main.js
+# Build dir (cf makefile)
+dist/
 
 # Created by https://www.gitignore.io/api/vim,osx,elm,node,linux,windows
 

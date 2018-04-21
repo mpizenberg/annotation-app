@@ -1,22 +1,17 @@
-# Use an official Node runtime as a parent image
-FROM node:8
+# Using a multi-stage image build
 
-# Set the working directory to /app
+# Stage 1: build the elm app
+FROM node:8 as builder
 WORKDIR /app
-
-# Copy the current directory contents into the container at /app
 ADD . /app
-
-# Install Elm and any needed packages
 RUN npm install --unsafe-perm -g elm@0.18.0
 RUN make install
+RUN make build && make config && make docker-pack
 
-# Build Elm application
-RUN make build
-
-# Make correct port available to the world outside this container
-# See configuration in makefile to know the correct port
+# Stage 2: create a lightweight running image
+# See makefile docker config for constants
+FROM node:8-alpine as runner
+WORKDIR /app
+COPY --from=builder /app/run .
 EXPOSE 8003
-
-# Start node server when the container launches
-CMD ["make", "start"]
+CMD ["npm", "start"]

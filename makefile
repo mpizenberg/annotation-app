@@ -1,8 +1,9 @@
 # Configuration
-SERVER_CONFIG_FILE = .env
+SERVER_CONFIG_FILE = server/.env
 SERVER_PORT = 8003
-BUILD_DIR = dist
-STATIC_FILES = src/index.html src/ports.js src/utils.js dependencies/elm-pep/elm-pep.js
+DIST_DIR = dist
+BUILD_DIR = server/$(DIST_DIR)
+STATIC_FILES = client/static/* dependencies/elm-pep/elm-pep.js
 
 # Default is build and start server
 run : build start
@@ -10,10 +11,17 @@ run : build start
 # When just cloned, use `make all`
 all : install run
 
-# Install npm and elm dependencies
-install :
-	npm install
-	elm-package install --yes
+# INSTALLATION #############################################
+
+install : server-install client-install
+
+server-install :
+	cd server && npm install
+
+client-install :
+	cd client && elm-package install --yes
+
+# BUILD ####################################################
 
 # Copy static files to build dir
 copy-static-to-build :
@@ -22,30 +30,28 @@ copy-static-to-build :
 
 # Build elm app
 build : copy-static-to-build
-	elm-make src/Main.elm --output=$(BUILD_DIR)/Main.js
+	cd client && elm-make src/Main.elm --output=../$(BUILD_DIR)/Main.js
 
 # Start node server
 start : config
-	npm start
+	cd server && npm start
 
 # Rewrite server config
 config :
 	echo "SERVER_PORT=$(SERVER_PORT)" > $(SERVER_CONFIG_FILE)
-	echo "BUILD_DIR=$(BUILD_DIR)" >> $(SERVER_CONFIG_FILE)
+	echo "DIST_DIR=$(DIST_DIR)" >> $(SERVER_CONFIG_FILE)
 
 # Clean packages and build
 clean :
 	rm -rf $(SERVER_CONFIG_FILE)
 	rm -rf $(BUILD_DIR)
-	rm -rf elm-stuff/
-	rm -rf node_modules/
+	rm -rf client/elm-stuff/
+	rm -rf server/node_modules/
 
 # DOCKER ###################################################
 
 # Docker configuration
 DOCKER_IMAGE = annotation-app
-DOCKER_RUN_OBJECTS = package.json node_modules/ server.js .env dist/
-DOCKER_RUN_DIR = run/
 
 # Build the docker image
 docker-build : build config
@@ -54,9 +60,3 @@ docker-build : build config
 # Run a docker container
 docker-run :
 	docker run -d -p 80:$(SERVER_PORT) $(DOCKER_IMAGE)
-
-# Group all usefull data inside the run/ dir
-# This helper command is run at the end of docker build stage 1
-docker-pack :
-	mkdir -p $(DOCKER_RUN_DIR)
-	cp -r $(DOCKER_RUN_OBJECTS) $(DOCKER_RUN_DIR)

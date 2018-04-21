@@ -7,7 +7,7 @@ const compression = require("compression");
 // Config based on .env file (transferred to process.env)
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 const port = parseInt(process.env.SERVER_PORT, 10);
-const distDir = path.join(__dirname, process.env.BUILD_DIR);
+const distDir = path.join(__dirname, process.env.DIST_DIR);
 
 // Middlewares
 app.use(compression()); // gzip

@@ -69,7 +69,10 @@ When dependencies are met, to retrieve, compile and run this application for the
 
 ```shell
 # Clone repository with submodule dependencies
-git clone --recursive git@github.com:mpizenberg/annotation-app.git
+git clone --recursive https://github.com/mpizenberg/annotation-app.git
+
+# Move into the repository
+cd annotation-app
 
 # Compile and run for the first time
 make all

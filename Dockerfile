@@ -1,17 +1,17 @@
 # Using a multi-stage image build
+# Please use `make docker-build` that will use this file
 
-# Stage 1: build the elm app
-FROM node:8 as builder
+# Stage 1: pack usefull files into one directory
+FROM alpine:3.7 as packer
 WORKDIR /app
-ADD . /app
-RUN npm install --unsafe-perm -g elm@0.18.0
-RUN make install
-RUN make build && make config && make docker-pack
+RUN apk add --update make
+COPY . .
+RUN make docker-pack
 
 # Stage 2: create a lightweight running image
 # See makefile docker config for constants
-FROM node:8-alpine as runner
+FROM node:8-alpine
 WORKDIR /app
-COPY --from=builder /app/run .
+COPY --from=packer /app/run .
 EXPOSE 8003
 CMD ["npm", "start"]

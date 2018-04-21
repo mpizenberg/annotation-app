@@ -91,8 +91,8 @@ If you want to contribute to this project,
 the best way is to start by opening a github issue on this repo
 or contacting me on the elm slack (user @mattpiz).
 
-Matthieu Pizenberg - @mpizenberg
-Axel Carlier
+* Matthieu Pizenberg - @mpizenberg
+* Axel Carlier
 
 
 ## Special Thanks

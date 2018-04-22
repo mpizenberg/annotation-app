@@ -17,10 +17,46 @@ This work is in the process of being submitted to ACM MM'18 OSS Competition.
 
 ## Usage
 
-* Online at annotation-app.pizenberg.fr
-* Local -> cf Installation
-* Annotation tools provided
-* Configuration file
+The image annotation application is a web application.
+At the time of writing this, the application is deployed
+at http://annotation-app.pizenberg.fr so the simplest way
+of using it is to follow the link in your browser.
+If the application is down or you are interested in running
+it locally, check the Installation section.
+
+To open images to annotate, click on the image icon in the top toolbar.
+You can select one or multiple images.
+Repeating this action will add other images.
+
+Then, click on the config button in the top toolbar and load a Json config file.
+A config file describes the annotation tools and the label you want to use.
+Let's say that we want to annotate humans, dogs and cats, with bounding boxes.
+Then the Json config file will be:
+
+```json
+{ "classes": [ "human", "dog", "cat" ]
+, "annotations": [ "bbox" ]
+}
+```
+
+You can put any class you want and subclasses.
+The annotation types available are:
+
+* Bounding boxes: "bbox"
+* Points: "point"
+* Strokes: "stroke"
+* Outlines: "outline"
+* Polygons: "polygon"
+
+The config syntax is described with more details in the app documentation.
+The resulting interface with previous Json will be as the following image.
+
+![](https://mpizenberg.github.io/resources/annotation-app/simple-config.jpg)
+
+> **Warning**: you can change the config at any time but beware that
+> any config change will reset the annotations already done.
+
+
 * Export annotations
 * More documentation on gitbook
 

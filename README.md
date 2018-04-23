@@ -29,7 +29,7 @@ You can select one or multiple images.
 Repeating this action will add other images.
 
 Then, click on the config button in the top toolbar and load a Json config file.
-A config file describes the annotation tools and the label you want to use.
+A config file describes the annotation tools and the labels you want to use.
 Let's say that we want to annotate humans, dogs and cats, with bounding boxes.
 Then the Json config file will be:
 

@@ -102,15 +102,20 @@ docker container ls
 
 ### Using npm installation
 
-If you want to compile the source code you need to have Node with npm, and elm installed.
+If you want to compile the source code you need to have **node with npm**,
+and **elm** installed.
 If you are here, chances are you already have them installed on your system.
 Otherwise I suggest to install node/npm with [Node Version Manager (nvm)][nvm],
 and then to install elm@0.18.0 using npm: `npm install -g elm@0.18.0`.
+You can retrieve this application with **git** as explained below.
+In case you do not have git on your system and wish not to install it,
+you can download a zip folder containing the application at [this link][zip].
 
 When dependencies are met, to retrieve, compile and run this application for the first time:
 
 ```shell
 # Clone repository with submodule dependencies
+# Alternatively, download https://github.com/mpizenberg/annotation-app/archive/master.zip
 git clone --recursive https://github.com/mpizenberg/annotation-app.git
 
 # Move into the repository
@@ -124,7 +129,13 @@ Then simply open your browser at `localhost:8003` to load the application.
 After the first installation, I suggest to use `make run` instead of `make all`.
 Finer grained make rules and configuration are available in the simple `Makefile`.
 
+> **Windows notice**: This makefile uses posix shell syntax (sh, bash, dash, ...)
+> for its rules. It is thus not compatible with Windows.
+> Please refer to issue #14 if you are on Windows and wish to run
+> this application this way.
+
 [nvm]: https://github.com/creationix/nvm#install-script
+[zip]: https://github.com/mpizenberg/annotation-app/archive/master.zip
 
 
 ## Contributors

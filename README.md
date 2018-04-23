@@ -81,7 +81,7 @@ docker run -d -p 80:8003 mpizenberg/annotation-app:app
 
 Then simply open the app in your browser at `localhost`.
 
-> **Windows 7 notice**: if you are using Docker Toolbox on Windows 7,
+> **Windows notice**: if you are using Docker Toolbox,
 > use the Docker Machine IP instead of `localhost`.
 > For example, `http://192.168.99.100`.
 > To find the IP address, use the command `docker-machine ip`.

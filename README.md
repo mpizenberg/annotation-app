@@ -65,7 +65,7 @@ The resulting interface with previous Json will be as the following image.
 ## Installation
 
 There are two suggested way of installation if you want to run the app locally.
-Prefer to use npm if you want to modify some code,
+Prefer to use npm and elm if you want to modify some code,
 or docker if you simply want to use the app.
 
 ### Using docker installation
@@ -112,6 +112,12 @@ You can retrieve this application with **git** as explained below.
 In case you do not have git on your system and wish not to install it,
 you can download a zip folder containing the application at [this link][zip].
 
+> **Zip notice**: If you download the zip,
+> the submodules located in the `dependencies/`
+> folder will be empty.
+> You will have to do the same for each dependency.
+> So I strongly recommend to use [git][git].
+
 When dependencies are met, to retrieve, compile and run this application for the first time:
 
 ```shell
@@ -137,6 +143,7 @@ Finer grained make rules and configuration are available in the simple `Makefile
 
 [nvm]: https://github.com/creationix/nvm#install-script
 [zip]: https://github.com/mpizenberg/annotation-app/archive/master.zip
+[git]: https://git-scm.com/
 
 
 ## Contributors

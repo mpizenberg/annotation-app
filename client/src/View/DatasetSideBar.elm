@@ -28,14 +28,17 @@ viewRaw selectImageMsg dataset =
 
 viewAnnotated : (Int -> msg) -> Zipper AnnotatedImage -> Element Style var msg
 viewAnnotated selectImageMsg dataset =
-    column Style.None [] <|
-        List.concat
-            [ Zipper.getL dataset
-                |> List.map (viewOne selectImageMsg False toRawLoading)
-            , [ viewOne selectImageMsg True toRawLoading (Zipper.getC dataset) ]
-            , Zipper.getR dataset
-                |> List.map (viewOne selectImageMsg False toRawLoading)
-            ]
+    if List.isEmpty (Zipper.getL dataset) && List.isEmpty (Zipper.getR dataset) then
+        empty
+    else
+        column Style.None [] <|
+            List.concat
+                [ Zipper.getL dataset
+                    |> List.map (viewOne selectImageMsg False toRawLoading)
+                , [ viewOne selectImageMsg True toRawLoading (Zipper.getC dataset) ]
+                , Zipper.getR dataset
+                    |> List.map (viewOne selectImageMsg False toRawLoading)
+                ]
 
 
 toRawLoading : AnnotatedImage.Status -> RawImage.LoadingStatus

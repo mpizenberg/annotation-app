@@ -145,12 +145,13 @@ init flags =
                         |> changeConfig configString
 
         model =
-            fitImage <|
-                { viewParameters = viewParameters
-                , state = state
-                , viewer = viewer
-                , dragState = Pointer.NoDrag
-                }
+            updateAnnotationsWithImage <|
+                fitImage <|
+                    { viewParameters = viewParameters
+                    , state = state
+                    , viewer = viewer
+                    , dragState = Pointer.NoDrag
+                    }
     in
     ( model, Cmd.none )
 

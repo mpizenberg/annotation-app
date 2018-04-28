@@ -165,24 +165,27 @@ viewAll params tools =
             actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
 
         optionsButtons =
-            [ actionButton h True params.exportMsg Icon.save
-            , Button.loadMultipleFilesInput
-                { msgTagger = params.loadImagesMsg
-                , uniqueId = "image-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
-            , Button.loadFileInput
-                { msgTagger = params.loadConfigMsg
-                , uniqueId = "config-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
-            ]
+            if params.mturkMode then
+                [ textButton h True params.exportMsg "Submit" ]
+            else
+                [ actionButton h True params.exportMsg Icon.save
+                , Button.loadMultipleFilesInput
+                    { msgTagger = params.loadImagesMsg
+                    , uniqueId = "image-loader"
+                    , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
+                    , size = h
+                    , noStyle = Style.None
+                    , outerStyle = Style.Button Style.Abled
+                    }
+                , Button.loadFileInput
+                    { msgTagger = params.loadConfigMsg
+                    , uniqueId = "config-loader"
+                    , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
+                    , size = h
+                    , noStyle = Style.None
+                    , outerStyle = Style.Button Style.Abled
+                    }
+                ]
 
         zoomActions =
             [ actionButton h True params.zoomInMsg Icon.zoomIn
@@ -280,5 +283,26 @@ actionButton size clickable sendMsg innerSvg =
                 Style.Button Style.Abled
             else
                 Style.Button Style.Disabled
+        , otherAttributes = []
+        }
+
+
+textButton : Float -> Bool -> msg -> String -> Element Style ColorVariations msg
+textButton height clickable sendMsg innerText =
+    Button.viewText
+        { actionability =
+            if clickable then
+                Button.Abled Button.Inactive
+            else
+                Button.Disabled
+        , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
+        , innerElement = Element.text innerText
+        , innerStyle = Style.None
+        , height = height
+        , outerStyle =
+            if clickable then
+                Style.TextButton Style.Abled
+            else
+                Style.TextButton Style.Disabled
         , otherAttributes = []
         }

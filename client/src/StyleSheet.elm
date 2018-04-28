@@ -22,6 +22,7 @@ import Style.Font as Font
 type Style
     = None
     | Button ButtonState
+    | TextButton ButtonState
     | ClassesSidebar
     | ClassItem ClassState
     | Viewer
@@ -61,6 +62,19 @@ sheet =
             Color.background Color.grey
                 :: preventCommon
         , Style.style ToolIcon colorVariations
+
+        -- Text buttons
+        , Style.style (TextButton Disabled) <|
+            Color.background (Color.rgba 255 255 255 0.8)
+                :: Style.opacity 0.2
+                :: classesCommonStyles
+        , Style.style (TextButton Abled) <|
+            Color.background (Color.rgba 255 255 255 0.8)
+                :: Style.hover [ Color.background Color.lightGrey, Style.cursor "pointer" ]
+                :: classesCommonStyles
+        , Style.style (TextButton Selected) <|
+            Color.background Color.grey
+                :: classesCommonStyles
 
         -- Viewer
         , Style.style Viewer preventCommon

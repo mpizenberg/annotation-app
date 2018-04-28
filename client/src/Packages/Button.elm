@@ -11,13 +11,15 @@ module Packages.Button
         , FileLoader
         , MultipleFilesLoader
         , State(..)
+        , TextButton
         , loadFileInput
         , loadMultipleFilesInput
         , view
+        , viewText
         )
 
 import Element exposing (Element, el)
-import Element.Attributes as Attributes exposing (center, px, verticalCenter)
+import Element.Attributes as Attributes exposing (center, paddingLeft, paddingRight, px, verticalCenter)
 import Html
 import Html.Attributes
 import Html.Events
@@ -30,6 +32,17 @@ type alias Button style variation msg =
     , innerElement : Element style variation msg
     , innerStyle : style
     , size : ( Float, Float )
+    , outerStyle : style
+    , otherAttributes : List (Element.Attribute variation msg)
+    }
+
+
+type alias TextButton style variation msg =
+    { actionability : Actionability
+    , action : Element.Attribute variation msg
+    , innerElement : Element style variation msg
+    , innerStyle : style
+    , height : Float
     , outerStyle : style
     , otherAttributes : List (Element.Attribute variation msg)
     }
@@ -64,6 +77,26 @@ view button =
 
         innerButton =
             el button.innerStyle [ center, verticalCenter ] button.innerElement
+    in
+    el button.outerStyle attributes innerButton
+
+
+viewText : TextButton style variation msg -> Element style variation msg
+viewText button =
+    let
+        sizeAttributes =
+            [ Attributes.height (px button.height) ]
+
+        attributes =
+            case button.actionability of
+                Abled _ ->
+                    button.action :: sizeAttributes ++ button.otherAttributes
+
+                Disabled ->
+                    sizeAttributes ++ button.otherAttributes
+
+        innerButton =
+            el button.innerStyle [ center, verticalCenter, paddingLeft 40, paddingRight 40 ] button.innerElement
     in
     el button.outerStyle attributes innerButton
 

@@ -19,8 +19,16 @@
 		});
 		const containerSize = layoutViewportSize;
 
+		// Set elm app flags
+		const flags = {
+			deviceSize: containerSize(),
+			mturkMode: false,
+			images: [],
+			config: null
+		}
+
 		// Start elm app.
-		const app = Elm.Main.fullscreen(containerSize());
+		const app = Elm.Main.fullscreen(flags);
 	</script>
 	<script src="ports.js"></script>
 </body>

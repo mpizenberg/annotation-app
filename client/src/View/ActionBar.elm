@@ -32,6 +32,7 @@ import View.Icon as Icon
 type alias Parameters msg =
     { size : ( Float, Float )
     , hasAnnotations : Bool
+    , mturkMode : Bool
 
     -- events
     , removeLatestAnnotationMsg : msg

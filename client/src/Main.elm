@@ -25,7 +25,7 @@ import Ports
 import View.Main as View
 
 
-main : Program Device.Size Model Msg
+main : Program Flags Model Msg
 main =
     Html.programWithFlags
         { init = init
@@ -85,15 +85,23 @@ type ZoomMsg
     | ZoomFit
 
 
+type alias Flags =
+    { deviceSize : Device.Size
+    , mturkMode : Bool
+    , images : List Image
+    , config : Maybe String
+    }
+
+
 
 -- FUNCTIONS #########################################################
 
 
-init : Device.Size -> ( Model, Cmd Msg )
-init sizeFlag =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     let
         device =
-            Device.classify sizeFlag
+            Device.classify flags.deviceSize
 
         layout =
             View.pageLayout device
@@ -108,6 +116,7 @@ init sizeFlag =
             , actionBar =
                 { size = layout.actionBarSize
                 , hasAnnotations = False
+                , mturkMode = flags.mturkMode
                 , removeLatestAnnotationMsg = RemoveLatestAnnotation
                 , selectToolMsg = SelectTool
                 , zoomInMsg = ZoomMsg ZoomIn
@@ -126,14 +135,46 @@ init sizeFlag =
                 }
             }
 
+        state =
+            case flags.config of
+                Nothing ->
+                    importFlagsImages flags.images
+
+                Just configString ->
+                    importFlagsImages flags.images
+                        |> changeConfig configString
+
         model =
-            { viewParameters = viewParameters
-            , state = NothingProvided
-            , viewer = viewer
-            , dragState = Pointer.NoDrag
-            }
+            fitImage <|
+                { viewParameters = viewParameters
+                , state = state
+                , viewer = viewer
+                , dragState = Pointer.NoDrag
+                }
     in
     ( model, Cmd.none )
+
+
+importFlagsImages : List Image -> State
+importFlagsImages images =
+    case images of
+        [] ->
+            NothingProvided
+
+        image :: otherImages ->
+            let
+                toRaw id img =
+                    RawImage id img.url (RawImage.Loaded img)
+
+                firstRawImage =
+                    toRaw 0 image
+
+                otherRawImages =
+                    otherImages
+                        |> List.indexedMap (\id img -> toRaw (id + 1) img)
+            in
+            Zipper.init [] firstRawImage otherRawImages
+                |> ImagesProvided
 
 
 view : Model -> Html Msg

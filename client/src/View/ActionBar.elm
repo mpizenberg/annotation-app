@@ -10,6 +10,7 @@ module View.ActionBar
         , responsiveHeight
         , viewAll
         , viewConfig
+        , viewImages
         )
 
 import Data.Tool as Tool exposing (Tool)
@@ -78,27 +79,29 @@ emptyView params =
         filler =
             el Style.None [ width fill, height (px h) ] empty
 
-        configAndDatasetButtons =
-            [ Button.loadMultipleFilesInput
-                { msgTagger = params.loadImagesMsg
-                , uniqueId = "image-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
-            , Button.loadFileInput
-                { msgTagger = params.loadConfigMsg
-                , uniqueId = "config-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
-            ]
+        instruction =
+            textButton h False params.exportMsg "Load images →"
+    in
+    [ filler, instruction, datasetButton params.loadImagesMsg h ]
+        |> Element.row Style.None []
+
+
+viewImages : Parameters msg -> Element Style ColorVariations msg
+viewImages params =
+    let
+        ( w, h ) =
+            params.size
+
+        filler =
+            el Style.None [ width fill, height (px h) ] empty
+
+        instruction =
+            textButton h False params.exportMsg "Load Json config →"
     in
     filler
-        :: configAndDatasetButtons
+        :: instruction
+        :: configButton params.loadConfigMsg h
+        :: [ datasetButton params.loadImagesMsg h ]
         |> Element.row Style.None []
 
 
@@ -121,22 +124,8 @@ viewConfig params tools =
                 ]
 
         configAndDatasetButtons =
-            [ Button.loadMultipleFilesInput
-                { msgTagger = params.loadImagesMsg
-                , uniqueId = "image-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
-            , Button.loadFileInput
-                { msgTagger = params.loadConfigMsg
-                , uniqueId = "config-loader"
-                , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
-                , size = h
-                , noStyle = Style.None
-                , outerStyle = Style.Button Style.Abled
-                }
+            [ configButton params.loadConfigMsg h
+            , datasetButton params.loadImagesMsg h
             ]
     in
     (toolButtons ++ filler :: configAndDatasetButtons)
@@ -169,22 +158,8 @@ viewAll params tools =
                 [ textButton h True params.exportMsg "Submit" ]
             else
                 [ actionButton h True params.exportMsg Icon.save
-                , Button.loadMultipleFilesInput
-                    { msgTagger = params.loadImagesMsg
-                    , uniqueId = "image-loader"
-                    , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
-                    , size = h
-                    , noStyle = Style.None
-                    , outerStyle = Style.Button Style.Abled
-                    }
-                , Button.loadFileInput
-                    { msgTagger = params.loadConfigMsg
-                    , uniqueId = "config-loader"
-                    , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
-                    , size = h
-                    , noStyle = Style.None
-                    , outerStyle = Style.Button Style.Abled
-                    }
+                , configButton params.loadConfigMsg h
+                , datasetButton params.loadImagesMsg h
                 ]
 
         zoomActions =
@@ -195,6 +170,30 @@ viewAll params tools =
     in
     (toolButtons ++ filler :: removeLatestButton :: filler :: zoomActions ++ filler :: optionsButtons)
         |> Element.row Style.None []
+
+
+datasetButton : (List { name : String, file : Value } -> msg) -> Float -> Element Style ColorVariations msg
+datasetButton loadImagesMsg h =
+    Button.loadMultipleFilesInput
+        { msgTagger = loadImagesMsg
+        , uniqueId = "image-loader"
+        , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
+        , size = h
+        , noStyle = Style.None
+        , outerStyle = Style.Button Style.Abled
+        }
+
+
+configButton : (Value -> msg) -> Float -> Element Style ColorVariations msg
+configButton loadConfigMsg h =
+    Button.loadFileInput
+        { msgTagger = loadConfigMsg
+        , uniqueId = "config-loader"
+        , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
+        , size = h
+        , noStyle = Style.None
+        , outerStyle = Style.Button Style.Abled
+        }
 
 
 toolButton : (Int -> msg) -> Float -> Bool -> Tool -> Element Style ColorVariations msg

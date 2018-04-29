@@ -61,7 +61,7 @@ viewImages params viewer images =
     Element.layout Style.sheet <|
         Element.column Style.None
             [ Attributes.height fill ]
-            [ ActionBar.emptyView params.actionBar
+            [ ActionBar.viewImages params.actionBar
                 |> Element.below [ datasetRawSideBar params.selectImageMsg images ]
             , AnnotationsArea.viewImageOnly viewer (Zipper.getC images)
             ]

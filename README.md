@@ -1,9 +1,13 @@
 # Image Annotation Web App
 
 [![][badge-license]][license]
+[![][badge-doc]][doc]
+
 
 [badge-license]: https://img.shields.io/badge/license-MPL--2.0-blue.svg?style=flat-square
 [license]: https://www.mozilla.org/en-US/MPL/2.0/
+[badge-doc]: https://img.shields.io/badge/doc-gitbook-yellow.svg?style=flat-square
+[doc]: https://reva-n7.gitbook.io/annotation-app/
 
 This repository is a fully customizable image annotation web application.
 It is based on the Elm package
@@ -20,46 +24,13 @@ This work is in the process of being submitted to [ACM MM'18 OSS Competition][mm
 
 The image annotation application is a web application.
 At the time of writing this, the application is deployed
-at http://annotation-app.pizenberg.fr so the simplest way
+at https://annotation-app.pizenberg.fr so the simplest way
 of using it is to follow the link in your browser.
 If the application is down or you are interested in running
 it locally, check the Installation section.
 
-To open images to annotate, click on the image icon in the top toolbar.
-You can select one or multiple images.
-Repeating this action will add other images.
-
-Then, click on the config button in the top toolbar and load a Json config file.
-A config file describes the annotation tools and the labels you want to use.
-Let's say that we want to annotate humans, dogs and cats, with bounding boxes.
-Then the Json config file will be:
-
-```json
-{ "classes": [ "human", "dog", "cat" ]
-, "annotations": [ "bbox" ]
-}
-```
-
-You can put any class you want and subclasses.
-The annotation types available are:
-
-* Bounding boxes: "bbox"
-* Points: "point"
-* Strokes: "stroke"
-* Outlines: "outline"
-* Polygons: "polygon"
-
-The config syntax is described with more details in the app documentation.
-The resulting interface with previous Json will be as the following image.
-
-![](https://mpizenberg.github.io/resources/annotation-app/simple-config.jpg)
-
-> **Warning**: you can change the config at any time but beware that
-> any config change will reset the annotations already done.
-
-
-* Export annotations
-* More documentation on gitbook
+To learn how to use the application, follow the guide documentation
+available at https://reva-n7.gitbook.io/annotation-app/.
 
 
 ## Installation
@@ -156,9 +127,12 @@ or contacting me on the elm slack (user @mattpiz).
 * Axel Carlier
 
 
-## Special thanks
+## Special thanks to
 
-I would like to thank the online Elm community in particular:
+* @tforgione for your constant feedback
+* @dncg for your Windows tests
+
+I would also like to thank the online Elm community in particular:
 
 * @evancz for the delightful Elm language
 * @ianmackenzie for his fantastic geometry library

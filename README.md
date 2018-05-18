@@ -129,7 +129,7 @@ or contacting me on the elm slack (user @mattpiz).
 
 ## Special thanks to
 
-* @tforgione for your constant feedback
+* @tforgione and @GarciaDelMolino for your wise feedbacks
 * @dncg for your Windows tests
 
 I would also like to thank the online Elm community in particular:

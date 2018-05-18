@@ -111,8 +111,8 @@ type alias FileLoader style variation msg =
     }
 
 
-loadFileInput : FileLoader style var msg -> Element style var msg
-loadFileInput config =
+loadFileInput : String -> FileLoader style var msg -> Element style var msg
+loadFileInput tooltipText config =
     let
         invisibleInput =
             Html.input
@@ -131,7 +131,7 @@ loadFileInput config =
                 , innerStyle = config.noStyle
                 , size = ( config.size, config.size )
                 , outerStyle = config.outerStyle
-                , otherAttributes = []
+                , otherAttributes = [ Attributes.toAttr <| Html.Attributes.title tooltipText ]
                 }
     in
     Element.row config.noStyle [] [ Element.html invisibleInput, Element.node "label" labelButton ]
@@ -147,8 +147,8 @@ type alias MultipleFilesLoader style variation msg =
     }
 
 
-loadMultipleFilesInput : MultipleFilesLoader style var msg -> Element style var msg
-loadMultipleFilesInput config =
+loadMultipleFilesInput : String -> MultipleFilesLoader style var msg -> Element style var msg
+loadMultipleFilesInput tooltipText config =
     let
         invisibleInput =
             Html.input
@@ -168,7 +168,7 @@ loadMultipleFilesInput config =
                 , innerStyle = config.noStyle
                 , size = ( config.size, config.size )
                 , outerStyle = config.outerStyle
-                , otherAttributes = []
+                , otherAttributes = [ Attributes.toAttr <| Html.Attributes.title tooltipText ]
                 }
     in
     Element.row config.noStyle [] [ Element.html invisibleInput, Element.node "label" labelButton ]

@@ -15,7 +15,8 @@ module View.ActionBar
 
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element, el, empty)
-import Element.Attributes as Attributes exposing (fill, height, px, vary, width)
+import Element.Attributes as Attributes exposing (fill, height, px, toAttr, vary, width)
+import Html.Attributes
 import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Packages.Button as Button
@@ -25,6 +26,7 @@ import Pointer
 import StyleSheet as Style exposing (ColorVariations, Style)
 import Svg exposing (Svg)
 import View.Icon as Icon
+
 
 
 -- TYPES #############################################################
@@ -151,21 +153,22 @@ viewAll params tools =
                 ]
 
         removeLatestButton =
-            actionButton h params.hasAnnotations params.removeLatestAnnotationMsg Icon.trash2
+            actionButton h params.hasAnnotations params.removeLatestAnnotationMsg "Delete latest annotation of current tool" Icon.trash2
 
         optionsButtons =
             if params.mturkMode then
                 [ textButton h True params.exportMsg "Submit" ]
+
             else
-                [ actionButton h True params.exportMsg Icon.save
+                [ actionButton h True params.exportMsg "Save annotations" Icon.save
                 , configButton params.loadConfigMsg h
                 , datasetButton params.loadImagesMsg h
                 ]
 
         zoomActions =
-            [ actionButton h True params.zoomInMsg Icon.zoomIn
-            , actionButton h True params.zoomOutMsg Icon.zoomOut
-            , actionButton h True params.zoomFitMsg Icon.zoomFit
+            [ actionButton h True params.zoomInMsg "Zoom in" Icon.zoomIn
+            , actionButton h True params.zoomOutMsg "Zoom out" Icon.zoomOut
+            , actionButton h True params.zoomFitMsg "Fit zoom to image" Icon.zoomFit
             ]
     in
     (toolButtons ++ filler :: removeLatestButton :: filler :: zoomActions ++ filler :: optionsButtons)
@@ -174,7 +177,7 @@ viewAll params tools =
 
 datasetButton : (List { name : String, file : Value } -> msg) -> Float -> Element Style ColorVariations msg
 datasetButton loadImagesMsg h =
-    Button.loadMultipleFilesInput
+    Button.loadMultipleFilesInput "Load images"
         { msgTagger = loadImagesMsg
         , uniqueId = "image-loader"
         , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.image)
@@ -186,7 +189,7 @@ datasetButton loadImagesMsg h =
 
 configButton : (Value -> msg) -> Float -> Element Style ColorVariations msg
 configButton loadConfigMsg h =
-    Button.loadFileInput
+    Button.loadFileInput "Load JSON config file"
         { msgTagger = loadConfigMsg
         , uniqueId = "config-loader"
         , innerElement = Element.html (lazy2 Icon.toHtml (0.6 * h) Icon.settings)
@@ -202,6 +205,7 @@ toolButton selectToolMsg size isSelected tool =
         { actionability =
             if isSelected then
                 Button.Abled Button.Active
+
             else
                 Button.Abled Button.Inactive
         , action =
@@ -213,6 +217,7 @@ toolButton selectToolMsg size isSelected tool =
         , outerStyle =
             if isSelected then
                 Style.Button Style.Selected
+
             else
                 Style.Button Style.Abled
         , otherAttributes = []
@@ -235,42 +240,38 @@ disabledToolButton size tool =
 toolIcon : Float -> Int -> Tool.Type -> Element Style ColorVariations msg
 toolIcon size variant type_ =
     let
-        svgIcon =
+        ( svgIcon, tooltipText ) =
             case type_ of
                 Tool.Move ->
-                    Icon.move
+                    ( Icon.move, "Move" )
 
                 Tool.Point ->
-                    Icon.point
+                    ( Icon.point, "Point" )
 
                 Tool.BBox ->
-                    Icon.boundingBox
+                    ( Icon.boundingBox, "Bounding box" )
 
                 Tool.Stroke ->
-                    Icon.stroke
+                    ( Icon.stroke, "Stroke" )
 
                 Tool.Outline ->
-                    Icon.outline
+                    ( Icon.outline, "Outline" )
 
                 Tool.Polygon ->
-                    Icon.polygon
+                    ( Icon.polygon, "Polygon" )
     in
     lazy2 Icon.toHtml size svgIcon
         |> Element.html
-        |> el Style.ToolIcon [ vary (Style.FromPalette variant) True ]
+        |> el Style.ToolIcon [ vary (Style.FromPalette variant) True, toAttr <| Html.Attributes.title tooltipText ]
 
 
-actionButtonKeyed : Float -> Bool -> msg -> List (Svg msg) -> ( String, Element Style ColorVariations msg )
-actionButtonKeyed size clickable sendMsg innerSvg =
-    ( toString sendMsg, actionButton size clickable sendMsg innerSvg )
-
-
-actionButton : Float -> Bool -> msg -> List (Svg msg) -> Element Style ColorVariations msg
-actionButton size clickable sendMsg innerSvg =
+actionButton : Float -> Bool -> msg -> String -> List (Svg msg) -> Element Style ColorVariations msg
+actionButton size clickable sendMsg tooltipText innerSvg =
     Button.view
         { actionability =
             if clickable then
                 Button.Abled Button.Inactive
+
             else
                 Button.Disabled
         , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
@@ -280,9 +281,10 @@ actionButton size clickable sendMsg innerSvg =
         , outerStyle =
             if clickable then
                 Style.Button Style.Abled
+
             else
                 Style.Button Style.Disabled
-        , otherAttributes = []
+        , otherAttributes = [ toAttr <| Html.Attributes.title tooltipText ]
         }
 
 
@@ -292,6 +294,7 @@ textButton height clickable sendMsg innerText =
         { actionability =
             if clickable then
                 Button.Abled Button.Inactive
+
             else
                 Button.Disabled
         , action = Pointer.onDown (always sendMsg) |> Attributes.toAttr
@@ -301,6 +304,7 @@ textButton height clickable sendMsg innerText =
         , outerStyle =
             if clickable then
                 Style.TextButton Style.Abled
+
             else
                 Style.TextButton Style.Disabled
         , otherAttributes = []

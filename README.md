@@ -81,13 +81,7 @@ Otherwise I suggest to install node/npm with [Node Version Manager (nvm)][nvm],
 and then to install elm@0.18.0 using npm: `npm install -g elm@0.18.0`.
 You can retrieve this application with **git** as explained below.
 In case you do not have git on your system and wish not to install it,
-you can download a zip folder containing the application at [this link][zip].
-
-> **Zip notice**: If you download the zip,
-> the submodules located in the `dependencies/`
-> folder will be empty.
-> You will have to do the same for each dependency.
-> So I strongly recommend to use [git][git].
+you can download [this zip][zip] folder containing the application code.
 
 When dependencies are met, to retrieve, compile and run this application for the first time:
 
@@ -113,7 +107,7 @@ Finer grained make rules and configuration are available in the simple `Makefile
 > this application this way.
 
 [nvm]: https://github.com/creationix/nvm#install-script
-[zip]: https://github.com/mpizenberg/annotation-app/archive/master.zip
+[zip]: https://github.com/mpizenberg/annotation-app/releases/download/2018-05-20/application.zip
 [git]: https://git-scm.com/
 
 

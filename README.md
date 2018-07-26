@@ -12,7 +12,10 @@
 This repository is a fully customizable image annotation web application.
 It is based on the Elm package
 [mpizenberg/elm-image-annotation][image-anotation].
-This work is in the process of being submitted to [ACM MM'18 OSS Competition][mm18-ossc].
+We have been accepted to present our work at [ACM MM'18 OSS Competition][mm18-ossc].
+If you are nearby Seoul around October 22-26 (2018) and interested in this project,
+definitely come have a chat with us. You can contact me on the elm slack (@mattpiz)
+or by email: matthieu.pizenberg@gmail.com.
 
 [image-anotation]: https://github.com/mpizenberg/elm-image-annotation
 [mm18-ossc]: http://www.acmmm.org/2018/open-source-software-competition/

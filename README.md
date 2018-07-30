@@ -25,15 +25,13 @@ or by email: matthieu.pizenberg@gmail.com.
 
 ## Usage
 
-The image annotation application is a web application.
-At the time of writing this, the application is deployed
-at https://annotation-app.pizenberg.fr so the simplest way
-of using it is to follow the link in your browser.
-If the application is down or you are interested in running
-it locally, check the Installation section.
-
 To learn how to use the application, follow the guide documentation
 available at https://reva-n7.gitbook.io/annotation-app/.
+
+This is a web application, currently deployed
+at https://annotation-app.pizenberg.fr.
+If the application is down or you are interested in running
+it locally, check the Installation section.
 
 
 ## Installation

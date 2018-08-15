@@ -104,12 +104,13 @@ Finer grained make rules and configuration are available in the simple `Makefile
 
 > **Windows notice**: This makefile uses posix shell syntax (sh, bash, dash, ...)
 > for its rules. It is thus not compatible with Windows.
-> Please refer to issue #14 if you are on Windows and wish to run
+> Please refer to [issue #14][issue-14] if you are on Windows and wish to run
 > this application this way.
 
 [nvm]: https://github.com/creationix/nvm#install-script
 [zip]: https://github.com/mpizenberg/annotation-app/releases/download/2018-05-20/application.zip
 [git]: https://git-scm.com/
+[issue-14]: https://github.com/mpizenberg/annotation-app/issues/14
 
 
 ## Contributors

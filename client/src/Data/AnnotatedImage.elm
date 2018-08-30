@@ -540,9 +540,20 @@ encode : Dict Int Annotation.Info -> AnnotatedImage -> Value
 encode annotationsDict annotatedImage =
     Encode.object
         [ ( "image", Encode.string annotatedImage.name )
+        , ( "dimensions", encodeDimensions annotatedImage.status )
         , ( "annotations", encodeStatus annotationsDict annotatedImage.status )
         ]
 
+encodeDimensions : Status -> Value
+encodeDimensions status =
+    case status of
+        Loaded image _ ->
+            Encode.object
+            [ ( "height", Encode.int image.height)
+            , ( "width", Encode.int image.width)
+            ]
+        _ ->
+            Encode.null
 
 encodeStatus : Dict Int Annotation.Info -> Status -> Value
 encodeStatus annotationsDict status =

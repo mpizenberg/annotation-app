@@ -3,15 +3,14 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Packages.StaticTreeMap
-    exposing
-        ( Foldable
-        , StaticTreeMap
-        , StaticTreeMapZipper
-        , foldedTree
-        , from
-        , singleton
-        )
+module Packages.StaticTreeMap exposing
+    ( Foldable
+    , StaticTreeMap
+    , StaticTreeMapZipper
+    , foldedTree
+    , from
+    , singleton
+    )
 
 import Tree exposing (Tree)
 import Tree.Zipper as Zipper exposing (Zipper)
@@ -69,6 +68,7 @@ subFold targetKey zipper =
             |> Maybe.andThen purgePreviousSiblings
             |> Maybe.withDefault unfoldedZipper
             |> purgePreviousSiblings
+
     else if key < targetKey then
         case Zipper.lastChild unfoldedZipper of
             Nothing ->
@@ -76,6 +76,7 @@ subFold targetKey zipper =
 
             Just lastChild ->
                 subFold targetKey lastChild
+
     else
         case Zipper.previousSibling (purgeZipper zipper) of
             Nothing ->

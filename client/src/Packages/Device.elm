@@ -3,15 +3,14 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Packages.Device
-    exposing
-        ( Device
-        , Kind(..)
-        , Orientation(..)
-        , Size
-        , classify
-        , default
-        )
+module Packages.Device exposing
+    ( Device
+    , Kind(..)
+    , Orientation(..)
+    , Size
+    , classify
+    , default
+    )
 
 
 type alias Device =
@@ -53,22 +52,27 @@ classify { width, height } =
         deviceOrientation =
             if width < height then
                 Portrait
+
             else
                 Landscape
 
         minDimension =
             if deviceOrientation == Portrait then
                 width
+
             else
                 height
 
         deviceKind =
             if minDimension < 450 then
                 Phone
+
             else if minDimension < 850 then
                 Tablet
+
             else if minDimension < 1250 then
                 SmallDesktop
+
             else
                 BigDesktop
     in

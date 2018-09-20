@@ -3,14 +3,13 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module StyleSheet
-    exposing
-        ( ButtonState(..)
-        , ClassState(..)
-        , ColorVariations(..)
-        , Style(..)
-        , sheet
-        )
+module StyleSheet exposing
+    ( ButtonState(..)
+    , ClassState(..)
+    , ColorVariations(..)
+    , Style(..)
+    , sheet
+    )
 
 import Annotation.Color as Color
 import Color

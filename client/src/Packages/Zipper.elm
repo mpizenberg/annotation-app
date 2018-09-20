@@ -1,4 +1,29 @@
-module Packages.Zipper exposing (..)
+module Packages.Zipper exposing
+    ( Zipper(..)
+    , append
+    , getAll
+    , getC
+    , getL
+    , getR
+    , goEnd
+    , goL
+    , goR
+    , goStart
+    , goTo
+    , goToL
+    , goToR
+    , hasL
+    , hasR
+    , init
+    , insertL
+    , insertR
+    , mapAll
+    , moveMapStart
+    , setC
+    , setL
+    , setR
+    , updateC
+    )
 
 
 type Zipper a
@@ -52,8 +77,10 @@ goTo : (a -> Int) -> Int -> Zipper a -> Zipper a
 goTo f targetId ((Zipper _ center _) as zipper) =
     if f center < targetId then
         goToR f targetId zipper
+
     else if f center > targetId then
         goToL f targetId zipper
+
     else
         zipper
 
@@ -67,6 +94,7 @@ goToL f targetId ((Zipper left center right) as zipper) =
 
             x :: xs ->
                 goToL f targetId (Zipper xs x (center :: right))
+
     else
         zipper
 
@@ -80,6 +108,7 @@ goToR f targetId ((Zipper left center right) as zipper) =
 
             x :: xs ->
                 goToR f targetId (Zipper (center :: left) x xs)
+
     else
         zipper
 

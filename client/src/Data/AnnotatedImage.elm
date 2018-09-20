@@ -3,27 +3,26 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Data.AnnotatedImage
-    exposing
-        ( AnnotatedImage
-        , Annotations(..)
-        , BBoxDrawings
-        , OneOutlineDrawing(..)
-        , OnePolygonDrawing(..)
-        , OutlineDrawings
-        , PointDrawings
-        , PolygonDrawings
-        , Status(..)
-        , StrokeDrawings
-        , annotationsFromTools
-        , encode
-        , fromRaw
-        , hasAnnotations
-        , removeLatestAnnotation
-        , resetWithTools
-        , selectTool
-        , updateWithPointer
-        )
+module Data.AnnotatedImage exposing
+    ( AnnotatedImage
+    , Annotations(..)
+    , BBoxDrawings
+    , OneOutlineDrawing(..)
+    , OnePolygonDrawing(..)
+    , OutlineDrawings
+    , PointDrawings
+    , PolygonDrawings
+    , Status(..)
+    , StrokeDrawings
+    , annotationsFromTools
+    , encode
+    , fromRaw
+    , hasAnnotations
+    , removeLatestAnnotation
+    , resetWithTools
+    , selectTool
+    , updateWithPointer
+    )
 
 import Annotation.Geometry.BoundingBox as BoundingBox
 import Annotation.Geometry.Point as Point
@@ -37,6 +36,7 @@ import Dict exposing (Dict)
 import Image exposing (Image)
 import Json.Encode as Encode exposing (Value)
 import Packages.Zipper as Zipper exposing (Zipper)
+
 
 
 -- TYPES #############################################################
@@ -273,6 +273,7 @@ updateBBoxes selectedClassId pointerMsg dragState drawings =
         ( Pointer.UpAt ( x1, y1 ), Pointer.DraggingFrom ( x2, y2 ), d :: otherDrawings ) ->
             if x1 == x2 || y1 == y2 then
                 ( otherDrawings, Pointer.NoDrag, True )
+
             else
                 ( drawings, Pointer.NoDrag, True )
 
@@ -437,6 +438,7 @@ updatePolygons zoom selectedClassId pointerMsg dragState drawings =
                             -- Should use model.viewer.zoom here
                             if distance pos startPos > (30 / zoom) then
                                 ( drawings, Pointer.NoDrag, True )
+
                             else
                                 let
                                     polygon =
@@ -627,6 +629,7 @@ encodeWithClass encodeDrawing { classId, drawing } =
     -- if classId is 0, it means there are no classes
     if classId == 0 then
         encodeDrawing drawing
+
     else
         Encode.object
             [ ( "classId", Encode.int classId )

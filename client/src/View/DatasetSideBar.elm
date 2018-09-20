@@ -30,6 +30,7 @@ viewAnnotated : (Int -> msg) -> Zipper AnnotatedImage -> Element Style var msg
 viewAnnotated selectImageMsg dataset =
     if List.isEmpty (Zipper.getL dataset) && List.isEmpty (Zipper.getR dataset) then
         empty
+
     else
         column Style.None [] <|
             List.concat
@@ -62,6 +63,7 @@ viewOne selectImageMsg isSelected toLoadingStatus { id, name, status } =
                 attributes =
                     if isSelected then
                         [ padding 10 ]
+
                     else
                         [ padding 10
                         , Pointer.onDown (always <| selectImageMsg id)
@@ -70,6 +72,7 @@ viewOne selectImageMsg isSelected toLoadingStatus { id, name, status } =
             in
             if isSelected then
                 el (Style.ClassItem Style.SelectedClass) attributes textContent
+
             else
                 el (Style.ClassItem Style.NonSelectedClass) attributes textContent
     in

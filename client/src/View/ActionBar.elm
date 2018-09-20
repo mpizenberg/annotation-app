@@ -3,15 +3,14 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.ActionBar
-    exposing
-        ( Parameters
-        , emptyView
-        , responsiveHeight
-        , viewAll
-        , viewConfig
-        , viewImages
-        )
+module View.ActionBar exposing
+    ( Parameters
+    , emptyView
+    , responsiveHeight
+    , viewAll
+    , viewConfig
+    , viewImages
+    )
 
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element, el, empty)

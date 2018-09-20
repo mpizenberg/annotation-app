@@ -3,19 +3,18 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Data.Annotation
-    exposing
-        ( Info
-        , Type(..)
-        , encodeBBox
-        , encodeOutline
-        , encodePoint
-        , encodePolygon
-        , encodeStroke
-        , typeDecoder
-        , typeFromString
-        , typeToString
-        )
+module Data.Annotation exposing
+    ( Info
+    , Type(..)
+    , encodeBBox
+    , encodeOutline
+    , encodePoint
+    , encodePolygon
+    , encodeStroke
+    , typeDecoder
+    , typeFromString
+    , typeToString
+    )
 
 import Annotation.Geometry.BoundingBox as BoundingBox
 import Annotation.Geometry.Contour as Contour
@@ -25,6 +24,7 @@ import Annotation.Geometry.Stroke as Stroke
 import Annotation.Geometry.Types as Geometry
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+
 
 
 -- TYPES #############################################################

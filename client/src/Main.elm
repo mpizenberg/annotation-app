@@ -276,6 +276,7 @@ update msg model =
                     in
                     if hasChanged then
                         ( { model | viewer = newViewer, dragState = newDragState }, Cmd.none )
+
                     else
                         ( model, Cmd.none )
 
@@ -310,6 +311,7 @@ update msg model =
                             |> updateAnnotationsWithImage
                         , Cmd.none
                         )
+
                     else
                         ( model, Cmd.none )
 
@@ -405,6 +407,7 @@ update msg model =
                 Zipper.setC { img | status = newStatus } images
                     |> ImagesProvided
                     |> (\state -> ( fitImage { model | state = state }, Cmd.none ))
+
             else
                 Zipper.goTo .id id images
                     |> Zipper.updateC (\img -> { img | status = newStatus })
@@ -427,6 +430,7 @@ update msg model =
                     |> (\state -> fitImage { model | state = state })
                     |> updateAnnotationsWithImage
                     |> (\model -> ( model, Cmd.none ))
+
             else
                 Zipper.goTo .id id images
                     |> Zipper.updateC (\img -> { img | status = newStatus })
@@ -510,6 +514,7 @@ decodeConfig configString =
         selected =
             if List.isEmpty config.classes then
                 0
+
             else
                 1
     in

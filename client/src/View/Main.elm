@@ -3,18 +3,17 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.Main
-    exposing
-        ( Parameters
-        , markHasAnnotation
-        , pageLayout
-        , updateAnnotationsWithImage
-        , updateLayout
-        , viewAll
-        , viewConfig
-        , viewImages
-        , viewNothing
-        )
+module View.Main exposing
+    ( Parameters
+    , markHasAnnotation
+    , pageLayout
+    , updateAnnotationsWithImage
+    , updateLayout
+    , viewAll
+    , viewConfig
+    , viewImages
+    , viewNothing
+    )
 
 import Annotation.Viewer as Viewer exposing (Viewer)
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage, Annotations)
@@ -32,6 +31,7 @@ import View.ActionBar as ActionBar
 import View.AnnotationsArea as AnnotationsArea
 import View.ClassesSideBar as ClassesSideBar
 import View.DatasetSideBar as DatasetSideBar
+
 
 
 -- TYPES #############################################################
@@ -119,6 +119,7 @@ markHasAnnotation : Bool -> Parameters msg -> Parameters msg
 markHasAnnotation hasAnnotations ({ actionBar } as params) =
     if actionBar.hasAnnotations == hasAnnotations then
         params
+
     else
         { params | actionBar = { actionBar | hasAnnotations = hasAnnotations } }
 

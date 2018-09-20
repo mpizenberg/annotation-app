@@ -5,27 +5,26 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.Icon
-    exposing
-        ( boundingBox
-        , defaultAttributes
-        , download
-        , image
-        , moreVertical
-        , move
-        , outline
-        , point
-        , polygon
-        , rotateCcw
-        , save
-        , settings
-        , stroke
-        , toHtml
-        , trash2
-        , zoomFit
-        , zoomIn
-        , zoomOut
-        )
+module View.Icon exposing
+    ( boundingBox
+    , defaultAttributes
+    , download
+    , image
+    , moreVertical
+    , move
+    , outline
+    , point
+    , polygon
+    , rotateCcw
+    , save
+    , settings
+    , stroke
+    , toHtml
+    , trash2
+    , zoomFit
+    , zoomIn
+    , zoomOut
+    )
 
 import Html exposing (Html)
 import Svg exposing (Svg, svg)

@@ -3,17 +3,16 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Data.Config
-    exposing
-        ( Config
-        , annotationsInfoFrom
-        , classesFrom
-        , decoder
-        , empty
-        , encode
-        , pascal
-        , toolsFrom
-        )
+module Data.Config exposing
+    ( Config
+    , annotationsInfoFrom
+    , classesFrom
+    , decoder
+    , empty
+    , encode
+    , pascal
+    , toolsFrom
+    )
 
 import Data.Annotation as Annotation
 import Data.Tool as Tool exposing (Tool)
@@ -22,6 +21,7 @@ import Json.Encode as Encode exposing (Value)
 import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Tree exposing (Tree)
+
 
 
 -- TYPES #############################################################

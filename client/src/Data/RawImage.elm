@@ -8,6 +8,7 @@ module Data.RawImage exposing (LoadingStatus(..), RawImage)
 import Image exposing (Image)
 
 
+
 -- TYPES #############################################################
 
 

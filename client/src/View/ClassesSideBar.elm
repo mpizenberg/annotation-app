@@ -44,6 +44,7 @@ viewClass selectClassMsg selectedClassId foldableItem =
         attributes =
             if itemKey == selectedClassId then
                 [ padding 10 ]
+
             else
                 [ padding 10
                 , Pointer.onDown (always <| selectClassMsg itemKey)
@@ -53,12 +54,15 @@ viewClass selectClassMsg selectedClassId foldableItem =
         textContent =
             if foldableItem.folded then
                 text ("+ " ++ foldableItem.item)
+
             else
                 text foldableItem.item
     in
     if itemKey == 0 then
         empty
+
     else if itemKey == selectedClassId then
         el (Style.ClassItem Style.SelectedClass) attributes textContent
+
     else
         el (Style.ClassItem Style.NonSelectedClass) attributes textContent

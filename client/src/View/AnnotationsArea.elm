@@ -3,13 +3,12 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.AnnotationsArea
-    exposing
-        ( Parameters
-        , annotationsWithImage
-        , view
-        , viewImageOnly
-        )
+module View.AnnotationsArea exposing
+    ( Parameters
+    , annotationsWithImage
+    , view
+    , viewImageOnly
+    )
 
 import Annotation.Geometry.Contour as Contour
 import Annotation.Geometry.Stroke as Stroke
@@ -38,6 +37,7 @@ import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import Svg.Lazy exposing (lazy, lazy2, lazy3)
+
 
 
 -- TYPES #############################################################
@@ -265,6 +265,7 @@ lineStyle : Float -> Color -> Float -> Bool -> Style.Line
 lineStyle zoom color size highlight =
     if highlight then
         Style.Stroke (size / zoom) color
+
     else
         Style.Stroke (size / zoom) (moreTransparent color)
 
@@ -273,6 +274,7 @@ fillStyle : Color -> Bool -> Style.Fill
 fillStyle color highlight =
     if highlight then
         Style.Fill (moreOpaque color)
+
     else
         Style.Fill color
 

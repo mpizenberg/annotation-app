@@ -18,12 +18,12 @@ import Annotation.Viewer as Viewer exposing (Viewer)
 import Data.AnnotatedImage as AnnotatedImage
     exposing
         ( AnnotatedImage
-        , Annotations(BBoxes, Outlines, Points, Polygons, Strokes)
+        , Annotations(..)
         , BBoxDrawings
         , OutlineDrawings
         , PointDrawings
         , PolygonDrawings
-        , Status(Loaded, Loading, LoadingError)
+        , Status(..)
         , StrokeDrawings
         )
 import Data.RawImage as RawImage exposing (RawImage)

@@ -30,13 +30,13 @@ import Data.RawImage as RawImage exposing (RawImage)
 import Element exposing (Element, el, text)
 import Element.Attributes exposing (center, fill, height)
 import Future.Color as Color exposing (Color)
+import Future.Lazy exposing (lazy, lazy2, lazy3)
 import Html.Attributes
 import Image exposing (Image)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
-import Svg.Lazy exposing (lazy, lazy2, lazy3)
 
 
 

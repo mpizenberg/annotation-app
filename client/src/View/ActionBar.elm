@@ -15,8 +15,8 @@ module View.ActionBar exposing
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element, el, empty)
 import Element.Attributes as Attributes exposing (fill, height, px, toAttr, vary, width)
+import Future.Lazy exposing (lazy, lazy2, lazy3)
 import Html.Attributes
-import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Packages.Button as Button
 import Packages.Device as Device exposing (Device)

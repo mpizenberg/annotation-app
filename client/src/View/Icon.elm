@@ -26,6 +26,7 @@ module View.Icon exposing
     , zoomOut
     )
 
+import Future.String as String
 import Html exposing (Html)
 import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (..)
@@ -33,7 +34,7 @@ import Svg.Attributes exposing (..)
 
 toHtml : Float -> List (Svg msg) -> Html msg
 toHtml size icon =
-    svg (width (toString size) :: height (toString size) :: defaultAttributes) icon
+    svg (width (String.fromFloat size) :: height (String.fromFloat size) :: defaultAttributes) icon
 
 
 defaultAttributes : List (Svg.Attribute msg)

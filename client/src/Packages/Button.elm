@@ -19,6 +19,7 @@ module Packages.Button exposing
 
 import Element exposing (Element, el)
 import Element.Attributes as Attributes exposing (center, paddingLeft, paddingRight, px, verticalCenter)
+import Future.String as String
 import Html
 import Html.Attributes
 import Html.Events
@@ -202,7 +203,7 @@ dynamicListOf itemDecoder =
                 |> decodeAll
 
         decodeOne n =
-            Decode.field (toString n) itemDecoder
+            Decode.field (String.fromInt n) itemDecoder
     in
     Decode.field "length" Decode.int
         |> Decode.andThen decodeN

@@ -296,7 +296,7 @@ update msg model =
                         img =
                             Zipper.getC imgs
 
-                        ( newImg, newDragState, hasAnnotations, hasChanged ) =
+                        { newAnnotatedImage, newDragState, hasAnnotations, hasChanged } =
                             AnnotatedImage.updateWithPointer model.viewer.zoom classes.selected scaledPointerMsg model.dragState img
 
                         viewParameters =
@@ -305,7 +305,7 @@ update msg model =
                     if hasChanged then
                         ( { model
                             | dragState = newDragState
-                            , state = AllProvided config classes tools (Zipper.setC newImg imgs)
+                            , state = AllProvided config classes tools (Zipper.setC newAnnotatedImage imgs)
                             , viewParameters = viewParameters
                           }
                             |> updateAnnotationsWithImage

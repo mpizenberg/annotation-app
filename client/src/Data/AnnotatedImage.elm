@@ -5,6 +5,7 @@
 
 module Data.AnnotatedImage exposing
     ( AnnotatedImage
+    , AnnotatedImageUpdate
     , Annotations(..)
     , BBoxDrawings
     , OneOutlineDrawing(..)
@@ -175,12 +176,32 @@ removeLatest annotations =
 -- Pointer stuff
 
 
-addAnnotationsIndicator : (List a -> Annotations) -> ( List a, b, c ) -> ( Annotations, b, Bool, c )
+addAnnotationsIndicator : (List a -> Annotations) -> ( List a, Pointer.DragState, Bool ) -> PointerUpdate
 addAnnotationsIndicator type_ ( list, dragState, hasChanged ) =
-    ( type_ list, dragState, not (List.isEmpty list), hasChanged )
+    { newAnnotations = type_ list
+    , newDragState = dragState
+    , hasAnnotations = not (List.isEmpty list)
+    , hasChanged = hasChanged
+    }
 
 
-updateWithPointer : Float -> Int -> Pointer.Msg -> Pointer.DragState -> AnnotatedImage -> ( AnnotatedImage, Pointer.DragState, Bool, Bool )
+type alias PointerUpdate =
+    { newAnnotations : Annotations
+    , newDragState : Pointer.DragState
+    , hasAnnotations : Bool
+    , hasChanged : Bool
+    }
+
+
+type alias AnnotatedImageUpdate =
+    { newAnnotatedImage : AnnotatedImage
+    , newDragState : Pointer.DragState
+    , hasAnnotations : Bool
+    , hasChanged : Bool
+    }
+
+
+updateWithPointer : Float -> Int -> Pointer.Msg -> Pointer.DragState -> AnnotatedImage -> AnnotatedImageUpdate
 updateWithPointer zoom selectedClassId pointerMsg dragState ({ id, name, status } as annotatedImage) =
     case status of
         Loaded img zipper ->
@@ -188,7 +209,7 @@ updateWithPointer zoom selectedClassId pointerMsg dragState ({ id, name, status 
                 { toolId, annotations } =
                     Zipper.getC zipper
 
-                ( newAnnotations, newDragState, hasAnnotations, hasChanged ) =
+                { newAnnotations, newDragState, hasAnnotations, hasChanged } =
                     case annotations of
                         Points drawings ->
                             updatePoints selectedClassId pointerMsg dragState drawings
@@ -213,10 +234,18 @@ updateWithPointer zoom selectedClassId pointerMsg dragState ({ id, name, status 
                 newStatus =
                     Loaded img (Zipper.setC { toolId = toolId, annotations = newAnnotations } zipper)
             in
-            ( { annotatedImage | status = newStatus }, newDragState, hasAnnotations, hasChanged )
+            { newAnnotatedImage = { annotatedImage | status = newStatus }
+            , newDragState = newDragState
+            , hasAnnotations = hasAnnotations
+            , hasChanged = hasChanged
+            }
 
         _ ->
-            ( annotatedImage, dragState, False, False )
+            { newAnnotatedImage = annotatedImage
+            , newDragState = dragState
+            , hasAnnotations = False
+            , hasChanged = False
+            }
 
 
 updatePoints : Int -> Pointer.Msg -> Pointer.DragState -> PointDrawings -> ( PointDrawings, Pointer.DragState, Bool )

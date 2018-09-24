@@ -15,7 +15,6 @@ import Annotation.Geometry.Stroke as Stroke
 import Annotation.Style as Style
 import Annotation.Svg as Svg
 import Annotation.Viewer as Viewer exposing (Viewer)
-import Color exposing (Color)
 import Data.AnnotatedImage as AnnotatedImage
     exposing
         ( AnnotatedImage
@@ -30,6 +29,7 @@ import Data.AnnotatedImage as AnnotatedImage
 import Data.RawImage as RawImage exposing (RawImage)
 import Element exposing (Element, el, text)
 import Element.Attributes exposing (center, fill, height)
+import Future.Color as Color exposing (Color)
 import Html.Attributes
 import Image exposing (Image)
 import Packages.Zipper as Zipper exposing (Zipper)
@@ -264,40 +264,26 @@ viewPolygons zoom fillColor selectedClassId drawings =
 lineStyle : Float -> Color -> Float -> Bool -> Style.Line
 lineStyle zoom color size highlight =
     if highlight then
-        Style.Stroke (size / zoom) color
+        Style.Stroke (size / zoom) (Color.toOld color)
 
     else
-        Style.Stroke (size / zoom) (moreTransparent color)
+        Style.Stroke (size / zoom) (Color.toOld (moreTransparent color))
 
 
 fillStyle : Color -> Bool -> Style.Fill
 fillStyle color highlight =
     if highlight then
-        Style.Fill (moreOpaque color)
+        Style.Fill (Color.toOld (moreOpaque color))
 
     else
-        Style.Fill color
+        Style.Fill (Color.toOld color)
 
 
 moreOpaque : Color -> Color
 moreOpaque color =
-    let
-        rgba =
-            Color.toRgb color
-
-        newAlpha =
-            0.25 * (3 + rgba.alpha)
-    in
-    Color.rgba rgba.red rgba.green rgba.blue newAlpha
+    { color | alpha = 0.25 * (3.0 + color.alpha) }
 
 
 moreTransparent : Color -> Color
 moreTransparent color =
-    let
-        rgba =
-            Color.toRgb color
-
-        newAlpha =
-            0.25 * rgba.alpha
-    in
-    Color.rgba rgba.red rgba.green rgba.blue newAlpha
+    { color | alpha = 0.25 * color.alpha }

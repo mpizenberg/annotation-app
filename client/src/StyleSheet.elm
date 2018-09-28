@@ -6,7 +6,6 @@
 module StyleSheet exposing
     ( ButtonState(..)
     , ClassState(..)
-    , ColorVariations(..)
     , Style(..)
     , sheet
     )
@@ -38,11 +37,7 @@ type ClassState
     | NonSelectedClass
 
 
-type ColorVariations
-    = FromPalette Int
-
-
-sheet : StyleSheet Style ColorVariations
+sheet : StyleSheet Style variations
 sheet =
     Style.styleSheet
         [ Style.style None []
@@ -59,7 +54,7 @@ sheet =
         , Style.style (Button Selected) <|
             StyleColor.background Color.grey
                 :: preventCommon
-        , Style.style ToolIcon colorVariations
+        , Style.style ToolIcon [ StyleColor.text Color.black ]
 
         -- Text buttons
         , Style.style (TextButton Disabled) <|
@@ -94,17 +89,6 @@ classesCommonStyles : List (Style.Property class var)
 classesCommonStyles =
     Font.size 30
         :: preventCommon
-
-
-colorVariations : List (Style.Property class ColorVariations)
-colorVariations =
-    [ Style.variation (FromPalette 0) [ StyleColor.text Color.black ]
-    , Style.variation (FromPalette 1) [ StyleColor.text Color.darkBlue ]
-    , Style.variation (FromPalette 2) [ StyleColor.text Color.blue ]
-    , Style.variation (FromPalette 3) [ StyleColor.text Color.turquoise ]
-    , Style.variation (FromPalette 4) [ StyleColor.text Color.green ]
-    , Style.variation (FromPalette 5) [ StyleColor.text Color.beige ]
-    ]
 
 
 preventCommon : List (Style.Property class variation)

@@ -4,8 +4,7 @@
 
 
 module Data.Annotation exposing
-    ( Info
-    , Type(..)
+    ( Type(..)
     , encodeBBox
     , encodeOutline
     , encodePoint
@@ -36,12 +35,6 @@ type Type
     | Stroke
     | Outline
     | Polygon
-
-
-type alias Info =
-    { type_ : Type
-    , variant : Maybe String
-    }
 
 
 

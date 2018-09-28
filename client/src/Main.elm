@@ -227,7 +227,7 @@ update msg model =
             in
             { model | state = AllProvided config classes tools newImages }
                 |> fitImage
-                |> update (SelectTool (.id <| Zipper.getC tools))
+                |> update (SelectTool (Tool.toId <| Zipper.getC tools))
 
         ( SelectClass id, ConfigProvided config classes tools ) ->
             ( { model | state = ConfigProvided config { classes | selected = id } tools }
@@ -241,12 +241,12 @@ update msg model =
             )
 
         ( SelectTool toolId, ConfigProvided config classes tools ) ->
-            ( { model | state = ConfigProvided config classes (Zipper.goTo .id toolId tools) }, Cmd.none )
+            ( { model | state = ConfigProvided config classes (Zipper.goTo Tool.toId toolId tools) }, Cmd.none )
 
         ( SelectTool toolId, AllProvided config classes tools imgs ) ->
             let
                 newTools =
-                    Zipper.goTo .id toolId tools
+                    Zipper.goTo Tool.toId toolId tools
 
                 newAnnotatedImages =
                     Zipper.updateC (AnnotatedImage.selectTool toolId) imgs
@@ -269,7 +269,7 @@ update msg model =
             )
 
         ( PointerMsg pointerMsg, AllProvided config classes tools imgs ) ->
-            case .type_ (Zipper.getC tools) of
+            case Zipper.getC tools of
                 Tool.Move ->
                     let
                         ( newViewer, newDragState, hasChanged ) =
@@ -521,7 +521,8 @@ decodeConfig configString =
     in
     ( config
     , { selected = selected, all = Config.classesFrom config.classes }
-    , Config.toolsFrom config.annotations
+    , Config.toolsZipperFromConfig config.tools
+        |> Maybe.withDefault (Debug.crash "refactor")
     )
 
 
@@ -619,15 +620,9 @@ updateMove pointerMsg dragState viewer =
 
 encode : Config -> List AnnotatedImage -> Value
 encode config images =
-    let
-        annotationsDict =
-            Config.annotationsInfoFrom config.annotations
-                |> List.indexedMap (\id ann -> ( id + 1, ann ))
-                |> Dict.fromList
-    in
     Encode.object
         [ ( "config", Config.encode config )
-        , ( "images", Encode.list <| List.map (AnnotatedImage.encode annotationsDict) images )
+        , ( "images", Encode.list <| List.map AnnotatedImage.encode images )
         ]
 
 

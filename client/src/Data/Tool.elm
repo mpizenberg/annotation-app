@@ -3,26 +3,168 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Data.Tool exposing (Tool, Type(..))
+module Data.Tool exposing
+    ( Tool(..)
+    , toString, fromString
+    , toId, fromId
+    , encode, decoder
+    )
 
--- TYPES #############################################################
+{-| Tools for the annotation application.
+
+@docs Tool
+
+@docs toString, fromString
+
+@docs toId, fromId
+
+@docs encode, decoder
+
+-}
+
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 
 
-type alias Tool =
-    { id : Int
-    , type_ : Type
-    , variant : Int
-    }
-
-
-type Type
+{-| -}
+type Tool
     = Move
     | Point
     | BBox
-    | Stroke
+    | Line
     | Outline
     | Polygon
 
 
 
--- UPDATE ############################################################
+-- From and to String description
+
+
+{-| -}
+toString : Tool -> String
+toString tool =
+    case tool of
+        Move ->
+            "move"
+
+        Point ->
+            "point"
+
+        BBox ->
+            "bbox"
+
+        Line ->
+            "line"
+
+        Outline ->
+            "outline"
+
+        Polygon ->
+            "polygon"
+
+
+{-| -}
+fromString : String -> Maybe Tool
+fromString string =
+    case string of
+        "move" ->
+            Just Move
+
+        "point" ->
+            Just Point
+
+        "bbox" ->
+            Just BBox
+
+        "line" ->
+            Just Line
+
+        "outline" ->
+            Just Outline
+
+        "polygon" ->
+            Just Polygon
+
+        _ ->
+            Nothing
+
+
+
+-- From and to Int id
+
+
+{-| -}
+toId : Tool -> Int
+toId tool =
+    case tool of
+        Move ->
+            0
+
+        Point ->
+            1
+
+        BBox ->
+            2
+
+        Line ->
+            3
+
+        Outline ->
+            4
+
+        Polygon ->
+            5
+
+
+{-| -}
+fromId : Int -> Maybe Tool
+fromId id =
+    case id of
+        0 ->
+            Just Move
+
+        1 ->
+            Just Point
+
+        2 ->
+            Just BBox
+
+        3 ->
+            Just Line
+
+        4 ->
+            Just Outline
+
+        5 ->
+            Just Polygon
+
+        _ ->
+            Nothing
+
+
+
+-- Encode / Decode
+
+
+{-| -}
+encode : Tool -> Value
+encode =
+    toString >> Encode.string
+
+
+{-| -}
+decoder : Decoder Tool
+decoder =
+    Decode.string
+        |> Decode.map fromString
+        |> Decode.andThen maybeDecoder
+
+
+maybeDecoder : Maybe Tool -> Decoder Tool
+maybeDecoder maybeTool =
+    case maybeTool of
+        Nothing ->
+            Decode.fail "Error while decoding tool"
+
+        Just tool ->
+            Decode.succeed tool

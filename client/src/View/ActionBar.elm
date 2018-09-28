@@ -22,7 +22,7 @@ import Packages.Button as Button
 import Packages.Device as Device exposing (Device)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
-import StyleSheet as Style exposing (ColorVariations, Style)
+import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
 import View.Icon as Icon
 
@@ -71,7 +71,7 @@ responsiveHeight device =
             min 72 (device.size.width // 16)
 
 
-emptyView : Parameters msg -> Element Style ColorVariations msg
+emptyView : Parameters msg -> Element Style variations msg
 emptyView params =
     let
         ( w, h ) =
@@ -87,7 +87,7 @@ emptyView params =
         |> Element.row Style.None []
 
 
-viewImages : Parameters msg -> Element Style ColorVariations msg
+viewImages : Parameters msg -> Element Style variations msg
 viewImages params =
     let
         ( w, h ) =
@@ -106,7 +106,7 @@ viewImages params =
         |> Element.row Style.None []
 
 
-viewConfig : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
+viewConfig : Parameters msg -> Zipper Tool -> Element Style variations msg
 viewConfig params tools =
     let
         ( w, h ) =
@@ -133,7 +133,7 @@ viewConfig params tools =
         |> Element.row Style.None []
 
 
-viewAll : Parameters msg -> Zipper Tool -> Element Style ColorVariations msg
+viewAll : Parameters msg -> Zipper Tool -> Element Style variations msg
 viewAll params tools =
     let
         ( w, h ) =
@@ -174,7 +174,7 @@ viewAll params tools =
         |> Element.row Style.None []
 
 
-datasetButton : (List { name : String, file : Value } -> msg) -> Float -> Element Style ColorVariations msg
+datasetButton : (List { name : String, file : Value } -> msg) -> Float -> Element Style variations msg
 datasetButton loadImagesMsg h =
     Button.loadMultipleFilesInput "Load images"
         { msgTagger = loadImagesMsg
@@ -186,7 +186,7 @@ datasetButton loadImagesMsg h =
         }
 
 
-configButton : (Value -> msg) -> Float -> Element Style ColorVariations msg
+configButton : (Value -> msg) -> Float -> Element Style variations msg
 configButton loadConfigMsg h =
     Button.loadFileInput "Load JSON config file"
         { msgTagger = loadConfigMsg
@@ -198,7 +198,7 @@ configButton loadConfigMsg h =
         }
 
 
-toolButton : (Int -> msg) -> Float -> Bool -> Tool -> Element Style ColorVariations msg
+toolButton : (Int -> msg) -> Float -> Bool -> Tool -> Element Style variations msg
 toolButton selectToolMsg size isSelected tool =
     Button.view
         { actionability =
@@ -208,9 +208,9 @@ toolButton selectToolMsg size isSelected tool =
             else
                 Button.Abled Button.Inactive
         , action =
-            Pointer.onDown (always <| selectToolMsg tool.id)
+            Pointer.onDown (always <| selectToolMsg (Tool.toId tool))
                 |> Attributes.toAttr
-        , innerElement = toolIcon (0.6 * size) tool.variant tool.type_
+        , innerElement = toolIcon (0.6 * size) tool
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle =
@@ -223,12 +223,12 @@ toolButton selectToolMsg size isSelected tool =
         }
 
 
-disabledToolButton : Float -> Tool -> Element Style ColorVariations msg
+disabledToolButton : Float -> Tool -> Element Style variations msg
 disabledToolButton size tool =
     Button.view
         { actionability = Button.Disabled
         , action = Attributes.class ""
-        , innerElement = toolIcon (0.6 * size) tool.variant tool.type_
+        , innerElement = toolIcon (0.6 * size) tool
         , innerStyle = Style.None
         , size = ( size, size )
         , outerStyle = Style.Button Style.Disabled
@@ -236,11 +236,11 @@ disabledToolButton size tool =
         }
 
 
-toolIcon : Float -> Int -> Tool.Type -> Element Style ColorVariations msg
-toolIcon size variant type_ =
+toolIcon : Float -> Tool -> Element Style variations msg
+toolIcon size tool =
     let
         ( svgIcon, tooltipText ) =
-            case type_ of
+            case tool of
                 Tool.Move ->
                     ( Icon.move, "Move" )
 
@@ -250,7 +250,7 @@ toolIcon size variant type_ =
                 Tool.BBox ->
                     ( Icon.boundingBox, "Bounding box" )
 
-                Tool.Stroke ->
+                Tool.Line ->
                     ( Icon.stroke, "Stroke" )
 
                 Tool.Outline ->
@@ -261,10 +261,10 @@ toolIcon size variant type_ =
     in
     lazy2 Icon.toHtml size svgIcon
         |> Element.html
-        |> el Style.ToolIcon [ vary (Style.FromPalette variant) True, toAttr <| Html.Attributes.title tooltipText ]
+        |> el Style.ToolIcon [ toAttr <| Html.Attributes.title tooltipText ]
 
 
-actionButton : Float -> Bool -> msg -> String -> List (Svg msg) -> Element Style ColorVariations msg
+actionButton : Float -> Bool -> msg -> String -> List (Svg msg) -> Element Style variations msg
 actionButton size clickable sendMsg tooltipText innerSvg =
     Button.view
         { actionability =
@@ -287,7 +287,7 @@ actionButton size clickable sendMsg tooltipText innerSvg =
         }
 
 
-textButton : Float -> Bool -> msg -> String -> Element Style ColorVariations msg
+textButton : Float -> Bool -> msg -> String -> Element Style variations msg
 textButton height clickable sendMsg innerText =
     Button.viewText
         { actionability =

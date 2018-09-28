@@ -26,7 +26,7 @@ import Image exposing (Image)
 import Packages.Device as Device exposing (Device)
 import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
 import Packages.Zipper as Zipper exposing (Zipper)
-import StyleSheet as Style exposing (ColorVariations, Style)
+import StyleSheet as Style exposing (Style)
 import View.ActionBar as ActionBar
 import View.AnnotationsArea as AnnotationsArea
 import View.ClassesSideBar as ClassesSideBar

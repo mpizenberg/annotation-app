@@ -33,7 +33,6 @@ import Data.Annotation as Annotation
 import Data.Pointer as Pointer
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
-import Dict exposing (Dict)
 import Image exposing (Image)
 import Json.Encode as Encode exposing (Value)
 import Packages.Zipper as Zipper exposing (Zipper)
@@ -527,21 +526,21 @@ resetWithTools tools image =
 annotationsFromTools : Zipper Tool -> Zipper { toolId : Int, annotations : Annotations }
 annotationsFromTools tools =
     let
-        filteredTools =
+        annotationTools =
             Zipper.getAll tools
-                |> List.filter (\tool -> tool.type_ /= Tool.Move)
+                |> List.filter (\tool -> tool /= Tool.Move)
 
         fromTool tool =
             let
                 emptyAnnotations =
-                    case tool.type_ of
+                    case tool of
                         Tool.Point ->
                             Points []
 
                         Tool.BBox ->
                             BBoxes []
 
-                        Tool.Stroke ->
+                        Tool.Line ->
                             Strokes []
 
                         Tool.Outline ->
@@ -553,9 +552,9 @@ annotationsFromTools tools =
                         _ ->
                             Debug.crash "A tool should only be of some kinds"
             in
-            { toolId = tool.id, annotations = emptyAnnotations }
+            { toolId = Tool.toId tool, annotations = emptyAnnotations }
     in
-    case filteredTools of
+    case annotationTools of
         [] ->
             Debug.crash "Config should always provide at least one annotation tool"
 
@@ -567,48 +566,38 @@ annotationsFromTools tools =
 -- Encoders
 
 
-encode : Dict Int Annotation.Info -> AnnotatedImage -> Value
-encode annotationsDict annotatedImage =
+encode : AnnotatedImage -> Value
+encode annotatedImage =
     Encode.object
         [ ( "image", Encode.string annotatedImage.name )
-        , ( "annotations", encodeStatus annotationsDict annotatedImage.status )
+        , ( "annotations", encodeStatus annotatedImage.status )
         ]
 
 
-encodeStatus : Dict Int Annotation.Info -> Status -> Value
-encodeStatus annotationsDict status =
+encodeStatus : Status -> Value
+encodeStatus status =
     case status of
         Loaded _ zipper ->
             Zipper.getAll zipper
-                |> List.map (encodePairIdAnnotations annotationsDict)
+                |> List.map encodePairIdAnnotations
                 |> Encode.list
 
         _ ->
             Encode.null
 
 
-encodePairIdAnnotations : Dict Int Annotation.Info -> { toolId : Int, annotations : Annotations } -> Value
-encodePairIdAnnotations annotationsDict { toolId, annotations } =
+encodePairIdAnnotations : { toolId : Int, annotations : Annotations } -> Value
+encodePairIdAnnotations { toolId, annotations } =
     let
-        encodeItem : Annotation.Info -> Value
-        encodeItem { type_, variant } =
-            case variant of
-                Nothing ->
-                    Encode.object
-                        [ ( "type", Encode.string <| Annotation.typeToString type_ )
-                        , ( "annotations", encodeAnnotations annotations )
-                        ]
-
-                Just variantName ->
-                    Encode.object
-                        [ ( "type", Encode.string <| Annotation.typeToString type_ )
-                        , ( "variant", Encode.string variantName )
-                        , ( "annotations", encodeAnnotations annotations )
-                        ]
+        toolString =
+            Tool.fromId toolId
+                |> Maybe.map Tool.toString
+                |> Maybe.withDefault (Debug.crash "should not be possible")
     in
-    Dict.get toolId annotationsDict
-        |> Maybe.map encodeItem
-        |> Maybe.withDefault Encode.null
+    Encode.object
+        [ ( "type", Encode.string toolString )
+        , ( "annotations", encodeAnnotations annotations )
+        ]
 
 
 encodeAnnotations : Annotations -> Value

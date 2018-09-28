@@ -11,7 +11,6 @@ import Data.Config as Config exposing (Config)
 import Data.Pointer as Pointer
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
-import Dict as Dict exposing (Dict)
 import Future.Lazy exposing (lazy, lazy2, lazy3)
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -19,7 +18,7 @@ import Image exposing (Image)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Packages.Device as Device exposing (Device)
-import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
+import Packages.FileSystem as FileSystem exposing (FileSystem)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Ports
 import View.Main as View
@@ -56,7 +55,7 @@ type State
 
 type alias Classes =
     { selected : Int
-    , all : StaticTreeMap String
+    , all : FileSystem
     }
 
 
@@ -505,7 +504,7 @@ changeConfig configString state =
             ConfigProvided config classes tools
 
 
-decodeConfig : String -> ( Config, { selected : Int, all : StaticTreeMap String }, Zipper Tool )
+decodeConfig : String -> ( Config, Classes, Zipper Tool )
 decodeConfig configString =
     let
         config =

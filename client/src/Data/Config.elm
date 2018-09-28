@@ -22,9 +22,9 @@ module Data.Config exposing
 import Data.Tool as Tool exposing (Tool)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Packages.StaticTreeMap as StaticTreeMap exposing (StaticTreeMap)
+import Packages.FileSystem as FileSystem exposing (FileSystem)
 import Packages.Zipper as Zipper exposing (Zipper)
-import Tree exposing (Tree)
+import Tree.Zipper
 
 
 
@@ -95,27 +95,57 @@ pascal =
 
 
 {-| -}
-classesFrom : List Class -> StaticTreeMap String
+classesFrom : List Class -> FileSystem
 classesFrom classes =
     let
-        convertNode : Class -> ( String, List Class )
-        convertNode class =
-            case class of
-                Label name ->
-                    ( name, [] )
-
-                Category name subClasses ->
-                    ( name, subClasses )
+        root =
+            FileSystem.initWithFolder
+                { id = 0
+                , name = "root-category"
+                , open = True
+                , files = []
+                }
     in
-    Category "classes-root" classes
-        |> Tree.unfold convertNode
-        |> StaticTreeMap.from
+    classesFromAcc classes ( 1, root )
+        |> Tuple.second
+
+
+classesFromAcc : List Class -> ( Int, FileSystem ) -> ( Int, FileSystem )
+classesFromAcc classes ( count, fileSystem ) =
+    List.foldr accumClass ( count, fileSystem ) classes
+
+
+accumClass : Class -> ( Int, FileSystem ) -> ( Int, FileSystem )
+accumClass class ( count, parentFileSystem ) =
+    case class of
+        Label name ->
+            ( count + 1, FileSystem.insertFile { id = count, name = name } parentFileSystem )
+
+        Category name classes ->
+            let
+                systemWithCategory =
+                    FileSystem.insertFolder
+                        { id = count
+                        , name = name
+                        , open = True
+                        , files = []
+                        }
+                        parentFileSystem
+
+                subsystem =
+                    Tree.Zipper.firstChild systemWithCategory
+                        |> Maybe.withDefault systemWithCategory
+
+                ( newCount, newSubsystem ) =
+                    classesFromAcc classes ( count + 1, subsystem )
+            in
+            ( newCount, newSubsystem |> Tree.Zipper.parent |> Maybe.withDefault parentFileSystem )
 
 
 {-| -}
 toolsZipperFromConfig : List Tool -> Maybe (Zipper Tool)
 toolsZipperFromConfig tools =
-    Nothing
+    Debug.crash "TODO toolsZipperFromConfig"
 
 
 

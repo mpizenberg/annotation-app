@@ -86,6 +86,9 @@ subFold targetKey zipper =
                 subFold targetKey previousSibling
 
 
+{-| If the focused tree has children, fold the tree and remove children.
+Else just unfold the focused label (makes no sense to have a folded leaf).
+-}
 purgeZipper : StaticTreeMapZipper a -> StaticTreeMapZipper a
 purgeZipper zipper =
     case Zipper.children zipper of
@@ -97,6 +100,10 @@ purgeZipper zipper =
                 |> Zipper.mapTree (Tree.replaceChildren [])
 
 
+{-| If there is a previous sibling, move to previous Sibling, purge it of its children
+and repeat the process on the previous sibling.
+Else repeat the process on parent if it exists
+-}
 purgePreviousSiblings : StaticTreeMapZipper a -> Maybe (StaticTreeMapZipper a)
 purgePreviousSiblings zipper =
     case Zipper.previousSibling zipper of

@@ -29,7 +29,7 @@ main : Program Flags Model Msg
 main =
     Html.programWithFlags
         { init = init
-        , view = lazy view
+        , view = \_ -> Html.text "Work in progress"
         , update = update
         , subscriptions = subscriptions
         }
@@ -178,22 +178,23 @@ importFlagsImages images =
                 |> ImagesProvided
 
 
-view : Model -> Html Msg
-view model =
-    Html.div [ Attributes.style [ ( "height", "100%" ) ] ]
-        [ case model.state of
-            NothingProvided ->
-                lazy View.viewNothing model.viewParameters
 
-            ConfigProvided config classes tools ->
-                lazy3 View.viewConfig model.viewParameters tools classes
-
-            ImagesProvided images ->
-                lazy3 View.viewImages model.viewParameters model.viewer images
-
-            AllProvided config classes tools images ->
-                View.viewAll model.viewParameters tools model.viewer classes images
-        ]
+-- view : Model -> Html Msg
+-- view model =
+--     Html.div [ Attributes.style [ ( "height", "100%" ) ] ]
+--         [ case model.state of
+--             NothingProvided ->
+--                 lazy View.viewNothing model.viewParameters
+--
+--             ConfigProvided config classes tools ->
+--                 lazy3 View.viewConfig model.viewParameters tools classes
+--
+--             ImagesProvided images ->
+--                 lazy3 View.viewImages model.viewParameters model.viewer images
+--
+--             AllProvided config classes tools images ->
+--                 View.viewAll model.viewParameters tools model.viewer classes images
+--         ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

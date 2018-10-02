@@ -35,12 +35,15 @@ type alias AnnotatedImage =
 type Status
     = Loading
     | Loaded Image
-    | LoadedWithAnnotations Image (Zipper { id : Int, annotation : Annotation ClassId })
+    | LoadedWithAnnotations Image (Zipper AnnotationWithId)
     | LoadingError String
 
 
-type alias ClassId =
-    Int
+type alias AnnotationWithId =
+    { id : Int
+    , classId : Int
+    , annotation : Annotation
+    }
 
 
 
@@ -67,8 +70,8 @@ hasAnnotations annotatedImage =
             False
 
 
-focusUpdate : (Annotation ClassId -> Annotation ClassId) -> AnnotatedImage -> AnnotatedImage
-focusUpdate f annotatedImage =
+updateCurrentWith : (Annotation -> Annotation) -> AnnotatedImage -> AnnotatedImage
+updateCurrentWith f annotatedImage =
     case annotatedImage.status of
         LoadedWithAnnotations img zipper ->
             let
@@ -81,7 +84,7 @@ focusUpdate f annotatedImage =
             annotatedImage
 
 
-updateAnnotation : (Annotation a -> Annotation a) -> { record | annotation : Annotation a } -> { record | annotation : Annotation a }
+updateAnnotation : (Annotation -> Annotation) -> { record | annotation : Annotation } -> { record | annotation : Annotation }
 updateAnnotation f record =
     { record | annotation = f record.annotation }
 
@@ -139,9 +142,15 @@ encodeStatus : Status -> Value
 encodeStatus status =
     case status of
         LoadedWithAnnotations image zipper ->
-            Zipper.getAll zipper
-                |> List.map .annotation
-                |> Encode.list (Annotation.encode Encode.int)
+            Encode.list encodeAnnotationWithId (Zipper.getAll zipper)
 
         _ ->
             Encode.null
+
+
+encodeAnnotationWithId : AnnotationWithId -> Value
+encodeAnnotationWithId { id, classId, annotation } =
+    Encode.object
+        [ ( "classId", Encode.int classId )
+        , ( "annotation", Annotation.encode annotation )
+        ]

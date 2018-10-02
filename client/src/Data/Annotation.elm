@@ -19,40 +19,40 @@ import Json.Encode as Encode exposing (Value)
 -- TYPES #############################################################
 
 
-type Annotation a
-    = Point Point.Point a
-    | BBox Rectangle.Rectangle a
-    | Line Line.Line a
-    | UnfinishedOutline Line.Line a
-    | Outline Line.Line a
-    | UnfinishedPolygon Line.Line a
-    | Polygon Line.Line a
+type Annotation
+    = Point Point.Point
+    | BBox Rectangle.Rectangle
+    | Line Line.Line
+    | UnfinishedOutline Line.Line
+    | Outline Line.Line
+    | UnfinishedPolygon Line.Line
+    | Polygon Line.Line
 
 
 
 -- UPDATE ############################################################
 
 
-moveUpdate : Pointer.Msg -> Pointer.DragState -> Annotation a -> Annotation a
+moveUpdate : Pointer.Msg -> Pointer.DragState -> Annotation -> Annotation
 moveUpdate pointerMsg dragState annotation =
     case ( annotation, pointerMsg, dragState ) of
-        ( Point point a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
-            Point (Point.fromCoordinates coordinates) a
+        ( Point point, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            Point (Point.fromCoordinates coordinates)
 
-        ( BBox rect a, Pointer.MoveAt coordinates, Pointer.DraggingFrom corner ) ->
-            BBox (createBBox coordinates corner) a
+        ( BBox rect, Pointer.MoveAt coordinates, Pointer.DraggingFrom corner ) ->
+            BBox (createBBox coordinates corner)
 
-        ( Line line a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
-            Line (prependPointToLine coordinates line) a
+        ( Line line, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            Line (prependPointToLine coordinates line)
 
-        ( UnfinishedOutline line a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
-            UnfinishedOutline (prependPointToLine coordinates line) a
+        ( UnfinishedOutline line, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            UnfinishedOutline (prependPointToLine coordinates line)
 
-        ( UnfinishedPolygon line a, Pointer.DownAt coordinates, Pointer.NoDrag ) ->
-            UnfinishedPolygon (prependPointToLine coordinates line) a
+        ( UnfinishedPolygon line, Pointer.DownAt coordinates, Pointer.NoDrag ) ->
+            UnfinishedPolygon (prependPointToLine coordinates line)
 
-        ( UnfinishedPolygon (_ :: line) a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
-            UnfinishedPolygon (prependPointToLine coordinates line) a
+        ( UnfinishedPolygon (_ :: line), Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            UnfinishedPolygon (prependPointToLine coordinates line)
 
         _ ->
             Debug.todo "update annotation"
@@ -72,54 +72,47 @@ prependPointToLine coordinates =
 -- ENCODE ############################################################
 
 
-encode : (a -> Value) -> Annotation a -> Value
-encode encodeClass annotation =
+encode : Annotation -> Value
+encode annotation =
     case annotation of
-        Point point a ->
+        Point point ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "point" )
+                [ ( "type", Encode.string "point" )
                 , ( "data", Point.encode point )
                 ]
 
-        BBox rectangle a ->
+        BBox rectangle ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "bbox" )
+                [ ( "type", Encode.string "bbox" )
                 , ( "data", Rectangle.encode rectangle )
                 ]
 
-        Line line a ->
+        Line line ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "line" )
+                [ ( "type", Encode.string "line" )
                 , ( "data", Line.encode line )
                 ]
 
-        UnfinishedOutline line a ->
+        UnfinishedOutline line ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "unfinished-outline" )
+                [ ( "type", Encode.string "unfinished-outline" )
                 , ( "data", Line.encode line )
                 ]
 
-        Outline line a ->
+        Outline line ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "outline" )
+                [ ( "type", Encode.string "outline" )
                 , ( "data", Line.encode line )
                 ]
 
-        UnfinishedPolygon line a ->
+        UnfinishedPolygon line ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "unfinished-polygon" )
+                [ ( "type", Encode.string "unfinished-polygon" )
                 , ( "data", Line.encode line )
                 ]
 
-        Polygon line a ->
+        Polygon line ->
             Encode.object
-                [ ( "class", encodeClass a )
-                , ( "type", Encode.string "polygon" )
+                [ ( "type", Encode.string "polygon" )
                 , ( "data", Line.encode line )
                 ]

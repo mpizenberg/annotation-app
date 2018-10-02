@@ -131,21 +131,20 @@ fromRaw tools { id, name, status } =
 
 
 encode : AnnotatedImage -> Value
-encode annotatedImage =
-    Encode.object
-        [ ( "image", Encode.string annotatedImage.name )
-        , ( "annotations", encodeStatus annotatedImage.status )
-        ]
-
-
-encodeStatus : Status -> Value
-encodeStatus status =
+encode { name, status } =
     case status of
-        LoadedWithAnnotations image zipper ->
-            Encode.list encodeAnnotationWithId (Zipper.getAll zipper)
+        LoadedWithAnnotations img zipper ->
+            Encode.object
+                [ ( "image", Encode.string name )
+                , ( "size", Encode.list Encode.int [ img.width, img.height ] )
+                , ( "annotations", Encode.list encodeAnnotationWithId (Zipper.getAll zipper) )
+                ]
 
         _ ->
-            Encode.null
+            Encode.object
+                [ ( "image", Encode.string name )
+                , ( "annotations", Encode.null )
+                ]
 
 
 encodeAnnotationWithId : AnnotationWithId -> Value

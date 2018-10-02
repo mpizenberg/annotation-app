@@ -5,28 +5,27 @@
 
 module Main exposing (main)
 
-import Annotation.Viewer as Viewer exposing (Viewer)
+import Browser
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.Config as Config exposing (Config)
+import Data.Image exposing (Image)
 import Data.Pointer as Pointer
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
-import Future.Lazy exposing (lazy, lazy2, lazy3)
 import Html exposing (Html)
 import Html.Attributes as Attributes
-import Image exposing (Image)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Packages.Device as Device exposing (Device)
 import Packages.FileSystem as FileSystem exposing (FileSystem)
 import Packages.Zipper as Zipper exposing (Zipper)
 import Ports
-import View.Main as View
+import Viewer exposing (Viewer)
 
 
 main : Program Flags Model Msg
 main =
-    Html.programWithFlags
+    Browser.element
         { init = init
         , view = \_ -> Html.text "Work in progress"
         , update = update
@@ -39,8 +38,7 @@ main =
 
 
 type alias Model =
-    { viewParameters : View.Parameters Msg
-    , state : State
+    { state : State
     , viewer : Viewer
     , dragState : Pointer.DragState
     }
@@ -50,7 +48,7 @@ type State
     = NothingProvided
     | ConfigProvided Config Classes (Zipper Tool)
     | ImagesProvided (Zipper RawImage)
-    | AllProvided Config Classes (Zipper Tool) (Zipper AnnotatedImage)
+    | AllProvided Config Classes (Zipper Tool) (Zipper { id : Int, annotatedImage : AnnotatedImage })
 
 
 type alias Classes =
@@ -81,7 +79,7 @@ type Msg
 type ZoomMsg
     = ZoomIn
     | ZoomOut
-    | ZoomFit
+    | ZoomFit ( Float, Float )
 
 
 type alias Flags =
@@ -102,38 +100,38 @@ init flags =
         device =
             Device.classify flags.deviceSize
 
-        layout =
-            View.pageLayout device
-
         viewer =
-            Viewer.setSize layout.viewerSize Viewer.default
+            Viewer.withSize ( 400, 200 )
 
-        viewParameters =
-            { device = device
-            , selectClassMsg = SelectClass
-            , selectImageMsg = SelectImage
-            , actionBar =
-                { size = layout.actionBarSize
-                , hasAnnotations = False
-                , mturkMode = flags.mturkMode
-                , removeLatestAnnotationMsg = RemoveLatestAnnotation
-                , selectToolMsg = SelectTool
-                , zoomInMsg = ZoomMsg ZoomIn
-                , zoomOutMsg = ZoomMsg ZoomOut
-                , zoomFitMsg = ZoomMsg ZoomFit
-                , loadConfigMsg = LoadConfig
-                , loadImagesMsg = LoadImages
-                , exportMsg = Export
-                }
-            , annotationsArea =
-                { size = layout.viewerSize
-                , annotationsWithImage = Nothing
-                , pointerDownMsg = PointerMsg << Pointer.DownAt
-                , pointerMoveMsg = PointerMsg << Pointer.MoveAt
-                , pointerUpMsg = PointerMsg << Pointer.UpAt
-                }
-            }
-
+        -- layout =
+        --     View.pageLayout device
+        --
+        -- viewParameters =
+        --     { device = device
+        --     , selectClassMsg = SelectClass
+        --     , selectImageMsg = SelectImage
+        --     , actionBar =
+        --         { size = layout.actionBarSize
+        --         , hasAnnotations = False
+        --         , mturkMode = flags.mturkMode
+        --         , removeLatestAnnotationMsg = RemoveLatestAnnotation
+        --         , selectToolMsg = SelectTool
+        --         , zoomInMsg = ZoomMsg ZoomIn
+        --         , zoomOutMsg = ZoomMsg ZoomOut
+        --         , zoomFitMsg = ZoomMsg ZoomFit
+        --         , loadConfigMsg = LoadConfig
+        --         , loadImagesMsg = LoadImages
+        --         , exportMsg = Export
+        --         }
+        --     , annotationsArea =
+        --         { size = layout.viewerSize
+        --         , annotationsWithImage = Nothing
+        --         , pointerDownMsg = PointerMsg << Pointer.DownAt
+        --         , pointerMoveMsg = PointerMsg << Pointer.MoveAt
+        --         , pointerUpMsg = PointerMsg << Pointer.UpAt
+        --         }
+        --     }
+        --
         state =
             case flags.config of
                 Nothing ->
@@ -144,13 +142,10 @@ init flags =
                         |> changeConfig configString
 
         model =
-            updateAnnotationsWithImage <|
-                fitImage <|
-                    { viewParameters = viewParameters
-                    , state = state
-                    , viewer = viewer
-                    , dragState = Pointer.NoDrag
-                    }
+            { state = state
+            , viewer = viewer
+            , dragState = Pointer.NoDrag
+            }
     in
     ( model, Cmd.none )
 
@@ -199,23 +194,21 @@ importFlagsImages images =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model.state ) of
-        ( WindowResizes size, _ ) ->
-            let
-                ( viewParameters, viewerSize ) =
-                    View.updateLayout size model.viewParameters
-
-                viewer =
-                    Viewer.setSize viewerSize model.viewer
-            in
-            ( { model | viewParameters = viewParameters, viewer = viewer }
-                |> fitImage
-                |> updateAnnotationsWithImage
-            , Cmd.none
-            )
-
+        -- ( WindowResizes size, _ ) ->
+        --     let
+        --         ( viewParameters, viewerSize ) =
+        --             View.updateLayout size model.viewParameters
+        --
+        --         viewer =
+        --             Viewer.setSize viewerSize model.viewer
+        --     in
+        --     ( { model | viewParameters = viewParameters, viewer = viewer }
+        --         |> fitImage
+        --         |> updateAnnotationsWithImage
+        --     , Cmd.none
+        --     )
         ( SelectImage imageId, ImagesProvided rawImages ) ->
             ( { model | state = ImagesProvided (Zipper.goTo .id imageId rawImages) }
-                |> fitImage
             , Cmd.none
             )
 
@@ -225,7 +218,6 @@ update msg model =
                     Zipper.goTo .id imageId images
             in
             { model | state = AllProvided config classes tools newImages }
-                |> fitImage
                 |> update (SelectTool (Tool.toId <| Zipper.getC tools))
 
         ( SelectClass id, ConfigProvided config classes tools ) ->
@@ -235,7 +227,6 @@ update msg model =
 
         ( SelectClass id, AllProvided config { selected, all } tools imgs ) ->
             ( { model | state = AllProvided config { selected = id, all = all } tools imgs }
-                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
@@ -247,23 +238,10 @@ update msg model =
                 newTools =
                     Zipper.goTo Tool.toId toolId tools
 
-                newAnnotatedImages =
-                    Zipper.updateC (AnnotatedImage.selectTool toolId) imgs
-
                 newState =
-                    AllProvided config classes newTools newAnnotatedImages
-
-                hasAnnotations =
-                    AnnotatedImage.hasAnnotations (Zipper.getC newAnnotatedImages)
-
-                viewParameters =
-                    View.markHasAnnotation hasAnnotations model.viewParameters
+                    AllProvided config classes newTools imgs
             in
-            ( { model
-                | state = newState
-                , viewParameters = viewParameters
-              }
-                |> updateAnnotationsWithImage
+            ( { model | state = newState }
             , Cmd.none
             )
 
@@ -285,55 +263,21 @@ update msg model =
                         scaledPointerMsg =
                             case pointerMsg of
                                 Pointer.DownAt pos ->
-                                    Pointer.DownAt (Viewer.positionIn model.viewer pos)
+                                    Pointer.DownAt (Viewer.coordinatesAt pos model.viewer)
 
                                 Pointer.MoveAt pos ->
-                                    Pointer.MoveAt (Viewer.positionIn model.viewer pos)
+                                    Pointer.MoveAt (Viewer.coordinatesAt pos model.viewer)
 
                                 Pointer.UpAt pos ->
-                                    Pointer.UpAt (Viewer.positionIn model.viewer pos)
-
-                        img =
-                            Zipper.getC imgs
-
-                        { newAnnotatedImage, newDragState, hasAnnotations, hasChanged } =
-                            AnnotatedImage.updateWithPointer model.viewer.zoom classes.selected scaledPointerMsg model.dragState img
-
-                        viewParameters =
-                            View.markHasAnnotation hasAnnotations model.viewParameters
+                                    Pointer.UpAt (Viewer.coordinatesAt pos model.viewer)
                     in
-                    if hasChanged then
-                        ( { model
-                            | dragState = newDragState
-                            , state = AllProvided config classes tools (Zipper.setC newAnnotatedImage imgs)
-                            , viewParameters = viewParameters
-                          }
-                            |> updateAnnotationsWithImage
-                        , Cmd.none
-                        )
-
-                    else
-                        ( model, Cmd.none )
+                    ( Debug.todo "update pointer", Cmd.none )
 
         ( ZoomMsg zoomMsg, _ ) ->
-            ( updateZoom zoomMsg model |> updateAnnotationsWithImage, Cmd.none )
+            ( updateZoom zoomMsg model, Cmd.none )
 
         ( RemoveLatestAnnotation, AllProvided config classes tools imgs ) ->
-            let
-                newZipper =
-                    Zipper.updateC AnnotatedImage.removeLatestAnnotation imgs
-
-                newState =
-                    AllProvided config classes tools newZipper
-
-                hasAnnotations =
-                    AnnotatedImage.hasAnnotations (Zipper.getC newZipper)
-
-                viewParameters =
-                    View.markHasAnnotation hasAnnotations model.viewParameters
-            in
-            ( { model | state = newState, viewParameters = viewParameters }
-                |> updateAnnotationsWithImage
+            ( Debug.todo "remove annotation"
             , Cmd.none
             )
 
@@ -362,8 +306,7 @@ update msg model =
                         (AnnotatedImage.fromRaw tools firstImage)
                         (List.map (AnnotatedImage.fromRaw tools) otherImages)
             in
-            ( { model | state = AllProvided config classes tools annotatedImages }
-                |> updateAnnotationsWithImage
+            ( Debug.todo "LoadImages"
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
@@ -390,95 +333,29 @@ update msg model =
                 newAnnotatedImages =
                     List.map (AnnotatedImage.fromRaw tools) newImages
             in
-            ( { model | state = AllProvided config classes tools (Zipper.append newAnnotatedImages previousImages) }
-                |> updateAnnotationsWithImage
+            ( Debug.todo "LoadImages"
             , Cmd.batch cmds
             )
 
         ( ImageLoaded { id, url, width, height }, ImagesProvided images ) ->
-            let
-                img =
-                    Zipper.getC images
-
-                newStatus =
-                    RawImage.Loaded (Image url width height)
-            in
-            if id == img.id then
-                Zipper.setC { img | status = newStatus } images
-                    |> ImagesProvided
-                    |> (\state -> ( fitImage { model | state = state }, Cmd.none ))
-
-            else
-                Zipper.goTo .id id images
-                    |> Zipper.updateC (\img -> { img | status = newStatus })
-                    |> Zipper.goTo .id img.id
-                    |> ImagesProvided
-                    |> (\state -> ( { model | state = state }, Cmd.none ))
+            Debug.todo "ImageLoaded"
 
         ( ImageLoaded { id, url, width, height }, AllProvided config classes tools images ) ->
-            let
-                img =
-                    Zipper.getC images
-
-                newStatus =
-                    AnnotatedImage.Loaded (Image url width height)
-                        (AnnotatedImage.annotationsFromTools tools)
-            in
-            if id == img.id then
-                Zipper.setC { img | status = newStatus } images
-                    |> AllProvided config classes tools
-                    |> (\state -> fitImage { model | state = state })
-                    |> updateAnnotationsWithImage
-                    |> (\model -> ( model, Cmd.none ))
-
-            else
-                Zipper.goTo .id id images
-                    |> Zipper.updateC (\img -> { img | status = newStatus })
-                    |> Zipper.goTo .id img.id
-                    |> AllProvided config classes tools
-                    |> (\state -> ( { model | state = state }, Cmd.none ))
+            Debug.todo "ImageLoaded"
 
         ( LoadConfig jsValue, _ ) ->
             ( model, Ports.loadConfigFile jsValue )
 
         ( ConfigLoaded configString, _ ) ->
             ( { model | state = changeConfig configString model.state }
-                |> updateAnnotationsWithImage
             , Cmd.none
             )
 
         ( Export, AllProvided config _ _ images ) ->
-            ( model, Ports.export <| encode config <| Zipper.getAll images )
+            ( model, Ports.export <| encode config <| List.map .annotatedImage <| Zipper.getAll images )
 
         _ ->
             ( model, Cmd.none )
-
-
-
--- Update helper due to limitations of 3 parameters for html lazy
-
-
-updateAnnotationsWithImage : Model -> Model
-updateAnnotationsWithImage model =
-    case model.state of
-        AllProvided config classes tools images ->
-            case .status (Zipper.getC images) of
-                AnnotatedImage.Loaded image annotationsZipper ->
-                    { model
-                        | viewParameters =
-                            View.updateAnnotationsWithImage
-                                model.viewer.zoom
-                                image
-                                classes.selected
-                                annotationsZipper
-                                model.viewParameters
-                    }
-
-                _ ->
-                    model
-
-        _ ->
-            model
 
 
 
@@ -493,12 +370,10 @@ changeConfig configString state =
     in
     case state of
         ImagesProvided images ->
-            Zipper.mapAll (AnnotatedImage.fromRaw tools) images
-                |> AllProvided config classes tools
+            Debug.todo "changeConfig"
 
         AllProvided _ _ _ images ->
-            Zipper.mapAll (AnnotatedImage.resetWithTools tools) images
-                |> AllProvided config classes tools
+            Debug.todo "changeConfig"
 
         _ ->
             ConfigProvided config classes tools
@@ -521,7 +396,7 @@ decodeConfig configString =
     ( config
     , { selected = selected, all = Config.classesFrom config.classes }
     , Config.toolsZipperFromConfig config.tools
-        |> Maybe.withDefault (Debug.crash "refactor")
+        |> Maybe.withDefault (Debug.todo "refactor")
     )
 
 
@@ -557,36 +432,13 @@ updateZoom : ZoomMsg -> Model -> Model
 updateZoom zoomMsg model =
     case zoomMsg of
         ZoomIn ->
-            { model | viewer = Viewer.setZoomCentered (1.5625 * model.viewer.zoom) model.viewer }
+            { model | viewer = Viewer.zoomIn model.viewer }
 
         ZoomOut ->
-            { model | viewer = Viewer.setZoomCentered (0.64 * model.viewer.zoom) model.viewer }
+            { model | viewer = Viewer.zoomOut model.viewer }
 
-        ZoomFit ->
-            fitImage model
-
-
-fitImage : Model -> Model
-fitImage ({ state } as model) =
-    case state of
-        ImagesProvided images ->
-            case .status (Zipper.getC images) of
-                RawImage.Loaded img ->
-                    { model | viewer = Viewer.fitImage 0.8 img model.viewer }
-
-                _ ->
-                    model
-
-        AllProvided _ _ _ images ->
-            case .status (Zipper.getC images) of
-                AnnotatedImage.Loaded img _ ->
-                    { model | viewer = Viewer.fitImage 0.8 img model.viewer }
-
-                _ ->
-                    model
-
-        _ ->
-            model
+        ZoomFit size ->
+            { model | viewer = Viewer.fitImage 1.2 size model.viewer }
 
 
 
@@ -600,11 +452,7 @@ updateMove pointerMsg dragState viewer =
             ( viewer, Pointer.DraggingFrom pos, True )
 
         ( Pointer.MoveAt ( x, y ), Pointer.DraggingFrom ( ox, oy ) ) ->
-            let
-                movement =
-                    Viewer.sizeIn viewer ( x - ox, y - oy )
-            in
-            ( Viewer.grabMove movement viewer, Pointer.DraggingFrom ( x, y ), True )
+            ( Viewer.pan ( x - ox, y - oy ) viewer, Pointer.DraggingFrom ( x, y ), True )
 
         ( Pointer.UpAt _, _ ) ->
             ( viewer, Pointer.NoDrag, True )
@@ -621,7 +469,7 @@ encode : Config -> List AnnotatedImage -> Value
 encode config images =
     Encode.object
         [ ( "config", Config.encode config )
-        , ( "images", Encode.list <| List.map AnnotatedImage.encode images )
+        , ( "images", Encode.list AnnotatedImage.encode images )
         ]
 
 

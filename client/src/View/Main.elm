@@ -15,7 +15,6 @@ module View.Main exposing
     , viewNothing
     )
 
-import Annotation.Viewer as Viewer exposing (Viewer)
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage, Annotations)
 import Data.RawImage as RawImage exposing (RawImage)
 import Data.Tool as Tool exposing (Tool)
@@ -31,6 +30,7 @@ import View.ActionBar as ActionBar
 import View.AnnotationsArea as AnnotationsArea
 import View.ClassesSideBar as ClassesSideBar
 import View.DatasetSideBar as DatasetSideBar
+import Viewer exposing (Viewer)
 
 
 

@@ -145,7 +145,7 @@ accumClass class ( count, parentFileSystem ) =
 {-| -}
 toolsZipperFromConfig : List Tool -> Maybe (Zipper Tool)
 toolsZipperFromConfig tools =
-    Debug.crash "TODO toolsZipperFromConfig"
+    Debug.todo "TODO toolsZipperFromConfig"
 
 
 
@@ -178,8 +178,8 @@ classDecoder =
 encode : Config -> Value
 encode config =
     Encode.object
-        [ ( "classes", Encode.list <| List.map encodeClass config.classes )
-        , ( "tools", Encode.list <| List.map Tool.encode config.tools )
+        [ ( "classes", Encode.list encodeClass config.classes )
+        , ( "tools", Encode.list Tool.encode config.tools )
         ]
 
 
@@ -192,5 +192,5 @@ encodeClass class =
         Category name classes ->
             Encode.object
                 [ ( "category", Encode.string name )
-                , ( "classes", Encode.list <| List.map encodeClass classes )
+                , ( "classes", Encode.list encodeClass classes )
                 ]

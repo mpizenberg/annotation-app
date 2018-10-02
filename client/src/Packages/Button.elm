@@ -118,7 +118,7 @@ loadFileInput tooltipText config =
             Html.input
                 [ Html.Attributes.id config.uniqueId
                 , Html.Attributes.type_ "file"
-                , Html.Attributes.style [ ( "display", "none" ) ]
+                , Html.Attributes.style "display" "none"
                 , loadFileEvent config.msgTagger
                 ]
                 []
@@ -155,7 +155,7 @@ loadMultipleFilesInput tooltipText config =
                 [ Html.Attributes.id config.uniqueId
                 , Html.Attributes.type_ "file"
                 , Html.Attributes.multiple True
-                , Html.Attributes.style [ ( "display", "none" ) ]
+                , Html.Attributes.style "display" "none"
                 , loadMultipleFilesEvent config.msgTagger
                 ]
                 []

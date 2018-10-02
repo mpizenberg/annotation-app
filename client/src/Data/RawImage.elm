@@ -5,7 +5,7 @@
 
 module Data.RawImage exposing (LoadingStatus(..), RawImage)
 
-import Image exposing (Image)
+import Data.Image as Image exposing (Image)
 
 
 

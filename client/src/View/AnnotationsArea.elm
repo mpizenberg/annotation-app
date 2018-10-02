@@ -10,22 +10,7 @@ module View.AnnotationsArea exposing
     , viewImageOnly
     )
 
-import Annotation.Geometry.Contour as Contour
-import Annotation.Geometry.Stroke as Stroke
-import Annotation.Style as Style
-import Annotation.Svg as Svg
-import Annotation.Viewer as Viewer exposing (Viewer)
-import Data.AnnotatedImage as AnnotatedImage
-    exposing
-        ( AnnotatedImage
-        , Annotations(..)
-        , BBoxDrawings
-        , OutlineDrawings
-        , PointDrawings
-        , PolygonDrawings
-        , Status(..)
-        , StrokeDrawings
-        )
+import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.RawImage as RawImage exposing (RawImage)
 import Element exposing (Element, el, text)
 import Element.Attributes exposing (center, fill, height)
@@ -37,6 +22,7 @@ import Packages.Zipper as Zipper exposing (Zipper)
 import Pointer
 import StyleSheet as Style exposing (Style)
 import Svg exposing (Svg)
+import Viewer exposing (Viewer)
 
 
 
@@ -68,7 +54,7 @@ viewImageOnly viewer { id, name, status } =
 
         RawImage.Loaded image ->
             Image.viewSvg [] image
-                |> Viewer.viewInWithDetails [ Html.Attributes.style [ ( "height", "100%" ) ] ] viewer
+                |> Viewer.viewInWithDetails [ Html.Attributes.style "height" "100%" ] viewer
                 |> Element.html
                 |> el Style.Viewer [ height fill ]
 
@@ -85,7 +71,7 @@ view : Parameters msg -> Viewer -> AnnotatedImage -> Element Style var msg
 view params viewer { id, name, status } =
     let
         attributes =
-            [ Html.Attributes.style [ ( "height", "100%" ) ]
+            [ Html.Attributes.style "height" "100%"
 
             -- pointer capture hack to continue "globally" the event anywhere on document
             , Html.Attributes.attribute "onpointerdown" "event.target.setPointerCapture(event.pointerId);"

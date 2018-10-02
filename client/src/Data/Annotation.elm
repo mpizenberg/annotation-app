@@ -4,24 +4,14 @@
 
 
 module Data.Annotation exposing
-    ( Type(..)
-    , encodeBBox
-    , encodeOutline
-    , encodePoint
-    , encodePolygon
-    , encodeStroke
-    , typeDecoder
-    , typeFromString
-    , typeToString
+    ( Annotation(..)
+    , encode
     )
 
-import Annotation.Geometry.BoundingBox as BoundingBox
-import Annotation.Geometry.Contour as Contour
-import Annotation.Geometry.Outline as Outline
-import Annotation.Geometry.Point as Point
-import Annotation.Geometry.Stroke as Stroke
-import Annotation.Geometry.Types as Geometry
-import Json.Decode as Decode exposing (Decoder)
+import Annotation.Line as Line
+import Annotation.Point as Point
+import Annotation.Rectangle as Rectangle
+import Data.Pointer as Pointer
 import Json.Encode as Encode exposing (Value)
 
 
@@ -29,92 +19,107 @@ import Json.Encode as Encode exposing (Value)
 -- TYPES #############################################################
 
 
-type Type
-    = Point
-    | BBox
-    | Stroke
-    | Outline
-    | Polygon
+type Annotation a
+    = Point Point.Point a
+    | BBox Rectangle.Rectangle a
+    | Line Line.Line a
+    | UnfinishedOutline Line.Line a
+    | Outline Line.Line a
+    | UnfinishedPolygon Line.Line a
+    | Polygon Line.Line a
 
 
 
--- FUNCTIONS #########################################################
+-- UPDATE ############################################################
 
 
-typeFromString : String -> Type
-typeFromString str =
-    case str of
-        "point" ->
-            Point
+moveUpdate : Pointer.Msg -> Pointer.DragState -> Annotation a -> Annotation a
+moveUpdate pointerMsg dragState annotation =
+    case ( annotation, pointerMsg, dragState ) of
+        ( Point point a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            Point (Point.fromCoordinates coordinates) a
 
-        "bbox" ->
-            BBox
+        ( BBox rect a, Pointer.MoveAt coordinates, Pointer.DraggingFrom corner ) ->
+            BBox (createBBox coordinates corner) a
 
-        "stroke" ->
-            Stroke
+        ( Line line a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            Line (prependPointToLine coordinates line) a
 
-        "outline" ->
-            Outline
+        ( UnfinishedOutline line a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            UnfinishedOutline (prependPointToLine coordinates line) a
 
-        "polygon" ->
-            Polygon
+        ( UnfinishedPolygon line a, Pointer.DownAt coordinates, Pointer.NoDrag ) ->
+            UnfinishedPolygon (prependPointToLine coordinates line) a
+
+        ( UnfinishedPolygon (_ :: line) a, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+            UnfinishedPolygon (prependPointToLine coordinates line) a
 
         _ ->
-            Point
+            Debug.todo "update annotation"
 
 
-typeToString : Type -> String
-typeToString type_ =
-    case type_ of
-        Point ->
-            "point"
+createBBox : ( Float, Float ) -> ( Float, Float ) -> Rectangle.Rectangle
+createBBox corner1 corner2 =
+    Rectangle.fromPointsPair ( Point.fromCoordinates corner1, Point.fromCoordinates corner2 )
 
-        BBox ->
-            "bbox"
 
-        Stroke ->
-            "stroke"
-
-        Outline ->
-            "outline"
-
-        Polygon ->
-            "polygon"
+prependPointToLine : ( Float, Float ) -> Line.Line -> Line.Line
+prependPointToLine coordinates =
+    Line.prependPoint (Point.fromCoordinates coordinates)
 
 
 
--- Decoders
+-- ENCODE ############################################################
 
 
-typeDecoder : Decoder Type
-typeDecoder =
-    Decode.map typeFromString Decode.string
+encode : (a -> Value) -> Annotation a -> Value
+encode encodeClass annotation =
+    case annotation of
+        Point point a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "point" )
+                , ( "data", Point.encode point )
+                ]
 
+        BBox rectangle a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "bbox" )
+                , ( "data", Rectangle.encode rectangle )
+                ]
 
+        Line line a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "line" )
+                , ( "data", Line.encode line )
+                ]
 
--- Encoders
+        UnfinishedOutline line a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "unfinished-outline" )
+                , ( "data", Line.encode line )
+                ]
 
+        Outline line a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "outline" )
+                , ( "data", Line.encode line )
+                ]
 
-encodePoint : Geometry.Point -> Value
-encodePoint point =
-    Point.encode point
+        UnfinishedPolygon line a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "unfinished-polygon" )
+                , ( "data", Line.encode line )
+                ]
 
-
-encodeBBox : Geometry.BoundingBox -> Value
-encodeBBox bbox =
-    BoundingBox.encode bbox
-
-
-encodeStroke : Geometry.Stroke -> Value
-encodeStroke stroke =
-    Stroke.encode stroke
-
-
-encodeOutline : Geometry.Outline -> Value
-encodeOutline outline =
-    Outline.encode outline
-
-
-encodePolygon : Geometry.Contour -> Value
-encodePolygon polygon =
-    Contour.encode polygon
+        Polygon line a ->
+            Encode.object
+                [ ( "class", encodeClass a )
+                , ( "type", Encode.string "polygon" )
+                , ( "data", Line.encode line )
+                ]

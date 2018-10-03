@@ -410,10 +410,10 @@ changeConfig configString state =
     in
     case state of
         ImagesProvided images ->
-            Debug.todo "changeConfig"
+            AllProvided config classes tools (Zipper.mapAll upgradeImage images)
 
         AllProvided _ _ _ images ->
-            Debug.todo "changeConfig"
+            AllProvided config classes tools (Zipper.mapAll resetImage images)
 
         _ ->
             ConfigProvided config classes tools
@@ -438,6 +438,16 @@ decodeConfig configString =
     , Config.toolsZipperFromConfig config.tools
         |> Maybe.withDefault (Debug.todo "refactor")
     )
+
+
+upgradeImage : { id : Int, remoteImage : RemoteImage } -> { id : Int, annotatedImage : AnnotatedImage }
+upgradeImage { id, remoteImage } =
+    { id = id, annotatedImage = AnnotatedImage.fromRemote remoteImage }
+
+
+resetImage : { a | annotatedImage : AnnotatedImage } -> { a | annotatedImage : AnnotatedImage }
+resetImage a =
+    { a | annotatedImage = AnnotatedImage.reset a.annotatedImage }
 
 
 

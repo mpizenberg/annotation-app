@@ -336,10 +336,42 @@ update msg model =
             )
 
         ( ImageLoaded { id, url, width, height }, ImagesProvided images ) ->
-            Debug.todo "ImageLoaded"
+            let
+                movedZipper =
+                    Zipper.goTo .id id images
+
+                { name } =
+                    .remoteImage (Zipper.getC movedZipper)
+
+                loaded =
+                    { name = name, status = RemoteImage.Loaded (Image url width height) }
+
+                newZipper =
+                    Zipper.setC { id = id, remoteImage = loaded } movedZipper
+                        |> Zipper.goTo .id (.id (Zipper.getC images))
+            in
+            ( { model | state = ImagesProvided newZipper }
+            , Cmd.none
+            )
 
         ( ImageLoaded { id, url, width, height }, AllProvided config classes tools images ) ->
-            Debug.todo "ImageLoaded"
+            let
+                movedZipper =
+                    Zipper.goTo .id id images
+
+                { name } =
+                    .annotatedImage (Zipper.getC movedZipper)
+
+                loaded =
+                    { name = name, status = AnnotatedImage.Loaded (Image url width height) }
+
+                newZipper =
+                    Zipper.setC { id = id, annotatedImage = loaded } movedZipper
+                        |> Zipper.goTo .id (.id (Zipper.getC images))
+            in
+            ( { model | state = AllProvided config classes tools newZipper }
+            , Cmd.none
+            )
 
         ( LoadConfig jsValue, _ ) ->
             ( model, Ports.loadConfigFile jsValue )

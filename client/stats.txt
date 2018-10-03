@@ -1,0 +1,49 @@
+Annotation app with Elm 0.18 at commit 72c354e0
+
+$ cloc client/src/
+
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+Elm                             19            904            114           2668
+
+$ cloc dependencies/elm-image-annotation/src/
+
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+Elm                             10            274            280            445
+
+
+After deleting elm-stuff/build-artifacts/, and running elm-make to build all the code:
+
+Success! Compiled 170 modules.
+Successfully generated ../server/dist/Main.js
+
+real    0m22,843s
+user    0m37,776s
+sys     0m21,256s
+
+
+After deleting elm-stuff/build-artifacts/0.18/mpizenberg/demo-elm-image-annotation/
+and running elm-make to build only my code:
+
+Success! Compiled 29 modules.
+Successfully generated ../server/dist/Main.js
+
+real    0m8,017s
+user    0m13,417s
+sys     0m7,435s
+
+File size for Main.js:
+ - raw:      1.2M
+ - min:      207K
+ - min.gzip:  51K
+ - raw.gzip: 155K
+
+
+
+Chromium perf analysis:
+ - width 1400px
+ - image 7Robot
+ - Pascal config
+
+

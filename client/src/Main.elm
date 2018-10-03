@@ -73,7 +73,7 @@ type Msg
     | Export
       -- other actions
     | ZoomMsg ZoomMsg
-    | RemoveLatestAnnotation
+    | RemoveAnnotation
 
 
 type ZoomMsg
@@ -276,8 +276,18 @@ update msg model =
         ( ZoomMsg zoomMsg, _ ) ->
             ( updateZoom zoomMsg model, Cmd.none )
 
-        ( RemoveLatestAnnotation, AllProvided config classes tools imgs ) ->
-            ( Debug.todo "remove annotation"
+        ( RemoveAnnotation, AllProvided config classes tools imgs ) ->
+            let
+                currentImage =
+                    Zipper.getC imgs
+
+                annotatedImage =
+                    AnnotatedImage.removeAnnotation currentImage.annotatedImage
+
+                newZipper =
+                    Zipper.setC { currentImage | annotatedImage = annotatedImage } imgs
+            in
+            ( { model | state = AllProvided config classes tools newZipper }
             , Cmd.none
             )
 

@@ -9,6 +9,7 @@ module Data.AnnotatedImage exposing
     , encode
     , fromRemote
     , hasAnnotations
+    , removeAnnotation
     , reset
     )
 
@@ -17,7 +18,7 @@ import Data.Image as Image exposing (Image)
 import Data.Pointer as Pointer
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Json.Encode as Encode exposing (Value)
-import Packages.Zipper as Zipper exposing (Zipper)
+import Packages.Zipper as Zipper exposing (Zipper(..))
 
 
 
@@ -66,6 +67,24 @@ hasAnnotations annotatedImage =
 
         _ ->
             False
+
+
+removeAnnotation : AnnotatedImage -> AnnotatedImage
+removeAnnotation annotatedImage =
+    case annotatedImage.status of
+        LoadedWithAnnotations img zipper ->
+            case zipper of
+                Zipper left _ (r :: rs) ->
+                    { annotatedImage | status = LoadedWithAnnotations img (Zipper left r rs) }
+
+                Zipper (l :: ls) _ [] ->
+                    { annotatedImage | status = LoadedWithAnnotations img (Zipper ls l []) }
+
+                Zipper [] _ [] ->
+                    { annotatedImage | status = Loaded img }
+
+        _ ->
+            annotatedImage
 
 
 updateCurrentWith : (Annotation -> Annotation) -> AnnotatedImage -> AnnotatedImage

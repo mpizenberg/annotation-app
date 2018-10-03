@@ -3,18 +3,13 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module Data.RawImage exposing (LoadingStatus(..), RawImage)
+module Data.RemoteImage exposing (LoadingStatus(..), RemoteImage)
 
 import Data.Image as Image exposing (Image)
 
 
-
--- TYPES #############################################################
-
-
-type alias RawImage =
-    { id : Int
-    , name : String
+type alias RemoteImage =
+    { name : String
     , status : LoadingStatus
     }
 

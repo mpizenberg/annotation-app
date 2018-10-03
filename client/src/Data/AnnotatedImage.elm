@@ -5,10 +5,9 @@
 
 module Data.AnnotatedImage exposing
     ( AnnotatedImage
-    , AnnotatedImageUpdate
     , Status(..)
     , encode
-    , fromRaw
+    , fromRemote
     , hasAnnotations
     , reset
     )
@@ -16,8 +15,7 @@ module Data.AnnotatedImage exposing
 import Data.Annotation as Annotation exposing (Annotation)
 import Data.Image as Image exposing (Image)
 import Data.Pointer as Pointer
-import Data.RawImage as RawImage exposing (RawImage)
-import Data.Tool as Tool exposing (Tool)
+import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Json.Encode as Encode exposing (Value)
 import Packages.Zipper as Zipper exposing (Zipper)
 
@@ -90,37 +88,21 @@ updateAnnotation f record =
 
 
 
--- Pointer stuff
+-- Conversion from remote image
 
 
-addAnnotationsIndicator type_ ( list, dragState, hasChanged ) =
-    Debug.todo "to remove"
-
-
-type alias AnnotatedImageUpdate =
-    { newAnnotatedImage : AnnotatedImage
-    , newDragState : Pointer.DragState
-    , hasAnnotations : Bool
-    , hasChanged : Bool
-    }
-
-
-
--- Conversion from raw image
-
-
-fromRaw : Zipper Tool -> RawImage -> AnnotatedImage
-fromRaw tools { id, name, status } =
+fromRemote : RemoteImage -> AnnotatedImage
+fromRemote { name, status } =
     let
         annotatedStatus =
             case status of
-                RawImage.Loading ->
+                RemoteImage.Loading ->
                     Loading
 
-                RawImage.LoadingError error ->
+                RemoteImage.LoadingError error ->
                     LoadingError error
 
-                RawImage.Loaded image ->
+                RemoteImage.Loaded image ->
                     Loaded image
     in
     { name = name, status = annotatedStatus }

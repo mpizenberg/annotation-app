@@ -10,7 +10,7 @@ import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.Config as Config exposing (Config)
 import Data.Image exposing (Image)
 import Data.Pointer as Pointer
-import Data.RawImage as RawImage exposing (RawImage)
+import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.Tool as Tool exposing (Tool)
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -47,7 +47,7 @@ type alias Model =
 type State
     = NothingProvided
     | ConfigProvided Config Classes (Zipper Tool)
-    | ImagesProvided (Zipper RawImage)
+    | ImagesProvided (Zipper { id : Int, remoteImage : RemoteImage })
     | AllProvided Config Classes (Zipper Tool) (Zipper { id : Int, annotatedImage : AnnotatedImage })
 
 
@@ -156,20 +156,20 @@ importFlagsImages images =
         [] ->
             NothingProvided
 
-        image :: otherImages ->
+        firstImage :: otherImages ->
             let
-                toRaw id img =
-                    RawImage id img.url (RawImage.Loaded img)
-
-                firstRawImage =
-                    toRaw 0 image
-
-                otherRawImages =
-                    otherImages
-                        |> List.indexedMap (\id img -> toRaw (id + 1) img)
+                otherRemoteImagesWithId =
+                    List.indexedMap (\id img -> remoteImageWithId (id + 1) img) otherImages
             in
-            Zipper.init [] firstRawImage otherRawImages
+            Zipper.init [] (remoteImageWithId 0 firstImage) otherRemoteImagesWithId
                 |> ImagesProvided
+
+
+remoteImageWithId : Int -> Image -> { id : Int, remoteImage : RemoteImage }
+remoteImageWithId id image =
+    { id = id
+    , remoteImage = RemoteImage image.url (RemoteImage.Loaded image)
+    }
 
 
 
@@ -207,8 +207,8 @@ update msg model =
         --         |> updateAnnotationsWithImage
         --     , Cmd.none
         --     )
-        ( SelectImage imageId, ImagesProvided rawImages ) ->
-            ( { model | state = ImagesProvided (Zipper.goTo .id imageId rawImages) }
+        ( SelectImage imageId, ImagesProvided remoteImages ) ->
+            ( { model | state = ImagesProvided (Zipper.goTo .id imageId remoteImages) }
             , Cmd.none
             )
 
@@ -281,32 +281,30 @@ update msg model =
             , Cmd.none
             )
 
-        ( LoadImages (f :: files), NothingProvided ) ->
+        ( LoadImages (first :: files), NothingProvided ) ->
             let
                 ( firstImage, firstCmd ) =
-                    prepareOneRawLoading 0 f
+                    prepareOneLoading setupRemoteLoading 0 first
 
                 ( otherImages, otherCmds ) =
-                    prepareRawLoading 1 files
+                    prepareListLoading setupRemoteLoading 1 files
             in
             ( { model | state = ImagesProvided (Zipper.init [] firstImage otherImages) }
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
-        ( LoadImages (f :: files), ConfigProvided config classes tools ) ->
+        ( LoadImages (first :: files), ConfigProvided config classes tools ) ->
             let
                 ( firstImage, firstCmd ) =
-                    prepareOneRawLoading 0 f
+                    prepareOneLoading setupAnnotatedLoading 0 first
 
                 ( otherImages, otherCmds ) =
-                    prepareRawLoading 1 files
+                    prepareListLoading setupAnnotatedLoading 1 files
 
                 annotatedImages =
-                    Zipper.init []
-                        (AnnotatedImage.fromRaw tools firstImage)
-                        (List.map (AnnotatedImage.fromRaw tools) otherImages)
+                    Zipper.init [] firstImage otherImages
             in
-            ( Debug.todo "LoadImages"
+            ( { model | state = AllProvided config classes tools annotatedImages }
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
@@ -316,7 +314,7 @@ update msg model =
                     1 + (.id << Zipper.getC) (Zipper.goEnd previousImages)
 
                 ( newImages, cmds ) =
-                    prepareRawLoading startingId files
+                    prepareListLoading setupRemoteLoading startingId files
             in
             ( { model | state = ImagesProvided (Zipper.append newImages previousImages) }
             , Cmd.batch cmds
@@ -328,12 +326,12 @@ update msg model =
                     1 + (.id << Zipper.getC) (Zipper.goEnd previousImages)
 
                 ( newImages, cmds ) =
-                    prepareRawLoading startingId files
+                    prepareListLoading setupAnnotatedLoading startingId files
 
-                newAnnotatedImages =
-                    List.map (AnnotatedImage.fromRaw tools) newImages
+                annotatedImages =
+                    Zipper.append newImages previousImages
             in
-            ( Debug.todo "LoadImages"
+            ( { model | state = AllProvided config classes tools annotatedImages }
             , Cmd.batch cmds
             )
 
@@ -404,22 +402,29 @@ decodeConfig configString =
 -- Images loading
 
 
-prepareRawLoading : Int -> List { name : String, file : Value } -> ( List RawImage, List (Cmd Msg) )
-prepareRawLoading startId images =
-    let
-        nbImages =
-            List.length images
+setupRemoteLoading : Int -> String -> { id : Int, remoteImage : RemoteImage }
+setupRemoteLoading id name =
+    { id = id, remoteImage = { name = name, status = RemoteImage.Loading } }
 
-        ids =
-            List.range startId (startId + nbImages)
-    in
-    List.map2 prepareOneRawLoading ids images
+
+setupAnnotatedLoading : Int -> String -> { id : Int, annotatedImage : AnnotatedImage }
+setupAnnotatedLoading id name =
+    { id = id, annotatedImage = { name = name, status = AnnotatedImage.Loading } }
+
+
+prepareListLoading :
+    (Int -> String -> loading)
+    -> Int
+    -> List { name : String, file : Value }
+    -> ( List loading, List (Cmd Msg) )
+prepareListLoading setup startId images =
+    List.indexedMap (\id img -> prepareOneLoading setup (startId + id) img) images
         |> List.unzip
 
 
-prepareOneRawLoading : Int -> { name : String, file : Value } -> ( RawImage, Cmd Msg )
-prepareOneRawLoading id { name, file } =
-    ( { id = id, name = name, status = RawImage.Loading }
+prepareOneLoading : (Int -> String -> loading) -> Int -> { name : String, file : Value } -> ( loading, Cmd Msg )
+prepareOneLoading setup id { name, file } =
+    ( setup id name
     , Ports.loadImageFile { id = id, file = file }
     )
 

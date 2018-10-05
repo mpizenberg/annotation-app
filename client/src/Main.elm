@@ -404,40 +404,45 @@ update msg model =
 
 changeConfig : String -> State -> State
 changeConfig configString state =
-    let
-        ( config, classes, tools ) =
-            decodeConfig configString
-    in
-    case state of
-        ImagesProvided images ->
+    case ( state, decodeConfig configString ) of
+        ( ImagesProvided images, Ok ( config, classes, tools ) ) ->
             AllProvided config classes tools (Zipper.mapAll upgradeImage images)
 
-        AllProvided _ _ _ images ->
+        ( AllProvided _ _ _ images, Ok ( config, classes, tools ) ) ->
             AllProvided config classes tools (Zipper.mapAll resetImage images)
 
-        _ ->
+        ( _, Ok ( config, classes, tools ) ) ->
             ConfigProvided config classes tools
 
+        ( _, Err _ ) ->
+            Debug.todo "handle error in state"
 
-decodeConfig : String -> ( Config, Classes, Zipper Tool )
+
+decodeConfig : String -> Result Config.Error ( Config, Classes, Zipper Tool )
 decodeConfig configString =
-    let
-        config =
-            Decode.decodeString Config.decoder configString
-                |> Result.withDefault Config.empty
+    case Decode.decodeString Config.decoder configString of
+        Ok config ->
+            let
+                selected =
+                    if List.isEmpty config.classes then
+                        0
 
-        selected =
-            if List.isEmpty config.classes then
-                0
+                    else
+                        1
+            in
+            case config.tools of
+                [] ->
+                    Err Config.IncorrectTools
 
-            else
-                1
-    in
-    ( config
-    , { selected = selected, all = Config.classesFrom config.classes }
-    , Config.toolsZipperFromConfig config.tools
-        |> Maybe.withDefault (Debug.todo "refactor")
-    )
+                firstTool :: otherTools ->
+                    Ok
+                        ( config
+                        , { selected = selected, all = Config.classesFrom config.classes }
+                        , Zipper.init [] firstTool otherTools
+                        )
+
+        Err decodeError ->
+            Err (Config.Incorrect decodeError)
 
 
 upgradeImage : { id : Int, remoteImage : RemoteImage } -> { id : Int, annotatedImage : AnnotatedImage }

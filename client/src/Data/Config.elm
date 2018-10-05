@@ -4,16 +4,16 @@
 
 
 module Data.Config exposing
-    ( Config, Class, empty, pascal
-    , classesFrom, toolsZipperFromConfig
+    ( Config, Class, Error(..), empty, pascal
+    , classesFrom
     , encode, decoder
     )
 
 {-| Manage the app configuration
 
-@docs Config, Class, empty, pascal
+@docs Config, Class, Error, empty, pascal
 
-@docs classesFrom, toolsZipperFromConfig
+@docs classesFrom
 
 @docs encode, decoder
 
@@ -38,9 +38,17 @@ type alias Config =
     }
 
 
+{-| -}
 type Class
     = Label String
     | Category String (List Class)
+
+
+{-| -}
+type Error
+    = IncorrectClasses
+    | IncorrectTools
+    | Incorrect Decode.Error
 
 
 
@@ -140,12 +148,6 @@ accumClass class ( count, parentFileSystem ) =
                     classesFromAcc classes ( count + 1, subsystem )
             in
             ( newCount, newSubsystem |> Tree.Zipper.parent |> Maybe.withDefault parentFileSystem )
-
-
-{-| -}
-toolsZipperFromConfig : List Tool -> Maybe (Zipper Tool)
-toolsZipperFromConfig tools =
-    Debug.todo "TODO toolsZipperFromConfig"
 
 
 

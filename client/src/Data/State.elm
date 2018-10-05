@@ -4,7 +4,7 @@
 
 
 module Data.State exposing
-    ( State(..), Classes
+    ( State(..), Classes, Error(..)
     , importFlagsImages
     , updateWithPointer
     , selectClass, selectImage, selectTool
@@ -16,7 +16,7 @@ module Data.State exposing
 
 {-| Module doc
 
-@docs State, Classes
+@docs State, Classes, Error
 
 @docs importFlagsImages
 
@@ -48,10 +48,10 @@ import Ports
 
 
 type State
-    = NothingProvided
-    | ConfigProvided Config Classes (Zipper Tool)
-    | ImagesProvided (Zipper { id : Int, remoteImage : RemoteImage })
-    | AllProvided Config Classes (Zipper Tool) (Zipper { id : Int, annotatedImage : AnnotatedImage })
+    = NothingProvided Error
+    | ConfigProvided Error Config Classes (Zipper Tool)
+    | ImagesProvided Error (Zipper { id : Int, remoteImage : RemoteImage })
+    | AllProvided Error Config Classes (Zipper Tool) (Zipper { id : Int, annotatedImage : AnnotatedImage })
 
 
 type alias Classes =
@@ -60,11 +60,16 @@ type alias Classes =
     }
 
 
+type Error
+    = NoError
+    | ConfigError Config.Error
+
+
 importFlagsImages : List Image -> State
 importFlagsImages images =
     case images of
         [] ->
-            NothingProvided
+            NothingProvided NoError
 
         firstImage :: otherImages ->
             let
@@ -72,7 +77,7 @@ importFlagsImages images =
                     List.indexedMap (\id img -> remoteImageWithId (id + 1) img) otherImages
             in
             Zipper.init [] (remoteImageWithId 0 firstImage) otherRemoteImagesWithId
-                |> ImagesProvided
+                |> ImagesProvided NoError
 
 
 remoteImageWithId : Int -> Image -> { id : Int, remoteImage : RemoteImage }
@@ -294,17 +299,28 @@ imageLoaded { id, url, width, height } state =
 changeConfig : String -> State -> State
 changeConfig configString state =
     case ( state, decodeConfig configString ) of
-        ( ImagesProvided images, Ok ( config, classes, tools ) ) ->
-            AllProvided config classes tools (Zipper.mapAll upgradeImage images)
+        -- No error
+        ( ImagesProvided _ images, Ok ( config, classes, tools ) ) ->
+            AllProvided NoError config classes tools (Zipper.mapAll upgradeImage images)
 
-        ( AllProvided _ _ _ images, Ok ( config, classes, tools ) ) ->
-            AllProvided config classes tools (Zipper.mapAll resetImage images)
+        ( AllProvided _ _ _ _ images, Ok ( config, classes, tools ) ) ->
+            AllProvided NoError config classes tools (Zipper.mapAll resetImage images)
 
         ( _, Ok ( config, classes, tools ) ) ->
-            ConfigProvided config classes tools
+            ConfigProvided NoError config classes tools
 
-        ( _, Err _ ) ->
-            Debug.todo "handle error in state"
+        -- Error
+        ( NothingProvided _, Err configError ) ->
+            NothingProvided (ConfigError configError)
+
+        ( ConfigProvided _ config classes tools, Err configError ) ->
+            ConfigProvided (ConfigError configError) config classes tools
+
+        ( ImagesProvided _ images, Err configError ) ->
+            ImagesProvided (ConfigError configError) images
+
+        ( AllProvided _ config classes tools images, Err configError ) ->
+            AllProvided (ConfigError configError) config classes tools images
 
 
 decodeConfig : String -> Result Config.Error ( Config, Classes, Zipper Tool )
@@ -382,7 +398,7 @@ prepareOneLoading setup id { name, file } =
 export : State -> Cmd msg
 export state =
     case state of
-        AllProvided config _ _ images ->
+        AllProvided _ config _ _ images ->
             Ports.export <| encode config <| List.map .annotatedImage <| Zipper.getAll images
 
         _ ->

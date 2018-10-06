@@ -34,7 +34,6 @@ main =
 type alias Model =
     { state : State
     , viewer : Viewer
-    , dragState : Pointer.DragState
     }
 
 
@@ -126,7 +125,6 @@ init flags =
         model =
             { state = state
             , viewer = viewer
-            , dragState = Pointer.NoDrag
             }
     in
     ( model, Cmd.none )
@@ -221,26 +219,6 @@ updateZoom zoomMsg model =
 
         ZoomFit size ->
             { model | viewer = Viewer.fitImage 1.2 size model.viewer }
-
-
-
--- Pointer movement
-
-
-updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> ( Viewer, Pointer.DragState, Bool )
-updateMove pointerMsg dragState viewer =
-    case ( pointerMsg, dragState ) of
-        ( Pointer.DownAt pos, _ ) ->
-            ( viewer, Pointer.DraggingFrom pos, True )
-
-        ( Pointer.MoveAt ( x, y ), Pointer.DraggingFrom ( ox, oy ) ) ->
-            ( Viewer.pan ( x - ox, y - oy ) viewer, Pointer.DraggingFrom ( x, y ), True )
-
-        ( Pointer.UpAt _, _ ) ->
-            ( viewer, Pointer.NoDrag, True )
-
-        _ ->
-            ( viewer, dragState, False )
 
 
 

@@ -156,7 +156,9 @@ update msg model =
             ( { model | viewer = windowResizes size model.viewer }, Cmd.none )
 
         PointerMsg pointerMsg ->
-            ( { model | state = State.updateWithPointer pointerMsg model.state }, Cmd.none )
+            State.updateWithPointer pointerMsg model.viewer model.state
+                |> Maybe.map (\( state, viewer ) -> ( { model | state = state, viewer = viewer }, Cmd.none ))
+                |> Maybe.withDefault ( model, Cmd.none )
 
         -- Select things
         SelectImage id ->

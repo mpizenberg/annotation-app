@@ -11,6 +11,7 @@ module Data.AnnotatedImage exposing
     , hasAnnotations
     , removeAnnotation
     , reset
+    , updateWithPointer
     )
 
 import Data.Annotation as Annotation exposing (Annotation)
@@ -85,6 +86,11 @@ removeAnnotation annotatedImage =
 
         _ ->
             annotatedImage
+
+
+updateWithPointer : Pointer.Msg -> AnnotatedImage -> AnnotatedImage
+updateWithPointer pointerMsg annotatedImage =
+    Debug.todo "AnnotatedImage.updateWithPointer"
 
 
 updateCurrentWith : (Annotation -> Annotation) -> AnnotatedImage -> AnnotatedImage

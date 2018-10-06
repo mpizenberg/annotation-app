@@ -159,53 +159,50 @@ selectTool id state =
 -- Pointer movement
 
 
-updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> ( Viewer, Pointer.DragState, Bool )
+updateWithPointer : Pointer.Msg -> Viewer -> State -> Maybe ( State, Viewer )
+updateWithPointer pointerMsg viewer state =
+    case state of
+        AllProvided error drag config classes tools imgs ->
+            case Zipper.getC tools of
+                Tool.Move ->
+                    updateMove pointerMsg drag viewer
+                        |> Maybe.map (Tuple.mapFirst (dragToState error config classes tools imgs))
+
+                _ ->
+                    let
+                        scaledPointerMsg =
+                            Pointer.mapMsg (\pos -> Viewer.coordinatesAt pos viewer) pointerMsg
+
+                        newDrag =
+                            Pointer.update pointerMsg drag
+                    in
+                    mapCurrentAnnotated (AnnotatedImage.updateWithPointer scaledPointerMsg) imgs
+                        |> AllProvided error newDrag config classes tools
+                        |> (\newState -> Just ( newState, viewer ))
+
+        _ ->
+            Nothing
+
+
+dragToState : Error -> Config -> Classes -> Zipper Tool -> AnnotatedZipper -> Pointer.DragState -> State
+dragToState error config classes tools imgs dragState =
+    AllProvided error dragState config classes tools imgs
+
+
+updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> Maybe ( Pointer.DragState, Viewer )
 updateMove pointerMsg dragState viewer =
     case ( pointerMsg, dragState ) of
         ( Pointer.DownAt pos, _ ) ->
-            ( viewer, Pointer.DraggingFrom pos, True )
+            Just ( Pointer.DraggingFrom pos, viewer )
 
         ( Pointer.MoveAt ( x, y ), Pointer.DraggingFrom ( ox, oy ) ) ->
-            ( Viewer.pan ( x - ox, y - oy ) viewer, Pointer.DraggingFrom ( x, y ), True )
+            Just ( Pointer.DraggingFrom ( x, y ), Viewer.pan ( x - ox, y - oy ) viewer )
 
         ( Pointer.UpAt _, _ ) ->
-            ( viewer, Pointer.NoDrag, True )
+            Just ( Pointer.NoDrag, viewer )
 
         _ ->
-            ( viewer, dragState, False )
-
-
-updateWithPointer : Pointer.Msg -> State -> State
-updateWithPointer pointerMsg state =
-    -- case state of
-    --     AllProvided config classes tools imgs ->
-    --         case Zipper.getC tools of
-    --         Tool.Move ->
-    --             let
-    --                 ( newViewer, newDragState, hasChanged ) =
-    --                     updateMove pointerMsg model.dragState model.viewer
-    --             in
-    --             if hasChanged then
-    --                 ( { model | viewer = newViewer, dragState = newDragState }, Cmd.none )
-    --
-    --             else
-    --                 ( model, Cmd.none )
-    --
-    --         _ ->
-    --             let
-    --                 scaledPointerMsg =
-    --                     case pointerMsg of
-    --                         Pointer.DownAt pos ->
-    --                             Pointer.DownAt (Viewer.coordinatesAt pos model.viewer)
-    --
-    --                         Pointer.MoveAt pos ->
-    --                             Pointer.MoveAt (Viewer.coordinatesAt pos model.viewer)
-    --
-    --                         Pointer.UpAt pos ->
-    --                             Pointer.UpAt (Viewer.coordinatesAt pos model.viewer)
-    --             in
-    --             ( Debug.todo "update pointer", Cmd.none )
-    Debug.todo "updateWithPointer"
+            Nothing
 
 
 removeAnnotation : State -> State

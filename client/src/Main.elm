@@ -45,7 +45,8 @@ type Msg
       -- select things
     | SelectImage Int
     | SelectTool Int
-    | SelectClass Int
+    | ToggleCategory Int
+    | SelectClass ( Int, Int )
       -- files
     | LoadImages (List { name : String, file : Value })
     | ImageLoaded { id : Int, url : String, width : Int, height : Int }
@@ -166,8 +167,11 @@ update msg model =
         SelectTool id ->
             ( { model | state = State.selectTool id model.state }, Cmd.none )
 
-        SelectClass id ->
-            ( { model | state = State.selectClass id model.state }, Cmd.none )
+        ToggleCategory id ->
+            ( { model | state = State.toggleCategory id model.state }, Cmd.none )
+
+        SelectClass idPair ->
+            ( { model | state = State.selectClass idPair model.state }, Cmd.none )
 
         -- Zooming
         ZoomMsg zoomMsg ->

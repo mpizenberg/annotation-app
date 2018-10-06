@@ -7,7 +7,7 @@ module Data.State exposing
     ( State(..), Classes, Error(..)
     , importFlagsImages
     , updateWithPointer
-    , selectClass, selectImage, selectTool
+    , toggleCategory, selectClass, selectImage, selectTool
     , loadImages, imageLoaded
     , changeConfig
     , export
@@ -22,7 +22,7 @@ module Data.State exposing
 
 @docs updateWithPointer
 
-@docs selectClass, selectImage, selectTool
+@docs toggleCategory, selectClass, selectImage, selectTool
 
 @docs loadImages, imageLoaded
 
@@ -55,7 +55,7 @@ type State
 
 
 type alias Classes =
-    { selected : Int
+    { selected : Maybe ( Int, Int )
     , all : FileSystem
     }
 
@@ -112,18 +112,33 @@ selectImage id state =
             state
 
 
-selectClass : Int -> State -> State
-selectClass id state =
-    -- ( SelectClass id, ConfigProvided config classes tools ) ->
-    --     ( { model | state = ConfigProvided config { classes | selected = id } tools }
-    --     , Cmd.none
-    --     )
-    --
-    -- ( SelectClass id, AllProvided config { selected, all } tools imgs ) ->
-    --     ( { model | state = AllProvided config { selected = id, all = all } tools imgs }
-    --     , Cmd.none
-    --     )
-    Debug.todo "selectClass"
+toggleCategory : Int -> State -> State
+toggleCategory id state =
+    case state of
+        AllProvided error config classes tools imgs ->
+            FileSystem.findFolderWithId id classes.all
+                |> Maybe.map toggleFocused
+                |> Maybe.map (\all -> { classes | all = all })
+                |> Maybe.map (\newClasses -> AllProvided error config newClasses tools imgs)
+                |> Maybe.withDefault state
+
+        _ ->
+            state
+
+
+toggleFocused : FileSystem -> FileSystem
+toggleFocused =
+    FileSystem.updateCurrentFolder (\f -> { f | open = not f.open })
+
+
+selectClass : ( Int, Int ) -> State -> State
+selectClass selected state =
+    case state of
+        AllProvided error config classes tools images ->
+            AllProvided error config { classes | selected = Just selected } tools images
+
+        _ ->
+            state
 
 
 selectTool : Int -> State -> State
@@ -306,14 +321,6 @@ decodeConfig : String -> Result Config.Error ( Config, Classes, Zipper Tool )
 decodeConfig configString =
     case Decode.decodeString Config.decoder configString of
         Ok config ->
-            let
-                selected =
-                    if List.isEmpty config.classes then
-                        0
-
-                    else
-                        1
-            in
             case config.tools of
                 [] ->
                     Err Config.IncorrectTools
@@ -321,7 +328,7 @@ decodeConfig configString =
                 firstTool :: otherTools ->
                     Ok
                         ( config
-                        , { selected = selected, all = Config.classesFrom config.classes }
+                        , { selected = Nothing, all = Config.classesFrom config.classes }
                         , Zipper.init [] firstTool otherTools
                         )
 

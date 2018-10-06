@@ -188,102 +188,87 @@ mapCurrentAnnotated f =
 
 loadImages : List { name : String, file : Value } -> State -> ( State, Cmd msg )
 loadImages images state =
-    -- ( LoadImages (first :: files), NothingProvided ) ->
-    --     let
-    --         ( firstImage, firstCmd ) =
-    --             prepareOneLoading setupRemoteLoading 0 first
-    --
-    --         ( otherImages, otherCmds ) =
-    --             prepareListLoading setupRemoteLoading 1 files
-    --     in
-    --     ( { model | state = ImagesProvided (Zipper.init [] firstImage otherImages) }
-    --     , Cmd.batch (firstCmd :: otherCmds)
-    --     )
-    --
-    -- ( LoadImages (first :: files), ConfigProvided config classes tools ) ->
-    --     let
-    --         ( firstImage, firstCmd ) =
-    --             prepareOneLoading setupAnnotatedLoading 0 first
-    --
-    --         ( otherImages, otherCmds ) =
-    --             prepareListLoading setupAnnotatedLoading 1 files
-    --
-    --         annotatedImages =
-    --             Zipper.init [] firstImage otherImages
-    --     in
-    --     ( { model | state = AllProvided config classes tools annotatedImages }
-    --     , Cmd.batch (firstCmd :: otherCmds)
-    --     )
-    --
-    -- ( LoadImages files, ImagesProvided previousImages ) ->
-    --     let
-    --         startingId =
-    --             1 + (.id << Zipper.getC) (Zipper.goEnd previousImages)
-    --
-    --         ( newImages, cmds ) =
-    --             prepareListLoading setupRemoteLoading startingId files
-    --     in
-    --     ( { model | state = ImagesProvided (Zipper.append newImages previousImages) }
-    --     , Cmd.batch cmds
-    --     )
-    --
-    -- ( LoadImages files, AllProvided config classes tools previousImages ) ->
-    --     let
-    --         startingId =
-    --             1 + (.id << Zipper.getC) (Zipper.goEnd previousImages)
-    --
-    --         ( newImages, cmds ) =
-    --             prepareListLoading setupAnnotatedLoading startingId files
-    --
-    --         annotatedImages =
-    --             Zipper.append newImages previousImages
-    --     in
-    --     ( { model | state = AllProvided config classes tools annotatedImages }
-    --     , Cmd.batch cmds
-    --     )
-    Debug.todo "loadImages"
+    case ( images, state ) of
+        ( first :: files, NothingProvided _ ) ->
+            let
+                ( firstImage, firstCmd ) =
+                    prepareOneLoading setupRemoteLoading 0 first
+
+                ( otherImages, otherCmds ) =
+                    prepareListLoading setupRemoteLoading 1 files
+            in
+            ( ImagesProvided NoError (Zipper.init [] firstImage otherImages)
+            , Cmd.batch (firstCmd :: otherCmds)
+            )
+
+        ( first :: files, ConfigProvided _ config classes tools ) ->
+            let
+                ( firstImage, firstCmd ) =
+                    prepareOneLoading setupAnnotatedLoading 0 first
+
+                ( otherImages, otherCmds ) =
+                    prepareListLoading setupAnnotatedLoading 1 files
+
+                annotatedImages =
+                    Zipper.init [] firstImage otherImages
+            in
+            ( AllProvided NoError config classes tools annotatedImages
+            , Cmd.batch (firstCmd :: otherCmds)
+            )
+
+        ( files, ImagesProvided _ previousImages ) ->
+            let
+                startingId =
+                    1 + .id (Zipper.getLast previousImages)
+
+                ( newImages, cmds ) =
+                    prepareListLoading setupRemoteLoading startingId files
+            in
+            ( ImagesProvided NoError (Zipper.append newImages previousImages)
+            , Cmd.batch cmds
+            )
+
+        ( files, AllProvided _ config classes tools previousImages ) ->
+            let
+                startingId =
+                    1 + .id (Zipper.getLast previousImages)
+
+                ( newImages, cmds ) =
+                    prepareListLoading setupAnnotatedLoading startingId files
+
+                annotatedImages =
+                    Zipper.append newImages previousImages
+            in
+            ( AllProvided NoError config classes tools annotatedImages
+            , Cmd.batch cmds
+            )
+
+        _ ->
+            ( state, Cmd.none )
+
+
+mapCurrentRemote : (RemoteImage -> RemoteImage) -> RemoteZipper -> RemoteZipper
+mapCurrentRemote f =
+    Zipper.updateC (\c -> { c | remoteImage = f c.remoteImage })
 
 
 imageLoaded : { id : Int, url : String, width : Int, height : Int } -> State -> State
 imageLoaded { id, url, width, height } state =
-    -- ( ImageLoaded { id, url, width, height }, ImagesProvided images ) ->
-    --     let
-    --         movedZipper =
-    --             Zipper.goTo .id id images
-    --
-    --         { name } =
-    --             .remoteImage (Zipper.getC movedZipper)
-    --
-    --         loaded =
-    --             { name = name, status = RemoteImage.Loaded (Image url width height) }
-    --
-    --         newZipper =
-    --             Zipper.setC { id = id, remoteImage = loaded } movedZipper
-    --                 |> Zipper.goTo .id (.id (Zipper.getC images))
-    --     in
-    --     ( { model | state = ImagesProvided newZipper }
-    --     , Cmd.none
-    --     )
-    --
-    -- ( ImageLoaded { id, url, width, height }, AllProvided config classes tools images ) ->
-    --     let
-    --         movedZipper =
-    --             Zipper.goTo .id id images
-    --
-    --         { name } =
-    --             .annotatedImage (Zipper.getC movedZipper)
-    --
-    --         loaded =
-    --             { name = name, status = AnnotatedImage.Loaded (Image url width height) }
-    --
-    --         newZipper =
-    --             Zipper.setC { id = id, annotatedImage = loaded } movedZipper
-    --                 |> Zipper.goTo .id (.id (Zipper.getC images))
-    --     in
-    --     ( { model | state = AllProvided config classes tools newZipper }
-    --     , Cmd.none
-    --     )
-    Debug.todo "imageLoaded"
+    case state of
+        ImagesProvided error images ->
+            Zipper.goTo .id id images
+                |> mapCurrentRemote (\r -> { r | status = RemoteImage.Loaded (Image url width height) })
+                |> Zipper.goTo .id (.id (Zipper.getC images))
+                |> ImagesProvided error
+
+        AllProvided error config classes tools images ->
+            Zipper.goTo .id id images
+                |> mapCurrentAnnotated (\r -> { r | status = AnnotatedImage.Loaded (Image url width height) })
+                |> Zipper.goTo .id (.id (Zipper.getC images))
+                |> AllProvided error config classes tools
+
+        _ ->
+            state
 
 
 

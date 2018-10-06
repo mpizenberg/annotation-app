@@ -4,6 +4,7 @@ module Packages.Zipper exposing
     , getAll
     , getC
     , getL
+    , getLast
     , getR
     , goEnd
     , goL
@@ -24,6 +25,8 @@ module Packages.Zipper exposing
     , setR
     , updateC
     )
+
+import Packages.ListExtra as ListExtra
 
 
 type Zipper a
@@ -170,6 +173,12 @@ getAll (Zipper left center right) =
 
         x :: xs ->
             getAll (Zipper xs x (center :: right))
+
+
+getLast : Zipper a -> a
+getLast (Zipper _ center right) =
+    ListExtra.last right
+        |> Maybe.withDefault center
 
 
 

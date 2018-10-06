@@ -93,19 +93,15 @@ remoteImageWithId id image =
 
 selectImage : Int -> State -> State
 selectImage id state =
-    -- ( SelectImage imageId, ImagesProvided remoteImages ) ->
-    --     ( { model | state = ImagesProvided (Zipper.goTo .id imageId remoteImages) }
-    --     , Cmd.none
-    --     )
-    --
-    -- ( SelectImage imageId, AllProvided config classes tools images ) ->
-    --     let
-    --         newImages =
-    --             Zipper.goTo .id imageId images
-    --     in
-    --     { model | state = AllProvided config classes tools newImages }
-    --         |> update (SelectTool (Tool.toId <| Zipper.getC tools))
-    Debug.todo "selectImage"
+    case state of
+        ImagesProvided _ remoteImages ->
+            ImagesProvided NoError (Zipper.goTo .id id remoteImages)
+
+        AllProvided _ config classes tools images ->
+            AllProvided NoError config classes tools (Zipper.goTo .id id images)
+
+        _ ->
+            state
 
 
 selectClass : Int -> State -> State
@@ -124,21 +120,15 @@ selectClass id state =
 
 selectTool : Int -> State -> State
 selectTool id state =
-    -- ( SelectTool toolId, ConfigProvided config classes tools ) ->
-    --     ( { model | state = ConfigProvided config classes (Zipper.goTo Tool.toId toolId tools) }, Cmd.none )
-    --
-    -- ( SelectTool toolId, AllProvided config classes tools imgs ) ->
-    --     let
-    --         newTools =
-    --             Zipper.goTo Tool.toId toolId tools
-    --
-    --         newState =
-    --             AllProvided config classes newTools imgs
-    --     in
-    --     ( { model | state = newState }
-    --     , Cmd.none
-    --     )
-    Debug.todo "selectTool"
+    case state of
+        ConfigProvided error config classes tools ->
+            ConfigProvided error config classes (Zipper.goTo Tool.toId id tools)
+
+        AllProvided error config classes tools imgs ->
+            AllProvided error config classes (Zipper.goTo Tool.toId id tools) imgs
+
+        _ ->
+            state
 
 
 updateWithPointer : Pointer.Msg -> State -> State

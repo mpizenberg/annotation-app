@@ -50,14 +50,22 @@ import Ports
 type State
     = NothingProvided Error
     | ConfigProvided Error Config Classes (Zipper Tool)
-    | ImagesProvided Error (Zipper { id : Int, remoteImage : RemoteImage })
-    | AllProvided Error Config Classes (Zipper Tool) (Zipper { id : Int, annotatedImage : AnnotatedImage })
+    | ImagesProvided Error RemoteZipper
+    | AllProvided Error Config Classes (Zipper Tool) AnnotatedZipper
 
 
 type alias Classes =
     { selected : Int
     , all : FileSystem
     }
+
+
+type alias RemoteZipper =
+    Zipper { id : Int, remoteImage : RemoteImage }
+
+
+type alias AnnotatedZipper =
+    Zipper { id : Int, annotatedImage : AnnotatedImage }
 
 
 type Error
@@ -165,21 +173,17 @@ updateWithPointer pointerMsg state =
 
 removeAnnotation : State -> State
 removeAnnotation state =
-    -- ( RemoveAnnotation, AllProvided config classes tools imgs ) ->
-    --     let
-    --         currentImage =
-    --             Zipper.getC imgs
-    --
-    --         annotatedImage =
-    --             AnnotatedImage.removeAnnotation currentImage.annotatedImage
-    --
-    --         newZipper =
-    --             Zipper.setC { currentImage | annotatedImage = annotatedImage } imgs
-    --     in
-    --     ( { model | state = AllProvided config classes tools newZipper }
-    --     , Cmd.none
-    --     )
-    Debug.todo "removeAnnotation"
+    case state of
+        AllProvided NoError config classes tools imgs ->
+            AllProvided NoError config classes tools (mapCurrentAnnotated AnnotatedImage.removeAnnotation imgs)
+
+        _ ->
+            state
+
+
+mapCurrentAnnotated : (AnnotatedImage -> AnnotatedImage) -> AnnotatedZipper -> AnnotatedZipper
+mapCurrentAnnotated f =
+    Zipper.updateC (\c -> { c | annotatedImage = f c.annotatedImage })
 
 
 loadImages : List { name : String, file : Value } -> State -> ( State, Cmd msg )

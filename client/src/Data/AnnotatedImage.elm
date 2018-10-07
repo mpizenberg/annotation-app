@@ -109,7 +109,15 @@ updateWithPointerDownAt : ( Float, Float ) -> Tool -> Int -> AnnotatedImage -> A
 updateWithPointerDownAt coordinates tool classId annotatedImage =
     case ( tool, annotatedImage.status ) of
         ( Tool.Polygon, LoadedWithAnnotations img count zipper ) ->
-            Debug.todo "check if current is unfinished polygon"
+            case .annotation (Zipper.getC zipper) of
+                Annotation.UnfinishedPolygon line ->
+                    Annotation.UnfinishedPolygon (Annotation.prependPointToLine coordinates line)
+                        |> changeCurrentOf zipper
+                        |> LoadedWithAnnotations img count
+                        |> (\status -> { annotatedImage | status = status })
+
+                _ ->
+                    annotatedImage
 
         ( _, Loaded img ) ->
             Annotation.init tool coordinates
@@ -127,6 +135,11 @@ updateWithPointerDownAt coordinates tool classId annotatedImage =
             annotatedImage
 
 
+changeCurrentOf : Zipper AnnotationWithId -> Annotation -> Zipper AnnotationWithId
+changeCurrentOf zipper annotation =
+    Zipper.updateC (\current -> { current | annotation = annotation }) zipper
+
+
 appendAnnotation : Int -> Int -> Annotation -> Zipper AnnotationWithId -> Zipper AnnotationWithId
 appendAnnotation id classId annotation zipper =
     Zipper.goEnd zipper
@@ -141,13 +154,13 @@ checkCurrent ({ name, status } as annotatedImage) =
 updateCurrentWith : (Annotation -> Annotation) -> String -> Image -> Int -> Zipper AnnotationWithId -> AnnotatedImage
 updateCurrentWith f imageName img count zipper =
     { name = imageName
-    , status = LoadedWithAnnotations img count (Zipper.updateC (updateAnnotation f) zipper)
+    , status = LoadedWithAnnotations img count (Zipper.updateC (updateAnnotationWith f) zipper)
     }
 
 
-updateAnnotation : (Annotation -> Annotation) -> { record | annotation : Annotation } -> { record | annotation : Annotation }
-updateAnnotation f record =
-    { record | annotation = f record.annotation }
+updateAnnotationWith : (Annotation -> Annotation) -> AnnotationWithId -> AnnotationWithId
+updateAnnotationWith f withId =
+    { withId | annotation = f withId.annotation }
 
 
 

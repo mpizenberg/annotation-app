@@ -8,6 +8,7 @@ module Data.Annotation exposing
     , encode
     , init
     , moveUpdate
+    , prependPointToLine
     )
 
 import Annotation.Line as Line
@@ -56,8 +57,6 @@ moveUpdate coordinates dragState annotation =
         ( UnfinishedOutline line, Pointer.DraggingFrom _ ) ->
             UnfinishedOutline (prependPointToLine coordinates line)
 
-        -- ( UnfinishedPolygon line, Pointer.DownAt coordinates, Pointer.NoDrag ) ->
-        --     UnfinishedPolygon (prependPointToLine coordinates line)
         ( UnfinishedPolygon (_ :: line), Pointer.DraggingFrom _ ) ->
             UnfinishedPolygon (prependPointToLine coordinates line)
 

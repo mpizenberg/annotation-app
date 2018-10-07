@@ -19,7 +19,15 @@ type Msg
 
 update : Msg -> DragState -> DragState
 update msg dragState =
-    Debug.todo "Pointer.update"
+    case msg of
+        DownAt pos ->
+            DraggingFrom pos
+
+        UpAt _ ->
+            NoDrag
+
+        _ ->
+            dragState
 
 
 mapMsg : (( Float, Float ) -> ( Float, Float )) -> Msg -> Msg

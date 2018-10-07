@@ -6,12 +6,15 @@
 module Data.Annotation exposing
     ( Annotation(..)
     , encode
+    , init
+    , moveUpdate
     )
 
 import Annotation.Line as Line
 import Annotation.Point as Point
 import Annotation.Rectangle as Rectangle
 import Data.Pointer as Pointer
+import Data.Tool as Tool exposing (Tool)
 import Json.Encode as Encode exposing (Value)
 
 
@@ -29,29 +32,33 @@ type Annotation
     | Polygon Line.Line
 
 
+init : Tool -> ( Float, Float ) -> Annotation
+init tool coordinates =
+    Debug.todo "Annotation.init"
+
+
 
 -- UPDATE ############################################################
 
 
-moveUpdate : Pointer.Msg -> Pointer.DragState -> Annotation -> Annotation
-moveUpdate pointerMsg dragState annotation =
-    case ( annotation, pointerMsg, dragState ) of
-        ( Point point, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+moveUpdate : ( Float, Float ) -> Pointer.DragState -> Annotation -> Annotation
+moveUpdate coordinates dragState annotation =
+    case ( annotation, dragState ) of
+        ( Point point, Pointer.DraggingFrom _ ) ->
             Point (Point.fromCoordinates coordinates)
 
-        ( BBox rect, Pointer.MoveAt coordinates, Pointer.DraggingFrom corner ) ->
+        ( BBox rect, Pointer.DraggingFrom corner ) ->
             BBox (createBBox coordinates corner)
 
-        ( Line line, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+        ( Line line, Pointer.DraggingFrom _ ) ->
             Line (prependPointToLine coordinates line)
 
-        ( UnfinishedOutline line, Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+        ( UnfinishedOutline line, Pointer.DraggingFrom _ ) ->
             UnfinishedOutline (prependPointToLine coordinates line)
 
-        ( UnfinishedPolygon line, Pointer.DownAt coordinates, Pointer.NoDrag ) ->
-            UnfinishedPolygon (prependPointToLine coordinates line)
-
-        ( UnfinishedPolygon (_ :: line), Pointer.MoveAt coordinates, Pointer.DraggingFrom _ ) ->
+        -- ( UnfinishedPolygon line, Pointer.DownAt coordinates, Pointer.NoDrag ) ->
+        --     UnfinishedPolygon (prependPointToLine coordinates line)
+        ( UnfinishedPolygon (_ :: line), Pointer.DraggingFrom _ ) ->
             UnfinishedPolygon (prependPointToLine coordinates line)
 
         _ ->

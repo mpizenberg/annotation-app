@@ -163,22 +163,28 @@ updateWithPointer : Pointer.Msg -> Viewer -> State -> Maybe ( State, Viewer )
 updateWithPointer pointerMsg viewer state =
     case state of
         AllProvided error drag config classes tools imgs ->
-            case Zipper.getC tools of
-                Tool.Move ->
+            case ( Zipper.getC tools, classes.selected ) of
+                ( Tool.Move, _ ) ->
                     updateMove pointerMsg drag viewer
                         |> Maybe.map (Tuple.mapFirst (dragToState error config classes tools imgs))
 
-                _ ->
+                ( tool, Just ( _, classId ) ) ->
                     let
                         scaledPointerMsg =
                             Pointer.mapMsg (\pos -> Viewer.coordinatesAt pos viewer) pointerMsg
 
                         newDrag =
                             Pointer.update pointerMsg drag
+
+                        updateAnnotated =
+                            AnnotatedImage.updateWithPointer scaledPointerMsg newDrag tool classId
                     in
-                    mapCurrentAnnotated (AnnotatedImage.updateWithPointer scaledPointerMsg) imgs
+                    mapCurrentAnnotated updateAnnotated imgs
                         |> AllProvided error newDrag config classes tools
                         |> (\newState -> Just ( newState, viewer ))
+
+                _ ->
+                    Nothing
 
         _ ->
             Nothing

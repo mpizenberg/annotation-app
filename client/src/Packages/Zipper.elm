@@ -16,6 +16,8 @@ module Packages.Zipper exposing
     , hasL
     , hasR
     , init
+    , insertGoL
+    , insertGoR
     , insertL
     , insertR
     , mapAll
@@ -23,6 +25,7 @@ module Packages.Zipper exposing
     , setC
     , setL
     , setR
+    , singleton
     , updateC
     )
 
@@ -36,6 +39,11 @@ type Zipper a
 init : List a -> a -> List a -> Zipper a
 init =
     Zipper
+
+
+singleton : a -> Zipper a
+singleton a =
+    Zipper [] a []
 
 
 
@@ -239,6 +247,16 @@ insertL value (Zipper left center right) =
 insertR : a -> Zipper a -> Zipper a
 insertR value (Zipper left center right) =
     Zipper left center (value :: right)
+
+
+insertGoL : a -> Zipper a -> Zipper a
+insertGoL value (Zipper left center right) =
+    Zipper left value (center :: right)
+
+
+insertGoR : a -> Zipper a -> Zipper a
+insertGoR value (Zipper left center right) =
+    Zipper (center :: left) value right
 
 
 append : List a -> Zipper a -> Zipper a

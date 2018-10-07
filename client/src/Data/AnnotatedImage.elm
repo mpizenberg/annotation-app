@@ -75,14 +75,11 @@ removeAnnotation : AnnotatedImage -> AnnotatedImage
 removeAnnotation annotatedImage =
     case annotatedImage.status of
         LoadedWithAnnotations img count zipper ->
-            case zipper of
-                Zipper left _ (r :: rs) ->
-                    { annotatedImage | status = LoadedWithAnnotations img count (Zipper left r rs) }
+            case Zipper.removeGoRelseL zipper of
+                Just newZipper ->
+                    { annotatedImage | status = LoadedWithAnnotations img count newZipper }
 
-                Zipper (l :: ls) _ [] ->
-                    { annotatedImage | status = LoadedWithAnnotations img count (Zipper ls l []) }
-
-                Zipper [] _ [] ->
+                _ ->
                     { annotatedImage | status = Loaded img }
 
         _ ->
@@ -98,8 +95,8 @@ updateWithPointer pointerMsg dragState tool classId ({ name } as annotatedImage)
         ( Pointer.MoveAt pos, LoadedWithAnnotations img count zipper ) ->
             updateCurrentWith (Annotation.moveUpdate pos dragState) name img count zipper
 
-        ( Pointer.UpAt _, LoadedWithAnnotations _ _ _ ) ->
-            checkCurrent annotatedImage
+        ( Pointer.UpAt _, LoadedWithAnnotations img count zipper ) ->
+            checkCurrent name img count zipper
 
         _ ->
             annotatedImage
@@ -146,9 +143,21 @@ appendAnnotation id classId annotation zipper =
         |> Zipper.insertGoR (AnnotationWithId id classId annotation)
 
 
-checkCurrent : AnnotatedImage -> AnnotatedImage
-checkCurrent ({ name, status } as annotatedImage) =
-    Debug.todo "check current for potential removal"
+checkCurrent : String -> Image -> Int -> Zipper AnnotationWithId -> AnnotatedImage
+checkCurrent name img count zipper =
+    case Annotation.end (.annotation (Zipper.getC zipper)) of
+        Just updatedAnnotation ->
+            changeCurrentOf zipper updatedAnnotation
+                |> LoadedWithAnnotations img count
+                |> (\status -> { name = name, status = status })
+
+        Nothing ->
+            case Zipper.removeGoRelseL zipper of
+                Just newZipper ->
+                    { name = name, status = LoadedWithAnnotations img count newZipper }
+
+                _ ->
+                    { name = name, status = Loaded img }
 
 
 updateCurrentWith : (Annotation -> Annotation) -> String -> Image -> Int -> Zipper AnnotationWithId -> AnnotatedImage

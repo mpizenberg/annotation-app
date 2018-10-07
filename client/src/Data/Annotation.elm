@@ -6,6 +6,7 @@
 module Data.Annotation exposing
     ( Annotation(..)
     , encode
+    , end
     , init
     , moveUpdate
     , prependPointToLine
@@ -72,6 +73,11 @@ createBBox corner1 corner2 =
 prependPointToLine : ( Float, Float ) -> Line.Line -> Line.Line
 prependPointToLine coordinates =
     Line.prependPoint (Point.fromCoordinates coordinates)
+
+
+end : Annotation -> Maybe Annotation
+end annotation =
+    Debug.todo "check after pointer up (remove, close, etc.)"
 
 
 

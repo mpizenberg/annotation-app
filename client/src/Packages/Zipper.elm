@@ -22,6 +22,10 @@ module Packages.Zipper exposing
     , insertR
     , mapAll
     , moveMapStart
+    , removeGoL
+    , removeGoLelseR
+    , removeGoR
+    , removeGoRelseL
     , setC
     , setL
     , setR
@@ -233,6 +237,56 @@ moveMapStart f (Zipper left center right) =
 
         x :: xs ->
             moveMapStart f (Zipper xs x <| f center :: right)
+
+
+
+-- REMOVE ##################################################
+
+
+removeGoL : Zipper a -> Maybe (Zipper a)
+removeGoL (Zipper left center right) =
+    case left of
+        l :: ls ->
+            Just (Zipper ls l right)
+
+        _ ->
+            Nothing
+
+
+removeGoR : Zipper a -> Maybe (Zipper a)
+removeGoR (Zipper left center right) =
+    case right of
+        r :: rs ->
+            Just (Zipper left r rs)
+
+        _ ->
+            Nothing
+
+
+removeGoLelseR : Zipper a -> Maybe (Zipper a)
+removeGoLelseR (Zipper left center right) =
+    case ( left, right ) of
+        ( l :: ls, _ ) ->
+            Just (Zipper ls l right)
+
+        ( [], r :: rs ) ->
+            Just (Zipper [] r rs)
+
+        _ ->
+            Nothing
+
+
+removeGoRelseL : Zipper a -> Maybe (Zipper a)
+removeGoRelseL (Zipper left center right) =
+    case ( left, right ) of
+        ( _, r :: rs ) ->
+            Just (Zipper [] r rs)
+
+        ( l :: ls, [] ) ->
+            Just (Zipper ls l right)
+
+        _ ->
+            Nothing
 
 
 

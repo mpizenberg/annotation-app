@@ -18,6 +18,7 @@ import Annotation.Rectangle as Rectangle
 import Data.Pointer as Pointer
 import Data.Tool as Tool exposing (Tool)
 import Json.Encode as Encode exposing (Value)
+import Packages.ListExtra as ListExtra
 
 
 
@@ -79,7 +80,7 @@ moveUpdate coordinates dragState annotation =
             UnfinishedPolygon (prependPointToLine coordinates line)
 
         _ ->
-            Debug.todo "update annotation"
+            annotation
 
 
 createBBox : ( Float, Float ) -> ( Float, Float ) -> Rectangle.Rectangle
@@ -92,9 +93,68 @@ prependPointToLine coordinates =
     Line.prependPoint (Point.fromCoordinates coordinates)
 
 
-end : Annotation -> Maybe Annotation
-end annotation =
-    Debug.todo "check after pointer up (remove, close, etc.)"
+end : Float -> Annotation -> Maybe Annotation
+end scale annotation =
+    case annotation of
+        -- Remove bounding box if all corners are the same point
+        BBox rectangle ->
+            if Rectangle.area rectangle == 0 then
+                Nothing
+
+            else
+                Just annotation
+
+        -- Remove line if it has only one point
+        Line (_ :: []) ->
+            Nothing
+
+        -- Remove outline if it contains less than 3 points
+        UnfinishedOutline (_ :: []) ->
+            Nothing
+
+        UnfinishedOutline (_ :: _ :: []) ->
+            Nothing
+
+        -- Close outline otherwise
+        UnfinishedOutline ((_ :: _ :: _ :: _) as line) ->
+            Just (Outline line)
+
+        -- Only accept points that are different from previous for the first 3 points
+        UnfinishedPolygon (p1 :: p2 :: []) ->
+            if Point.distance p1 p2 / scale > samePointDistance then
+                Just annotation
+
+            else
+                Just (UnfinishedPolygon [ p2 ])
+
+        UnfinishedPolygon (p1 :: p2 :: p3 :: []) ->
+            if Point.distance p1 p2 / scale > samePointDistance && Point.distance p1 p3 / scale > samePointDistance then
+                Just annotation
+
+            else
+                Just (UnfinishedPolygon [ p2, p3 ])
+
+        -- Close polygon if beginning and end match
+        UnfinishedPolygon (p1 :: p2 :: p3 :: otherPoints) ->
+            let
+                pEnd =
+                    ListExtra.last otherPoints
+                        |> Maybe.withDefault p1
+            in
+            if Point.distance p1 pEnd / scale > samePointDistance then
+                Just annotation
+
+            else
+                Just (Polygon (p2 :: p3 :: otherPoints))
+
+        -- In any other case leave annotation untouched
+        _ ->
+            Just annotation
+
+
+samePointDistance : Float
+samePointDistance =
+    10.0
 
 
 

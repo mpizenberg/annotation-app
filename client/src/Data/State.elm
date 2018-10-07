@@ -177,7 +177,7 @@ updateWithPointer pointerMsg viewer state =
                             Pointer.update pointerMsg drag
 
                         updateAnnotated =
-                            AnnotatedImage.updateWithPointer scaledPointerMsg newDrag tool classId
+                            AnnotatedImage.updateWithPointer scaledPointerMsg newDrag tool classId viewer.scale
                     in
                     mapCurrentAnnotated updateAnnotated imgs
                         |> AllProvided error newDrag config classes tools

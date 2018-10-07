@@ -86,8 +86,8 @@ removeAnnotation annotatedImage =
             annotatedImage
 
 
-updateWithPointer : Pointer.Msg -> Pointer.DragState -> Tool -> Int -> AnnotatedImage -> AnnotatedImage
-updateWithPointer pointerMsg dragState tool classId ({ name } as annotatedImage) =
+updateWithPointer : Pointer.Msg -> Pointer.DragState -> Tool -> Int -> Float -> AnnotatedImage -> AnnotatedImage
+updateWithPointer pointerMsg dragState tool classId scale ({ name } as annotatedImage) =
     case ( pointerMsg, annotatedImage.status ) of
         ( Pointer.DownAt pos, _ ) ->
             updateWithPointerDownAt pos tool classId annotatedImage
@@ -96,7 +96,7 @@ updateWithPointer pointerMsg dragState tool classId ({ name } as annotatedImage)
             updateCurrentWith (Annotation.moveUpdate pos dragState) name img count zipper
 
         ( Pointer.UpAt _, LoadedWithAnnotations img count zipper ) ->
-            checkCurrent name img count zipper
+            checkCurrent name img count scale zipper
 
         _ ->
             annotatedImage
@@ -152,9 +152,9 @@ appendAnnotation id classId annotation zipper =
         |> Zipper.insertGoR (AnnotationWithId id classId annotation)
 
 
-checkCurrent : String -> Image -> Int -> Zipper AnnotationWithId -> AnnotatedImage
-checkCurrent name img count zipper =
-    case Annotation.end (.annotation (Zipper.getC zipper)) of
+checkCurrent : String -> Image -> Int -> Float -> Zipper AnnotationWithId -> AnnotatedImage
+checkCurrent name img count scale zipper =
+    case Annotation.end scale (.annotation (Zipper.getC zipper)) of
         Just updatedAnnotation ->
             changeCurrentOf zipper updatedAnnotation
                 |> LoadedWithAnnotations img count

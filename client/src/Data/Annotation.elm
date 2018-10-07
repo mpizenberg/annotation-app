@@ -34,9 +34,26 @@ type Annotation
     | Polygon Line.Line
 
 
-init : Tool -> ( Float, Float ) -> Annotation
+init : Tool -> ( Float, Float ) -> Maybe Annotation
 init tool coordinates =
-    Debug.todo "Annotation.init"
+    case tool of
+        Tool.Point ->
+            Just <| Point (Point.fromCoordinates coordinates)
+
+        Tool.BBox ->
+            Just <| BBox (createBBox coordinates coordinates)
+
+        Tool.Line ->
+            Just <| Line [ Point.fromCoordinates coordinates ]
+
+        Tool.Outline ->
+            Just <| UnfinishedOutline [ Point.fromCoordinates coordinates ]
+
+        Tool.Polygon ->
+            Just <| UnfinishedPolygon [ Point.fromCoordinates coordinates ]
+
+        _ ->
+            Nothing
 
 
 

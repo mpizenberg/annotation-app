@@ -117,16 +117,25 @@ updateWithPointerDownAt coordinates tool classId annotatedImage =
                     annotatedImage
 
         ( _, Loaded img ) ->
-            Annotation.init tool coordinates
-                |> (\annotation -> { id = 0, classId = classId, annotation = annotation })
-                |> Zipper.singleton
-                |> LoadedWithAnnotations img 0
-                |> (\status -> { annotatedImage | status = status })
+            case Annotation.init tool coordinates of
+                Just annotation ->
+                    { id = 0, classId = classId, annotation = annotation }
+                        |> Zipper.singleton
+                        |> LoadedWithAnnotations img 0
+                        |> (\status -> { annotatedImage | status = status })
+
+                Nothing ->
+                    annotatedImage
 
         ( _, LoadedWithAnnotations img count zipper ) ->
-            appendAnnotation (count + 1) classId (Annotation.init tool coordinates) zipper
-                |> LoadedWithAnnotations img (count + 1)
-                |> (\status -> { annotatedImage | status = status })
+            case Annotation.init tool coordinates of
+                Just annotation ->
+                    appendAnnotation (count + 1) classId annotation zipper
+                        |> LoadedWithAnnotations img (count + 1)
+                        |> (\status -> { annotatedImage | status = status })
+
+                Nothing ->
+                    annotatedImage
 
         _ ->
             annotatedImage

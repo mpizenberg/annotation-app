@@ -54,4 +54,4 @@ nothingProvided msg error =
                     Html.pre [] [ Html.text (Decode.errorToString decodeError) ]
                         |> Element.html
     in
-    Element.column [] [ actionBar, centerArea ]
+    Element.column [ Element.width Element.fill ] [ actionBar, centerArea ]

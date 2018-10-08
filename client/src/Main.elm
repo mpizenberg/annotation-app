@@ -206,8 +206,12 @@ update msg model =
 
 
 windowResizes : Device.Size -> Viewer -> Viewer
-windowResizes size viewer =
-    Debug.todo "WindowResizes"
+windowResizes { width, height } viewer =
+    let
+        center =
+            Viewer.coordinatesAtCenter viewer
+    in
+    Viewer.centerAtCoordinates center { viewer | size = ( toFloat width, toFloat height ) }
 
 
 updateZoom : ZoomMsg -> Model -> Model

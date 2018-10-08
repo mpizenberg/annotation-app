@@ -9,11 +9,13 @@ import Browser
 import Data.Image exposing (Image)
 import Data.Pointer as Pointer
 import Data.State as State exposing (State)
+import Element
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Json.Encode as Encode exposing (Value)
 import Packages.Device as Device exposing (Device)
 import Ports
+import View.Main as View
 import Viewer exposing (Viewer)
 
 
@@ -21,7 +23,7 @@ main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
-        , view = \_ -> Html.text "Work in progress"
+        , view = view
         , update = update
         , subscriptions = subscriptions
         }
@@ -55,6 +57,14 @@ type Msg
       -- other actions
     | ZoomMsg ZoomMsg
     | RemoveAnnotation
+
+
+msgBuilders : View.Msg Msg
+msgBuilders =
+    { actionBar =
+        { loadImages = LoadImages
+        }
+    }
 
 
 type ZoomMsg
@@ -130,9 +140,17 @@ init flags =
     ( model, Cmd.none )
 
 
+view : Model -> Html Msg
+view model =
+    case model.state of
+        State.NothingProvided error ->
+            Element.layout [] (View.nothingProvided msgBuilders error)
 
--- view : Model -> Html Msg
--- view model =
+        _ ->
+            Debug.todo "view"
+
+
+
 --     Html.div [ Attributes.style [ ( "height", "100%" ) ] ]
 --         [ case model.state of
 --             NothingProvided ->

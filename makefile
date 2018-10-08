@@ -19,7 +19,7 @@ server-install :
 	cd server && npm install
 
 client-install :
-	cd client && elm-package install --yes
+	cd client && elm-19 install
 
 # BUILD ####################################################
 
@@ -30,7 +30,7 @@ copy-static-to-build :
 
 # Build elm app
 build : copy-static-to-build
-	cd client && elm-make src/Main.elm --output=../$(BUILD_DIR)/Main.js
+	cd client && elm-19 make src/Main.elm --output=../$(BUILD_DIR)/Main.js
 
 # Start node server
 start : config

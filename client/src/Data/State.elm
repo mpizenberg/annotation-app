@@ -292,23 +292,45 @@ mapCurrentRemote f =
     Zipper.updateC (\c -> { c | remoteImage = f c.remoteImage })
 
 
-imageLoaded : { id : Int, url : String, width : Int, height : Int } -> State -> State
-imageLoaded { id, url, width, height } state =
+imageLoaded : { id : Int, url : String, width : Int, height : Int } -> Viewer -> State -> ( State, Viewer )
+imageLoaded { id, url, width, height } viewer state =
     case state of
         ImagesProvided error drag images ->
-            Zipper.goTo .id id images
-                |> mapCurrentRemote (\r -> { r | status = RemoteImage.Loaded (Image url width height) })
-                |> Zipper.goTo .id (.id (Zipper.getC images))
-                |> ImagesProvided error drag
+            let
+                newState =
+                    Zipper.goTo .id id images
+                        |> mapCurrentRemote (\r -> { r | status = RemoteImage.Loaded (Image url width height) })
+                        |> Zipper.goTo .id (.id (Zipper.getC images))
+                        |> ImagesProvided error drag
+
+                newViewer =
+                    if .id (Zipper.getC images) == id then
+                        Viewer.fitImage 1.0 ( toFloat width, toFloat height ) viewer
+
+                    else
+                        viewer
+            in
+            ( newState, newViewer )
 
         AllProvided error drag config classes tools images ->
-            Zipper.goTo .id id images
-                |> mapCurrentAnnotated (\r -> { r | status = AnnotatedImage.Loaded (Image url width height) })
-                |> Zipper.goTo .id (.id (Zipper.getC images))
-                |> AllProvided error drag config classes tools
+            let
+                newState =
+                    Zipper.goTo .id id images
+                        |> mapCurrentAnnotated (\r -> { r | status = AnnotatedImage.Loaded (Image url width height) })
+                        |> Zipper.goTo .id (.id (Zipper.getC images))
+                        |> AllProvided error drag config classes tools
+
+                newViewer =
+                    if .id (Zipper.getC images) == id then
+                        Viewer.fitImage 1.0 ( toFloat width, toFloat height ) viewer
+
+                    else
+                        viewer
+            in
+            ( newState, newViewer )
 
         _ ->
-            state
+            ( state, viewer )
 
 
 

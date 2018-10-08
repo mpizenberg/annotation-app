@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Elm image annotation demo</title>
+	<title>Annotation App</title>
 	<meta charset="UTF-8">
 	<link rel="shortcut icon" href="favicon64.png" type="image/png" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<style>html, body, .style-elements { height: 100% }</style>
 	<script src="elm-pep.js"></script>
 	<script src="utils.js"></script>
+	<script src="ports.js"></script>
 	<script src="Main.js"></script>
 </head>
 <body>
@@ -19,11 +19,10 @@
 			width: document.documentElement.clientWidth,
 			height: document.documentElement.clientHeight
 		});
-		const containerSize = layoutViewportSize;
 
 		// Set elm app flags
 		const flags = {
-			deviceSize: containerSize(),
+			deviceSize: layoutViewportSize(),
 			mturkMode: false,
 			images: [],
 			config: null
@@ -34,7 +33,9 @@
 			node: document.getElementById("elm"),
 			flags: flags
 		})
+
+		// Activate the app ports
+		activatePorts(app, utils, layoutViewportSize)
 	</script>
-	<script src="ports.js"></script>
 </body>
 </html>

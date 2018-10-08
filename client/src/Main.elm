@@ -92,7 +92,7 @@ init flags =
             Device.classify flags.deviceSize
 
         viewer =
-            Viewer.withSize ( 400, 200 )
+            Viewer.withSize (computeViewerSize flags.deviceSize)
 
         -- layout =
         --     View.pageLayout device
@@ -204,7 +204,11 @@ update msg model =
                 |> Tuple.mapFirst (\state -> { model | state = state })
 
         ImageLoaded image ->
-            ( { model | state = State.imageLoaded image model.state }, Cmd.none )
+            let
+                ( newState, newViewer ) =
+                    State.imageLoaded image model.viewer model.state
+            in
+            ( { model | state = newState, viewer = newViewer }, Cmd.none )
 
         -- Loading config
         LoadConfig jsValue ->
@@ -227,12 +231,14 @@ update msg model =
 
 
 windowResizes : Device.Size -> Viewer -> Viewer
-windowResizes { width, height } viewer =
-    let
-        center =
-            Viewer.coordinatesAtCenter viewer
-    in
-    Viewer.centerAtCoordinates center { viewer | size = ( toFloat width, toFloat height ) }
+windowResizes size viewer =
+    { viewer | size = computeViewerSize size }
+        |> Viewer.centerAtCoordinates (Viewer.coordinatesAtCenter viewer)
+
+
+computeViewerSize : Device.Size -> ( Float, Float )
+computeViewerSize { width, height } =
+    ( toFloat width, toFloat height - 100 )
 
 
 updateZoom : ZoomMsg -> Model -> Model

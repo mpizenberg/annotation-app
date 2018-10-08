@@ -4,7 +4,7 @@
 
 
 module Data.State exposing
-    ( State(..), Classes, Error(..)
+    ( State(..), Error(..), Classes, RemoteZipper, AnnotatedZipper
     , importFlagsImages
     , updateWithPointer
     , toggleCategory, selectClass, selectImage, selectTool
@@ -16,7 +16,7 @@ module Data.State exposing
 
 {-| Module doc
 
-@docs State, Classes, Error
+@docs State, Error, Classes, RemoteZipper, AnnotatedZipper
 
 @docs importFlagsImages
 

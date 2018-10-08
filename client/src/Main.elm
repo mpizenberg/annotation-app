@@ -146,6 +146,9 @@ view model =
         State.NothingProvided error ->
             Element.layout [] (View.nothingProvided msgBuilders error)
 
+        State.ImagesProvided error _ remoteZipper ->
+            Element.layout [] (View.imagesProvided msgBuilders error remoteZipper model.viewer)
+
         _ ->
             Debug.todo "view"
 

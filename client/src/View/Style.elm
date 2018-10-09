@@ -17,7 +17,7 @@ base =
 
 sidebarBG : Element.Color
 sidebarBG =
-    Element.rgba255 255 255 255 0.8
+    Element.rgba255 230 230 230 0.7
 
 
 hoveredItemBG : Element.Color
@@ -27,4 +27,4 @@ hoveredItemBG =
 
 focusedItemBG : Element.Color
 focusedItemBG =
-    Element.rgba255 180 180 180 0.9
+    Element.rgba255 180 180 180 0.8

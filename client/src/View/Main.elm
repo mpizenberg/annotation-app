@@ -10,6 +10,7 @@ import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.State as State
 import Element exposing (Element)
 import Element.Background
+import Element.Border
 import Html
 import Html.Attributes
 import Json.Decode as Decode
@@ -75,12 +76,22 @@ imagesProvided msg error remoteZipper viewer =
                     [ Element.Background.color Style.sidebarBG ]
 
         imagesSidebar =
-            ImagesSidebar.column
+            Element.row
                 [ Element.alignRight
-                , Element.width (Element.maximum 200 Element.shrink)
                 , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+                ]
+                [ chevronRight
+                , imagesList
+                ]
+
+        imagesList =
+            ImagesSidebar.column
+                [ Element.width (Element.maximum 600 Element.shrink)
+                , Element.height Element.fill
+                , Element.alignRight
                 , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
                 , Element.scrollbarY
+                , Element.Background.color Style.sidebarBG
                 ]
                 msg.selectImage
                 remoteZipper

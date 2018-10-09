@@ -66,7 +66,16 @@ imagesProvided msg error remoteZipper viewer =
             ActionBar.nothingProvided msg.actionBar
 
         imagesSidebar =
-            ImagesSidebar.verticalList Element.alignRight msg.selectImage remoteZipper
+            ImagesSidebar.verticalList
+                [ Element.alignRight
+                , Element.clip
+                , Element.width (Element.maximum 200 Element.shrink)
+                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+                , Element.scrollbarY
+                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
+                ]
+                msg.selectImage
+                remoteZipper
 
         centerArea =
             case error of

@@ -13,9 +13,9 @@ import Packages.Zipper as Zipper exposing (Zipper)
 import View.Style as Style
 
 
-verticalList : Element.Attribute msg -> (Int -> msg) -> Zipper { id : Int, remoteImage : RemoteImage } -> Element msg
-verticalList position selectImageMsg zipper =
-    Element.column [ position ] <|
+verticalList : List (Element.Attribute msg) -> (Int -> msg) -> Zipper { id : Int, remoteImage : RemoteImage } -> Element msg
+verticalList attributes selectImageMsg zipper =
+    Element.column attributes <|
         List.concat
             [ Zipper.getL zipper
                 |> List.map (imageItem selectImageMsg Style.sidebarBG)

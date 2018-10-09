@@ -9,6 +9,7 @@ import Data.Config as Config
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.State as State
 import Element exposing (Element)
+import Element.Background
 import Html
 import Html.Attributes
 import Json.Decode as Decode
@@ -16,7 +17,9 @@ import Packages.Zipper as Zipper
 import Svg
 import Svg.Attributes
 import View.ActionBar as ActionBar
+import View.Icon as Icon
 import View.ImagesSidebar as ImagesSidebar
+import View.Style as Style
 import Viewer exposing (Viewer)
 import Viewer.Svg
 
@@ -65,14 +68,19 @@ imagesProvided msg error remoteZipper viewer =
         actionBar =
             ActionBar.nothingProvided msg.actionBar
 
+        chevronRight =
+            Icon.toHtml 64 Icon.chevronRight
+                |> Element.html
+                |> Element.el
+                    [ Element.Background.color Style.sidebarBG ]
+
         imagesSidebar =
-            ImagesSidebar.verticalList
+            ImagesSidebar.column
                 [ Element.alignRight
-                , Element.clip
                 , Element.width (Element.maximum 200 Element.shrink)
                 , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
-                , Element.scrollbarY
                 , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
+                , Element.scrollbarY
                 ]
                 msg.selectImage
                 remoteZipper

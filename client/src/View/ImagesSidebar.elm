@@ -3,7 +3,7 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.ImagesSidebar exposing (verticalList)
+module View.ImagesSidebar exposing (column)
 
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Element exposing (Element)
@@ -13,8 +13,8 @@ import Packages.Zipper as Zipper exposing (Zipper)
 import View.Style as Style
 
 
-verticalList : List (Element.Attribute msg) -> (Int -> msg) -> Zipper { id : Int, remoteImage : RemoteImage } -> Element msg
-verticalList attributes selectImageMsg zipper =
+column : List (Element.Attribute msg) -> (Int -> msg) -> Zipper { id : Int, remoteImage : RemoteImage } -> Element msg
+column attributes selectImageMsg zipper =
     Element.column attributes <|
         List.concat
             [ Zipper.getL zipper

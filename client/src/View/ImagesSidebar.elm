@@ -7,8 +7,10 @@ module View.ImagesSidebar exposing (verticalList)
 
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Element exposing (Element)
+import Element.Background
 import Element.Events
 import Packages.Zipper as Zipper exposing (Zipper)
+import View.Style as Style
 
 
 verticalList : Element.Attribute msg -> (Int -> msg) -> Zipper { id : Int, remoteImage : RemoteImage } -> Element msg
@@ -16,19 +18,22 @@ verticalList position selectImageMsg zipper =
     Element.column [ position ] <|
         List.concat
             [ Zipper.getL zipper
-                |> List.map (imageItem selectImageMsg)
-            , [ imageItem selectImageMsg (Zipper.getC zipper) ]
+                |> List.map (imageItem selectImageMsg Style.sidebarBG)
+            , [ imageItem selectImageMsg Style.focusedItemBG (Zipper.getC zipper) ]
             , Zipper.getR zipper
-                |> List.map (imageItem selectImageMsg)
+                |> List.map (imageItem selectImageMsg Style.sidebarBG)
             ]
 
 
-imageItem : (Int -> msg) -> { id : Int, remoteImage : RemoteImage } -> Element msg
-imageItem selectImageMsg { id, remoteImage } =
+imageItem : (Int -> msg) -> Element.Color -> { id : Int, remoteImage : RemoteImage } -> Element msg
+imageItem selectImageMsg bgColor { id, remoteImage } =
     Element.row
         [ Element.width Element.fill
         , Element.padding 10
+        , Element.pointer
         , Element.Events.onClick (selectImageMsg id)
+        , Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+        , Element.Background.color bgColor
         ]
         [ indicator remoteImage.status
         , Element.text remoteImage.name

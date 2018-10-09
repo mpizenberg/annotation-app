@@ -16,6 +16,7 @@ import Packages.Zipper as Zipper
 import Svg
 import Svg.Attributes
 import View.ActionBar as ActionBar
+import View.ImagesSidebar as ImagesSidebar
 import Viewer exposing (Viewer)
 import Viewer.Svg
 
@@ -25,18 +26,12 @@ import Viewer.Svg
 
 
 type alias Msg msg =
-    { actionBar : ActionBar.Msg msg
+    { selectImage : Int -> msg
+    , actionBar : ActionBar.Msg msg
     }
 
 
 
--- type alias Parameters msg =
---     { device : Device
---     , actionBar : ActionBar.Parameters msg
---     , annotationsArea : AnnotationsArea.Parameters msg
---     , selectClassMsg : Int -> msg
---     , selectImageMsg : Int -> msg
---     }
 -- FUNCTIONS #########################################################
 
 
@@ -70,8 +65,9 @@ imagesProvided msg error remoteZipper viewer =
         actionBar =
             ActionBar.nothingProvided msg.actionBar
 
-        -- imagesSidebar =
-        --     Debug.todo "sidebar"
+        imagesSidebar =
+            ImagesSidebar.verticalList Element.alignRight msg.selectImage remoteZipper
+
         centerArea =
             case error of
                 State.NoError ->
@@ -86,10 +82,18 @@ imagesProvided msg error remoteZipper viewer =
                 State.ConfigError (Config.Incorrect decodeError) ->
                     Html.pre [] [ Html.text (Decode.errorToString decodeError) ]
                         |> Element.html
+
+        centerAreaWithSidebars =
+            centerArea
+                |> Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.inFront imagesSidebar
+                    ]
     in
     Element.column
         [ Element.width Element.fill, Element.height Element.fill ]
-        [ actionBar, centerArea ]
+        [ actionBar, centerAreaWithSidebars ]
 
 
 imageArea : RemoteImage -> Viewer -> Element msg

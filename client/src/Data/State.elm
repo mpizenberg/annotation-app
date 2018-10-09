@@ -100,17 +100,44 @@ remoteImageWithId id image =
 -- UPDATE ############################################################
 
 
-selectImage : Int -> State -> State
-selectImage id state =
+selectImage : Int -> Viewer -> State -> ( State, Viewer )
+selectImage id viewer state =
     case state of
         ImagesProvided _ drag remoteImages ->
-            ImagesProvided NoError drag (Zipper.goTo .id id remoteImages)
+            let
+                movedZipper =
+                    Zipper.goTo .id id remoteImages
+
+                newViewer =
+                    case .status (.remoteImage (Zipper.getC movedZipper)) of
+                        RemoteImage.Loaded img ->
+                            Viewer.fitImage 1.2 ( toFloat img.width, toFloat img.height ) viewer
+
+                        _ ->
+                            viewer
+            in
+            ( ImagesProvided NoError drag movedZipper, newViewer )
 
         AllProvided _ drag config classes tools images ->
-            AllProvided NoError drag config classes tools (Zipper.goTo .id id images)
+            let
+                movedZipper =
+                    Zipper.goTo .id id images
+
+                newViewer =
+                    case .status (.annotatedImage (Zipper.getC movedZipper)) of
+                        AnnotatedImage.Loaded img ->
+                            Viewer.fitImage 1.2 ( toFloat img.width, toFloat img.height ) viewer
+
+                        AnnotatedImage.LoadedWithAnnotations img _ _ ->
+                            Viewer.fitImage 1.2 ( toFloat img.width, toFloat img.height ) viewer
+
+                        _ ->
+                            viewer
+            in
+            ( AllProvided NoError drag config classes tools movedZipper, newViewer )
 
         _ ->
-            state
+            ( state, viewer )
 
 
 toggleCategory : Int -> State -> State

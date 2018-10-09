@@ -16,6 +16,7 @@ import Json.Encode as Encode exposing (Value)
 import Packages.Device as Device exposing (Device)
 import Ports
 import View.Main as View
+import View.Style as Style
 import Viewer exposing (Viewer)
 
 
@@ -61,7 +62,8 @@ type Msg
 
 msgBuilders : View.Msg Msg
 msgBuilders =
-    { actionBar =
+    { selectImage = SelectImage
+    , actionBar =
         { loadImages = LoadImages
         }
     }
@@ -144,10 +146,14 @@ view : Model -> Html Msg
 view model =
     case model.state of
         State.NothingProvided error ->
-            Element.layout [] (View.nothingProvided msgBuilders error)
+            Element.layout
+                Style.base
+                (View.nothingProvided msgBuilders error)
 
         State.ImagesProvided error _ remoteZipper ->
-            Element.layout [] (View.imagesProvided msgBuilders error remoteZipper model.viewer)
+            Element.layout
+                Style.base
+                (View.imagesProvided msgBuilders error remoteZipper model.viewer)
 
         _ ->
             Debug.todo "view"
@@ -183,7 +189,11 @@ update msg model =
 
         -- Select things
         SelectImage id ->
-            ( { model | state = State.selectImage id model.state }, Cmd.none )
+            let
+                ( newState, newViewer ) =
+                    State.selectImage id model.viewer model.state
+            in
+            ( { model | state = newState, viewer = newViewer }, Cmd.none )
 
         SelectTool id ->
             ( { model | state = State.selectTool id model.state }, Cmd.none )

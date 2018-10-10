@@ -36,6 +36,11 @@ type Tool
     | Polygon
 
 
+everyTool : List Tool
+everyTool =
+    [ Move, Point, BBox, Line, Outline, Polygon ]
+
+
 
 -- From and to String description
 
@@ -164,7 +169,10 @@ maybeDecoder : Maybe Tool -> Decoder Tool
 maybeDecoder maybeTool =
     case maybeTool of
         Nothing ->
-            Decode.fail "Error while decoding tool"
+            List.map toString everyTool
+                |> String.join " | "
+                |> (++) "Error while decoding tool. A tool should be one of these: "
+                |> Decode.fail
 
         Just tool ->
             Decode.succeed tool

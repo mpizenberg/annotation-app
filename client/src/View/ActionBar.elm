@@ -3,14 +3,16 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.ActionBar exposing (Msg, imagesProvided, nothingProvided)
+module View.ActionBar exposing (Msg, configProvided, imagesProvided, nothingProvided)
 
+import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element)
 import Element.Background
 import Html exposing (Html)
 import Html.Attributes
 import Json.Encode as Encode exposing (Value)
 import Packages.FileInput as FileInput
+import Packages.Zipper as Zipper exposing (Zipper)
 import View.Icon as Icon
 import View.Style as Style
 
@@ -22,25 +24,14 @@ import View.Style as Style
 type alias Msg msg =
     { loadImages : List { name : String, file : Value } -> msg
     , loadConfig : Value -> msg
+    , selectTool : Int -> msg
+    , removeAnnotation : msg
+
+    -- below are only for AllProvided state
     }
 
 
 
--- type alias Parameters msg =
---     { size : ( Float, Float )
---     , hasAnnotations : Bool
---     , mturkMode : Bool
---
---     -- events
---     , removeLatestAnnotationMsg : msg
---     , selectToolMsg : Int -> msg
---     , zoomInMsg : msg
---     , zoomOutMsg : msg
---     , zoomFitMsg : msg
---     , loadConfigMsg : Value -> msg
---     , loadImagesMsg : List { name : String, file : Value } -> msg
---     , exportMsg : msg
---     }
 -- FUNCTIONS #########################################################
 
 
@@ -50,6 +41,57 @@ nothingProvided msg =
         [ Element.text "Load images →"
         , loadImagesButton msg.loadImages
         ]
+
+
+configProvided : Msg msg -> Zipper Tool -> Element msg
+configProvided msg toolsZipper =
+    Element.row [ Element.width Element.fill ]
+        [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
+        , filler
+        , loadConfigButton msg.loadConfig
+        , loadImagesButton msg.loadImages
+        ]
+
+
+toolButtonDisabled : Tool -> Element msg
+toolButtonDisabled tool =
+    [ svgToolIcon tool ]
+        |> Html.label
+            [ Html.Attributes.style "width" "100px"
+            , Html.Attributes.style "height" "100px"
+            , Html.Attributes.style "display" "flex"
+            , Html.Attributes.style "align-items" "center"
+            , Html.Attributes.style "justify-content" "center"
+            , Html.Attributes.style "color" "gray"
+            ]
+        |> Element.html
+
+
+svgToolIcon : Tool -> Html msg
+svgToolIcon tool =
+    case tool of
+        Tool.Move ->
+            Icon.toHtml 60 Icon.move
+
+        Tool.Point ->
+            Icon.toHtml 60 Icon.point
+
+        Tool.BBox ->
+            Icon.toHtml 60 Icon.boundingBox
+
+        Tool.Line ->
+            Icon.toHtml 60 Icon.line
+
+        Tool.Outline ->
+            Icon.toHtml 60 Icon.outline
+
+        Tool.Polygon ->
+            Icon.toHtml 60 Icon.polygon
+
+
+filler : Element msg
+filler =
+    Element.el [ Element.width Element.fill ] Element.none
 
 
 imagesProvided : Msg msg -> Element msg

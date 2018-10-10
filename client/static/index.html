@@ -25,7 +25,11 @@
 			deviceSize: layoutViewportSize(),
 			mturkMode: false,
 			images: [],
-			config: null
+			config: `
+				{ "classes": ["human", "dragon"]
+				, "tools": [ "move", "point", "bbox", "line", "outline", "polygon" ]
+				}
+				`
 		}
 
 		// Start elm app.

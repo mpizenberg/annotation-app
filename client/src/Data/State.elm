@@ -7,7 +7,7 @@ module Data.State exposing
     ( State(..), Error(..), Classes, RemoteZipper, AnnotatedZipper
     , importFlagsImages
     , updateWithPointer
-    , toggleCategory, selectClass, selectImage, selectTool, toggleImagesPanel
+    , toggleCategory, selectClass, selectImage, selectTool, toggleClassesPanel, toggleImagesPanel
     , loadImages, imageLoaded
     , changeConfig
     , export
@@ -22,7 +22,7 @@ module Data.State exposing
 
 @docs updateWithPointer
 
-@docs toggleCategory, selectClass, selectImage, selectTool, toggleImagesPanel
+@docs toggleCategory, selectClass, selectImage, selectTool, toggleClassesPanel, toggleImagesPanel
 
 @docs loadImages, imageLoaded
 
@@ -50,7 +50,7 @@ import Viewer exposing (Viewer)
 
 type State
     = NothingProvided Error
-    | ConfigProvided Error Config Classes (Zipper Tool)
+    | ConfigProvided Error Config Bool Classes (Zipper Tool)
     | ImagesProvided Error Pointer.DragState Bool RemoteZipper
     | AllProvided Error Pointer.DragState Config Classes (Zipper Tool) AnnotatedZipper
 
@@ -164,6 +164,16 @@ toggleFocused =
     FileSystem.updateCurrentFolder (\f -> { f | open = not f.open })
 
 
+toggleClassesPanel : State -> State
+toggleClassesPanel state =
+    case state of
+        ConfigProvided error config visible classes tools ->
+            ConfigProvided error config (not visible) classes tools
+
+        _ ->
+            Debug.todo "toggleClassesPanel"
+
+
 toggleImagesPanel : State -> State
 toggleImagesPanel state =
     case state of
@@ -187,8 +197,8 @@ selectClass selected state =
 selectTool : Int -> State -> State
 selectTool id state =
     case state of
-        ConfigProvided error config classes tools ->
-            ConfigProvided error config classes (Zipper.goTo Tool.toId id tools)
+        ConfigProvided error config visible classes tools ->
+            ConfigProvided error config visible classes (Zipper.goTo Tool.toId id tools)
 
         AllProvided error drag config classes tools imgs ->
             AllProvided error drag config classes (Zipper.goTo Tool.toId id tools) imgs
@@ -283,7 +293,7 @@ loadImages images state =
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
-        ( first :: files, ConfigProvided _ config classes tools ) ->
+        ( first :: files, ConfigProvided _ config visible classes tools ) ->
             let
                 ( firstImage, firstCmd ) =
                     prepareOneLoading setupAnnotatedLoading 0 first
@@ -390,14 +400,14 @@ changeConfig configString state =
             AllProvided NoError drag config classes tools (Zipper.mapAll resetImage images)
 
         ( _, Ok ( config, classes, tools ) ) ->
-            ConfigProvided NoError config classes tools
+            ConfigProvided NoError config True classes tools
 
         -- Error
         ( NothingProvided _, Err configError ) ->
             NothingProvided (ConfigError configError)
 
-        ( ConfigProvided _ config classes tools, Err configError ) ->
-            ConfigProvided (ConfigError configError) config classes tools
+        ( ConfigProvided _ config visible classes tools, Err configError ) ->
+            ConfigProvided (ConfigError configError) config visible classes tools
 
         ( ImagesProvided _ drag visible images, Err configError ) ->
             ImagesProvided (ConfigError configError) drag visible images

@@ -51,6 +51,7 @@ type Msg
     | ToggleCategory Int
       -- toggle side panels
     | ToggleImagesPanel
+    | ToggleClassesPanel
       -- files
     | LoadImages (List { name : String, file : Value })
     | ImageLoaded { id : Int, url : String, width : Int, height : Int }
@@ -65,10 +66,15 @@ type Msg
 msgBuilders : View.Msg Msg
 msgBuilders =
     { selectImage = SelectImage
+    , toggleCategory = ToggleCategory
+    , selectClass = SelectClass
     , toggleImagesPanel = ToggleImagesPanel
+    , toggleClassesPanel = ToggleClassesPanel
     , actionBar =
         { loadImages = LoadImages
         , loadConfig = LoadConfig
+        , selectTool = SelectTool
+        , removeAnnotation = RemoveAnnotation
         }
     }
 
@@ -159,7 +165,12 @@ view model =
                 Style.base
                 (View.imagesProvided msgBuilders error visible remoteZipper model.viewer)
 
-        _ ->
+        State.ConfigProvided error config visible classes toolsZipper ->
+            Element.layout
+                Style.base
+                (View.configProvided msgBuilders error config visible classes toolsZipper)
+
+        State.AllProvided error _ config classes toolsZipper annotatedZipper ->
             Debug.todo "view"
 
 
@@ -209,6 +220,9 @@ update msg model =
             ( { model | state = State.selectClass idPair model.state }, Cmd.none )
 
         -- toggle side panels
+        ToggleClassesPanel ->
+            ( { model | state = State.toggleClassesPanel model.state }, Cmd.none )
+
         ToggleImagesPanel ->
             ( { model | state = State.toggleImagesPanel model.state }, Cmd.none )
 

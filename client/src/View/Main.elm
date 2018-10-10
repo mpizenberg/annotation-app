@@ -3,11 +3,12 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.Main exposing (Msg, imagesProvided, nothingProvided)
+module View.Main exposing (Msg, configProvided, imagesProvided, nothingProvided)
 
-import Data.Config as Config
+import Data.Config as Config exposing (Config)
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.State as State
+import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element)
 import Element.Background
 import Element.Border
@@ -18,10 +19,11 @@ import Html.Attributes
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Json.Value
-import Packages.Zipper as Zipper
+import Packages.Zipper as Zipper exposing (Zipper)
 import Svg
 import Svg.Attributes
 import View.ActionBar as ActionBar
+import View.ClassesSidebar as ClassesSidebar
 import View.Icon as Icon
 import View.ImagesSidebar as ImagesSidebar
 import View.Style as Style
@@ -35,7 +37,10 @@ import Viewer.Svg
 
 type alias Msg msg =
     { selectImage : Int -> msg
+    , toggleCategory : Int -> msg
+    , selectClass : ( Int, Int ) -> msg
     , toggleImagesPanel : msg
+    , toggleClassesPanel : msg
     , actionBar : ActionBar.Msg msg
     }
 
@@ -59,6 +64,77 @@ nothingProvided msg error =
                     configErrorPreformatted configError
     in
     Element.column [ Element.width Element.fill ] [ actionBar, centerArea ]
+
+
+configProvided : Msg msg -> State.Error -> Config -> Bool -> State.Classes -> Zipper Tool -> Element msg
+configProvided msg error config visible classes toolsZipper =
+    let
+        actionBar =
+            ActionBar.configProvided msg.actionBar toolsZipper
+
+        chevronLeft =
+            Icon.toHtml 64 Icon.chevronLeft
+                |> Element.html
+                |> Element.el
+                    [ Element.Background.color Style.sidebarBG
+                    , Element.Events.onClick msg.toggleClassesPanel
+                    ]
+
+        chevronRight =
+            Icon.toHtml 64 Icon.chevronRight
+                |> Element.html
+                |> Element.el
+                    [ Element.Background.color Style.sidebarBG
+                    , Element.Events.onClick msg.toggleClassesPanel
+                    ]
+
+        classesSidebar =
+            Element.row
+                [ Element.alignLeft
+                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+                ]
+                (if visible then
+                    [ classesList
+                    , chevronLeft
+                    ]
+
+                 else
+                    [ chevronRight ]
+                )
+
+        classesList =
+            ClassesSidebar.column
+                [ Element.width (Element.maximum 600 Element.shrink)
+                , Element.height Element.fill
+                , Element.alignLeft
+                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
+                , Element.scrollbarY
+                , Element.Background.color Style.sidebarBG
+                ]
+                msg.toggleCategory
+                msg.selectClass
+                classes
+
+        centerArea =
+            case error of
+                State.NoError ->
+                    Element.text "No image loaded yet"
+                        |> Element.el [ Element.centerX, Element.centerY ]
+
+                State.ConfigError configError ->
+                    configErrorPreformatted configError
+
+        centerAreaWithSidebars =
+            centerArea
+                |> Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.inFront classesSidebar
+                    ]
+    in
+    Element.column
+        [ Element.width Element.fill, Element.height Element.fill ]
+        [ actionBar, centerAreaWithSidebars ]
 
 
 imagesProvided : Msg msg -> State.Error -> Bool -> State.RemoteZipper -> Viewer -> Element msg
@@ -137,7 +213,8 @@ configErrorPreformatted configError =
             Element.text "Classes in config are incorrect"
 
         Config.IncorrectTools ->
-            Element.text "Tools in config are incorrect"
+            [ Element.text "You should always have at least one tool. Try adding one in the 'tools' field." ]
+                |> Element.paragraph []
 
         Config.Incorrect decodeError ->
             Html.pre [] [ Html.text (Decode.errorToString <| foldValueInError decodeError) ]

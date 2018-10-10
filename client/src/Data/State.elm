@@ -7,7 +7,7 @@ module Data.State exposing
     ( State(..), Error(..), Classes, RemoteZipper, AnnotatedZipper
     , importFlagsImages
     , updateWithPointer
-    , toggleCategory, selectClass, selectImage, selectTool
+    , toggleCategory, selectClass, selectImage, selectTool, toggleImagesPanel
     , loadImages, imageLoaded
     , changeConfig
     , export
@@ -22,7 +22,7 @@ module Data.State exposing
 
 @docs updateWithPointer
 
-@docs toggleCategory, selectClass, selectImage, selectTool
+@docs toggleCategory, selectClass, selectImage, selectTool, toggleImagesPanel
 
 @docs loadImages, imageLoaded
 
@@ -51,13 +51,18 @@ import Viewer exposing (Viewer)
 type State
     = NothingProvided Error
     | ConfigProvided Error Config Classes (Zipper Tool)
-    | ImagesProvided Error Pointer.DragState RemoteZipper
+    | ImagesProvided Error Pointer.DragState Bool RemoteZipper
     | AllProvided Error Pointer.DragState Config Classes (Zipper Tool) AnnotatedZipper
 
 
 type alias Classes =
     { selected : Maybe ( Int, Int )
     , all : FileSystem
+    }
+
+
+type alias SidePanels =
+    { imagesVisible : Bool
     }
 
 
@@ -86,7 +91,7 @@ importFlagsImages images =
                     List.indexedMap (\id img -> remoteImageWithId (id + 1) img) otherImages
             in
             Zipper.init [] (remoteImageWithId 0 firstImage) otherRemoteImagesWithId
-                |> ImagesProvided NoError Pointer.NoDrag
+                |> ImagesProvided NoError Pointer.NoDrag True
 
 
 remoteImageWithId : Int -> Image -> { id : Int, remoteImage : RemoteImage }
@@ -103,7 +108,7 @@ remoteImageWithId id image =
 selectImage : Int -> Viewer -> State -> ( State, Viewer )
 selectImage id viewer state =
     case state of
-        ImagesProvided _ drag remoteImages ->
+        ImagesProvided _ drag visible remoteImages ->
             let
                 movedZipper =
                     Zipper.goTo .id id remoteImages
@@ -116,7 +121,7 @@ selectImage id viewer state =
                         _ ->
                             viewer
             in
-            ( ImagesProvided NoError drag movedZipper, newViewer )
+            ( ImagesProvided NoError drag visible movedZipper, newViewer )
 
         AllProvided _ drag config classes tools images ->
             let
@@ -157,6 +162,16 @@ toggleCategory id state =
 toggleFocused : FileSystem -> FileSystem
 toggleFocused =
     FileSystem.updateCurrentFolder (\f -> { f | open = not f.open })
+
+
+toggleImagesPanel : State -> State
+toggleImagesPanel state =
+    case state of
+        ImagesProvided error drag visible remoteImages ->
+            ImagesProvided error drag (not visible) remoteImages
+
+        _ ->
+            Debug.todo "toggleImagesPanel"
 
 
 selectClass : ( Int, Int ) -> State -> State
@@ -264,7 +279,7 @@ loadImages images state =
                 ( otherImages, otherCmds ) =
                     prepareListLoading setupRemoteLoading 1 files
             in
-            ( ImagesProvided NoError Pointer.NoDrag (Zipper.init [] firstImage otherImages)
+            ( ImagesProvided NoError Pointer.NoDrag True (Zipper.init [] firstImage otherImages)
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
@@ -283,7 +298,7 @@ loadImages images state =
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
-        ( files, ImagesProvided _ drag previousImages ) ->
+        ( files, ImagesProvided _ drag visible previousImages ) ->
             let
                 startingId =
                     1 + .id (Zipper.getLast previousImages)
@@ -291,7 +306,7 @@ loadImages images state =
                 ( newImages, cmds ) =
                     prepareListLoading setupRemoteLoading startingId files
             in
-            ( ImagesProvided NoError drag (Zipper.append newImages previousImages)
+            ( ImagesProvided NoError drag visible (Zipper.append newImages previousImages)
             , Cmd.batch cmds
             )
 
@@ -322,13 +337,13 @@ mapCurrentRemote f =
 imageLoaded : { id : Int, url : String, width : Int, height : Int } -> Viewer -> State -> ( State, Viewer )
 imageLoaded { id, url, width, height } viewer state =
     case state of
-        ImagesProvided error drag images ->
+        ImagesProvided error drag visible images ->
             let
                 newState =
                     Zipper.goTo .id id images
                         |> mapCurrentRemote (\r -> { r | status = RemoteImage.Loaded (Image url width height) })
                         |> Zipper.goTo .id (.id (Zipper.getC images))
-                        |> ImagesProvided error drag
+                        |> ImagesProvided error drag visible
 
                 newViewer =
                     if .id (Zipper.getC images) == id then
@@ -368,7 +383,7 @@ changeConfig : String -> State -> State
 changeConfig configString state =
     case ( state, decodeConfig configString ) of
         -- No error
-        ( ImagesProvided _ drag images, Ok ( config, classes, tools ) ) ->
+        ( ImagesProvided _ drag visible images, Ok ( config, classes, tools ) ) ->
             AllProvided NoError drag config classes tools (Zipper.mapAll upgradeImage images)
 
         ( AllProvided _ drag _ _ _ images, Ok ( config, classes, tools ) ) ->
@@ -384,8 +399,8 @@ changeConfig configString state =
         ( ConfigProvided _ config classes tools, Err configError ) ->
             ConfigProvided (ConfigError configError) config classes tools
 
-        ( ImagesProvided _ drag images, Err configError ) ->
-            ImagesProvided (ConfigError configError) drag images
+        ( ImagesProvided _ drag visible images, Err configError ) ->
+            ImagesProvided (ConfigError configError) drag visible images
 
         ( AllProvided _ drag config classes tools images, Err configError ) ->
             AllProvided (ConfigError configError) drag config classes tools images

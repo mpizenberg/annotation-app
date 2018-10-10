@@ -11,6 +11,7 @@ import Data.State as State
 import Element exposing (Element)
 import Element.Background
 import Element.Border
+import Element.Events
 import Html
 import Html.Attributes
 import Json.Decode as Decode
@@ -31,6 +32,7 @@ import Viewer.Svg
 
 type alias Msg msg =
     { selectImage : Int -> msg
+    , toggleImagesPanel : msg
     , actionBar : ActionBar.Msg msg
     }
 
@@ -63,26 +65,41 @@ nothingProvided msg error =
     Element.column [ Element.width Element.fill ] [ actionBar, centerArea ]
 
 
-imagesProvided : Msg msg -> State.Error -> State.RemoteZipper -> Viewer -> Element msg
-imagesProvided msg error remoteZipper viewer =
+imagesProvided : Msg msg -> State.Error -> Bool -> State.RemoteZipper -> Viewer -> Element msg
+imagesProvided msg error visible remoteZipper viewer =
     let
         actionBar =
             ActionBar.nothingProvided msg.actionBar
+
+        chevronLeft =
+            Icon.toHtml 64 Icon.chevronLeft
+                |> Element.html
+                |> Element.el
+                    [ Element.Background.color Style.sidebarBG
+                    , Element.Events.onClick msg.toggleImagesPanel
+                    ]
 
         chevronRight =
             Icon.toHtml 64 Icon.chevronRight
                 |> Element.html
                 |> Element.el
-                    [ Element.Background.color Style.sidebarBG ]
+                    [ Element.Background.color Style.sidebarBG
+                    , Element.Events.onClick msg.toggleImagesPanel
+                    ]
 
         imagesSidebar =
             Element.row
                 [ Element.alignRight
                 , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
                 ]
-                [ chevronRight
-                , imagesList
-                ]
+                (if visible then
+                    [ chevronRight
+                    , imagesList
+                    ]
+
+                 else
+                    [ chevronLeft ]
+                )
 
         imagesList =
             ImagesSidebar.column

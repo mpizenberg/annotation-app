@@ -47,8 +47,10 @@ type Msg
       -- select things
     | SelectImage Int
     | SelectTool Int
-    | ToggleCategory Int
     | SelectClass ( Int, Int )
+    | ToggleCategory Int
+      -- toggle side panels
+    | ToggleImagesPanel
       -- files
     | LoadImages (List { name : String, file : Value })
     | ImageLoaded { id : Int, url : String, width : Int, height : Int }
@@ -63,6 +65,7 @@ type Msg
 msgBuilders : View.Msg Msg
 msgBuilders =
     { selectImage = SelectImage
+    , toggleImagesPanel = ToggleImagesPanel
     , actionBar =
         { loadImages = LoadImages
         }
@@ -150,10 +153,10 @@ view model =
                 Style.base
                 (View.nothingProvided msgBuilders error)
 
-        State.ImagesProvided error _ remoteZipper ->
+        State.ImagesProvided error _ visible remoteZipper ->
             Element.layout
                 Style.base
-                (View.imagesProvided msgBuilders error remoteZipper model.viewer)
+                (View.imagesProvided msgBuilders error visible remoteZipper model.viewer)
 
         _ ->
             Debug.todo "view"
@@ -203,6 +206,10 @@ update msg model =
 
         SelectClass idPair ->
             ( { model | state = State.selectClass idPair model.state }, Cmd.none )
+
+        -- toggle side panels
+        ToggleImagesPanel ->
+            ( { model | state = State.toggleImagesPanel model.state }, Cmd.none )
 
         -- Zooming
         ZoomMsg zoomMsg ->

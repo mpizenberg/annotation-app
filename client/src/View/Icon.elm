@@ -6,7 +6,8 @@
 
 
 module View.Icon exposing
-    ( chevronRight
+    ( chevronLeft
+    , chevronRight
     , image
     , toHtml
     )
@@ -43,6 +44,11 @@ image =
     , Svg.circle [ cx "8.5", cy "8.5", r "1.5" ] []
     , Svg.polyline [ points "21 15 16 10 5 21" ] []
     ]
+
+
+chevronLeft : List (Svg msg)
+chevronLeft =
+    [ Svg.polyline [ points "15 18 9 12 15 6" ] [] ]
 
 
 chevronRight : List (Svg msg)

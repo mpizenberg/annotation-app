@@ -165,15 +165,29 @@ foldValue : Value -> Value
 foldValue value =
     case Json.Value.decodeValue value of
         Json.Value.ObjectValue list ->
-            List.map (Tuple.mapSecond (always <| Json.Value.StringValue "...")) list
+            List.map (Tuple.mapSecond strictFoldJsonValue) list
                 |> Json.Value.ObjectValue
                 |> Json.Value.encode
 
-        Json.Value.ArrayValue _ ->
-            Encode.string "[...]"
+        Json.Value.ArrayValue list ->
+            Json.Value.ArrayValue (List.map strictFoldJsonValue list)
+                |> Json.Value.encode
 
         _ ->
             value
+
+
+strictFoldJsonValue : Json.Value.JsonValue -> Json.Value.JsonValue
+strictFoldJsonValue jsonValue =
+    case jsonValue of
+        Json.Value.ObjectValue _ ->
+            Json.Value.StringValue "{...}"
+
+        Json.Value.ArrayValue _ ->
+            Json.Value.StringValue "[...]"
+
+        _ ->
+            jsonValue
 
 
 imageArea : RemoteImage -> Viewer -> Element msg

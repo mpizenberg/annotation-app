@@ -69,7 +69,7 @@ imagesProvided : Msg msg -> State.Error -> Bool -> State.RemoteZipper -> Viewer 
 imagesProvided msg error visible remoteZipper viewer =
     let
         actionBar =
-            ActionBar.nothingProvided msg.actionBar
+            ActionBar.imagesProvided msg.actionBar
 
         chevronLeft =
             Icon.toHtml 64 Icon.chevronLeft

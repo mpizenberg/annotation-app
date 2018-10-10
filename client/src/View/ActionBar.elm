@@ -3,7 +3,7 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.ActionBar exposing (Msg, nothingProvided)
+module View.ActionBar exposing (Msg, imagesProvided, nothingProvided)
 
 import Element exposing (Element)
 import Html exposing (Html)
@@ -19,6 +19,7 @@ import View.Icon as Icon
 
 type alias Msg msg =
     { loadImages : List { name : String, file : Value } -> msg
+    , loadConfig : Value -> msg
     }
 
 
@@ -47,6 +48,42 @@ nothingProvided msg =
         [ Element.text "Load images →"
         , loadImagesButton msg.loadImages
         ]
+
+
+imagesProvided : Msg msg -> Element msg
+imagesProvided msg =
+    Element.row [ Element.alignRight ]
+        [ Element.text "Load config →"
+        , loadConfigButton msg.loadConfig
+        , loadImagesButton msg.loadImages
+        ]
+
+
+loadConfigButton : (Value -> msg) -> Element msg
+loadConfigButton loadConfigMsg =
+    let
+        uniqueId =
+            "load-config"
+
+        configIcon =
+            [ Icon.toHtml 60 Icon.settings ]
+                |> Html.label
+                    [ Html.Attributes.style "width" "100px"
+                    , Html.Attributes.style "height" "100px"
+                    , Html.Attributes.style "display" "flex"
+                    , Html.Attributes.style "align-items" "center"
+                    , Html.Attributes.style "justify-content" "center"
+                    , Html.Attributes.for uniqueId
+                    ]
+
+        invisibleInput =
+            FileInput.invisible
+                { id = uniqueId
+                , accept = "application/json"
+                , quantity = FileInput.SingleWith loadConfigMsg
+                }
+    in
+    Element.row [] [ Element.html configIcon, Element.html invisibleInput ]
 
 
 loadImagesButton : (List { name : String, file : Value } -> msg) -> Element msg

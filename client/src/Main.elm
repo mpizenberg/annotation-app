@@ -68,6 +68,7 @@ msgBuilders =
     , toggleImagesPanel = ToggleImagesPanel
     , actionBar =
         { loadImages = LoadImages
+        , loadConfig = LoadConfig
         }
     }
 

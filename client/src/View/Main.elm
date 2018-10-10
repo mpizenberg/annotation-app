@@ -16,6 +16,8 @@ import Element.Font
 import Html
 import Html.Attributes
 import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
+import Json.Value
 import Packages.Zipper as Zipper
 import Svg
 import Svg.Attributes
@@ -138,9 +140,40 @@ configErrorPreformatted configError =
             Element.text "Tools in config are incorrect"
 
         Config.Incorrect decodeError ->
-            Html.pre [] [ Html.text (Decode.errorToString decodeError) ]
+            Html.pre [] [ Html.text (Decode.errorToString <| foldValueInError decodeError) ]
                 |> Element.html
                 |> Element.el [ Element.Font.size 12 ]
+
+
+foldValueInError : Decode.Error -> Decode.Error
+foldValueInError error =
+    case error of
+        Decode.Field string err ->
+            Decode.Field string (foldValueInError err)
+
+        Decode.Index int err ->
+            Decode.Index int (foldValueInError err)
+
+        Decode.OneOf list ->
+            Decode.OneOf (List.map foldValueInError list)
+
+        Decode.Failure string value ->
+            Decode.Failure string (foldValue value)
+
+
+foldValue : Value -> Value
+foldValue value =
+    case Json.Value.decodeValue value of
+        Json.Value.ObjectValue list ->
+            List.map (Tuple.mapSecond (always <| Json.Value.StringValue "...")) list
+                |> Json.Value.ObjectValue
+                |> Json.Value.encode
+
+        Json.Value.ArrayValue _ ->
+            Encode.string "[...]"
+
+        _ ->
+            value
 
 
 imageArea : RemoteImage -> Viewer -> Element msg

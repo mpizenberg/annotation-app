@@ -6,11 +6,13 @@
 module View.ActionBar exposing (Msg, imagesProvided, nothingProvided)
 
 import Element exposing (Element)
+import Element.Background
 import Html exposing (Html)
 import Html.Attributes
 import Json.Encode as Encode exposing (Value)
 import Packages.FileInput as FileInput
 import View.Icon as Icon
+import View.Style as Style
 
 
 
@@ -65,7 +67,7 @@ loadConfigButton loadConfigMsg =
         uniqueId =
             "load-config"
 
-        configIcon =
+        icon =
             [ Icon.toHtml 60 Icon.settings ]
                 |> Html.label
                     [ Html.Attributes.style "width" "100px"
@@ -74,7 +76,14 @@ loadConfigButton loadConfigMsg =
                     , Html.Attributes.style "align-items" "center"
                     , Html.Attributes.style "justify-content" "center"
                     , Html.Attributes.for uniqueId
+
+                    -- need to manually add a cursor because the class given by elm-ui
+                    -- gets overwritten by user agent stylesheet for a label
+                    , Html.Attributes.style "cursor" "pointer"
                     ]
+                |> Element.html
+                |> Element.el
+                    [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ] ]
 
         invisibleInput =
             FileInput.invisible
@@ -83,7 +92,7 @@ loadConfigButton loadConfigMsg =
                 , quantity = FileInput.SingleWith loadConfigMsg
                 }
     in
-    Element.row [] [ Element.html configIcon, Element.html invisibleInput ]
+    Element.row [] [ icon, Element.html invisibleInput ]
 
 
 loadImagesButton : (List { name : String, file : Value } -> msg) -> Element msg
@@ -92,7 +101,7 @@ loadImagesButton loadImagesMsg =
         uniqueId =
             "load-images"
 
-        imageIcon =
+        icon =
             [ Icon.toHtml 60 Icon.image ]
                 |> Html.label
                     [ Html.Attributes.style "width" "100px"
@@ -101,7 +110,14 @@ loadImagesButton loadImagesMsg =
                     , Html.Attributes.style "align-items" "center"
                     , Html.Attributes.style "justify-content" "center"
                     , Html.Attributes.for uniqueId
+
+                    -- need to manually add a cursor because the class given by elm-ui
+                    -- gets overwritten by user agent stylesheet for a label
+                    , Html.Attributes.style "cursor" "pointer"
                     ]
+                |> Element.html
+                |> Element.el
+                    [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ] ]
 
         invisibleInput =
             FileInput.invisible
@@ -110,4 +126,4 @@ loadImagesButton loadImagesMsg =
                 , quantity = FileInput.MultipleWith loadImagesMsg
                 }
     in
-    Element.row [] [ Element.html imageIcon, Element.html invisibleInput ]
+    Element.row [] [ icon, Element.html invisibleInput ]

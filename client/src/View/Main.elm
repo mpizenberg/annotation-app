@@ -12,6 +12,7 @@ import Element exposing (Element)
 import Element.Background
 import Element.Border
 import Element.Events
+import Element.Font
 import Html
 import Html.Attributes
 import Json.Decode as Decode
@@ -52,15 +53,8 @@ nothingProvided msg error =
                 State.NoError ->
                     Element.none
 
-                State.ConfigError Config.IncorrectClasses ->
-                    Element.text "Classes in config are incorrect"
-
-                State.ConfigError Config.IncorrectTools ->
-                    Element.text "Tools in config are incorrect"
-
-                State.ConfigError (Config.Incorrect decodeError) ->
-                    Html.pre [] [ Html.text (Decode.errorToString decodeError) ]
-                        |> Element.html
+                State.ConfigError configError ->
+                    configErrorPreformatted configError
     in
     Element.column [ Element.width Element.fill ] [ actionBar, centerArea ]
 
@@ -118,15 +112,8 @@ imagesProvided msg error visible remoteZipper viewer =
                 State.NoError ->
                     imageArea (.remoteImage (Zipper.getC remoteZipper)) viewer
 
-                State.ConfigError Config.IncorrectClasses ->
-                    Element.text "Classes in config are incorrect"
-
-                State.ConfigError Config.IncorrectTools ->
-                    Element.text "Tools in config are incorrect"
-
-                State.ConfigError (Config.Incorrect decodeError) ->
-                    Html.pre [] [ Html.text (Decode.errorToString decodeError) ]
-                        |> Element.html
+                State.ConfigError configError ->
+                    configErrorPreformatted configError
 
         centerAreaWithSidebars =
             centerArea
@@ -139,6 +126,21 @@ imagesProvided msg error visible remoteZipper viewer =
     Element.column
         [ Element.width Element.fill, Element.height Element.fill ]
         [ actionBar, centerAreaWithSidebars ]
+
+
+configErrorPreformatted : Config.Error -> Element msg
+configErrorPreformatted configError =
+    case configError of
+        Config.IncorrectClasses ->
+            Element.text "Classes in config are incorrect"
+
+        Config.IncorrectTools ->
+            Element.text "Tools in config are incorrect"
+
+        Config.Incorrect decodeError ->
+            Html.pre [] [ Html.text (Decode.errorToString decodeError) ]
+                |> Element.html
+                |> Element.el [ Element.Font.size 12 ]
 
 
 imageArea : RemoteImage -> Viewer -> Element msg

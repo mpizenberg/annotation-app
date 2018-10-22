@@ -52,7 +52,7 @@ type State
     = NothingProvided Error
     | ConfigProvided Error Config Bool Classes (Zipper Tool)
     | ImagesProvided Error Pointer.DragState Bool RemoteZipper
-    | AllProvided Error Pointer.DragState Config Classes (Zipper Tool) AnnotatedZipper
+    | AllProvided Error Pointer.DragState Config SidePanels Classes (Zipper Tool) AnnotatedZipper
 
 
 type alias Classes =
@@ -63,6 +63,7 @@ type alias Classes =
 
 type alias SidePanels =
     { imagesVisible : Bool
+    , classesVisible : Bool
     }
 
 
@@ -123,7 +124,7 @@ selectImage id viewer state =
             in
             ( ImagesProvided NoError drag visible movedZipper, newViewer )
 
-        AllProvided _ drag config classes tools images ->
+        AllProvided _ drag config sidePanels classes tools images ->
             let
                 movedZipper =
                     Zipper.goTo .id id images
@@ -139,7 +140,7 @@ selectImage id viewer state =
                         _ ->
                             viewer
             in
-            ( AllProvided NoError drag config classes tools movedZipper, newViewer )
+            ( AllProvided NoError drag config sidePanels classes tools movedZipper, newViewer )
 
         _ ->
             ( state, viewer )
@@ -155,11 +156,11 @@ toggleCategory id state =
                 |> Maybe.map (\newClasses -> ConfigProvided error config visible newClasses tools)
                 |> Maybe.withDefault state
 
-        AllProvided error drag config classes tools imgs ->
+        AllProvided error drag config sidePanels classes tools imgs ->
             FileSystem.findFolderWithId id classes.all
                 |> Maybe.map toggleFocused
                 |> Maybe.map (\all -> { classes | all = all })
-                |> Maybe.map (\newClasses -> AllProvided error drag config newClasses tools imgs)
+                |> Maybe.map (\newClasses -> AllProvided error drag config sidePanels newClasses tools imgs)
                 |> Maybe.withDefault state
 
         _ ->
@@ -197,8 +198,8 @@ selectClass selected state =
         ConfigProvided error config visible classes tools ->
             ConfigProvided error config visible { classes | selected = Just selected } tools
 
-        AllProvided error drag config classes tools images ->
-            AllProvided error drag config { classes | selected = Just selected } tools images
+        AllProvided error drag config sidePanels classes tools images ->
+            AllProvided error drag config sidePanels { classes | selected = Just selected } tools images
 
         _ ->
             state
@@ -210,8 +211,8 @@ selectTool id state =
         ConfigProvided error config visible classes tools ->
             ConfigProvided error config visible classes (Zipper.goTo Tool.toId id tools)
 
-        AllProvided error drag config classes tools imgs ->
-            AllProvided error drag config classes (Zipper.goTo Tool.toId id tools) imgs
+        AllProvided error drag config sidePanels classes tools imgs ->
+            AllProvided error drag config sidePanels classes (Zipper.goTo Tool.toId id tools) imgs
 
         _ ->
             state
@@ -224,11 +225,11 @@ selectTool id state =
 updateWithPointer : Pointer.Msg -> Viewer -> State -> Maybe ( State, Viewer )
 updateWithPointer pointerMsg viewer state =
     case state of
-        AllProvided error drag config classes tools imgs ->
+        AllProvided error drag config sidePanels classes tools imgs ->
             case ( Zipper.getC tools, classes.selected ) of
                 ( Tool.Move, _ ) ->
                     updateMove pointerMsg drag viewer
-                        |> Maybe.map (Tuple.mapFirst (dragToState error config classes tools imgs))
+                        |> Maybe.map (Tuple.mapFirst (dragToState error config sidePanels classes tools imgs))
 
                 ( tool, Just ( _, classId ) ) ->
                     let
@@ -242,7 +243,7 @@ updateWithPointer pointerMsg viewer state =
                             AnnotatedImage.updateWithPointer scaledPointerMsg newDrag tool classId viewer.scale
                     in
                     mapCurrentAnnotated updateAnnotated imgs
-                        |> AllProvided error newDrag config classes tools
+                        |> AllProvided error newDrag config sidePanels classes tools
                         |> (\newState -> Just ( newState, viewer ))
 
                 _ ->
@@ -252,9 +253,9 @@ updateWithPointer pointerMsg viewer state =
             Nothing
 
 
-dragToState : Error -> Config -> Classes -> Zipper Tool -> AnnotatedZipper -> Pointer.DragState -> State
-dragToState error config classes tools imgs dragState =
-    AllProvided error dragState config classes tools imgs
+dragToState : Error -> Config -> SidePanels -> Classes -> Zipper Tool -> AnnotatedZipper -> Pointer.DragState -> State
+dragToState error config sidePanels classes tools imgs dragState =
+    AllProvided error dragState config sidePanels classes tools imgs
 
 
 updateMove : Pointer.Msg -> Pointer.DragState -> Viewer -> Maybe ( Pointer.DragState, Viewer )
@@ -276,8 +277,8 @@ updateMove pointerMsg dragState viewer =
 removeAnnotation : State -> State
 removeAnnotation state =
     case state of
-        AllProvided NoError drag config classes tools imgs ->
-            AllProvided NoError drag config classes tools (mapCurrentAnnotated AnnotatedImage.removeAnnotation imgs)
+        AllProvided NoError drag config sidePanels classes tools imgs ->
+            AllProvided NoError drag config sidePanels classes tools (mapCurrentAnnotated AnnotatedImage.removeAnnotation imgs)
 
         _ ->
             state
@@ -313,8 +314,13 @@ loadImages images state =
 
                 annotatedImages =
                     Zipper.init [] firstImage otherImages
+
+                sidePanels =
+                    { imagesVisible = True
+                    , classesVisible = visible
+                    }
             in
-            ( AllProvided NoError Pointer.NoDrag config classes tools annotatedImages
+            ( AllProvided NoError Pointer.NoDrag config sidePanels classes tools annotatedImages
             , Cmd.batch (firstCmd :: otherCmds)
             )
 
@@ -330,7 +336,7 @@ loadImages images state =
             , Cmd.batch cmds
             )
 
-        ( files, AllProvided _ drag config classes tools previousImages ) ->
+        ( files, AllProvided _ drag config sidePanels classes tools previousImages ) ->
             let
                 startingId =
                     1 + .id (Zipper.getLast previousImages)
@@ -341,7 +347,7 @@ loadImages images state =
                 annotatedImages =
                     Zipper.append newImages previousImages
             in
-            ( AllProvided NoError drag config classes tools annotatedImages
+            ( AllProvided NoError drag config sidePanels classes tools annotatedImages
             , Cmd.batch cmds
             )
 
@@ -374,13 +380,13 @@ imageLoaded { id, url, width, height } viewer state =
             in
             ( newState, newViewer )
 
-        AllProvided error drag config classes tools images ->
+        AllProvided error drag config sidePanels classes tools images ->
             let
                 newState =
                     Zipper.goTo .id id images
                         |> mapCurrentAnnotated (\r -> { r | status = AnnotatedImage.Loaded (Image url width height) })
                         |> Zipper.goTo .id (.id (Zipper.getC images))
-                        |> AllProvided error drag config classes tools
+                        |> AllProvided error drag config sidePanels classes tools
 
                 newViewer =
                     if .id (Zipper.getC images) == id then
@@ -404,10 +410,16 @@ changeConfig configString state =
     case ( state, decodeConfig configString ) of
         -- No error
         ( ImagesProvided _ drag visible images, Ok ( config, classes, tools ) ) ->
-            AllProvided NoError drag config classes tools (Zipper.mapAll upgradeImage images)
+            let
+                sidePanels =
+                    { imagesVisible = visible
+                    , classesVisible = True
+                    }
+            in
+            AllProvided NoError drag config sidePanels classes tools (Zipper.mapAll upgradeImage images)
 
-        ( AllProvided _ drag _ _ _ images, Ok ( config, classes, tools ) ) ->
-            AllProvided NoError drag config classes tools (Zipper.mapAll resetImage images)
+        ( AllProvided _ drag _ sidePanels _ _ images, Ok ( config, classes, tools ) ) ->
+            AllProvided NoError drag config sidePanels classes tools (Zipper.mapAll resetImage images)
 
         ( _, Ok ( config, classes, tools ) ) ->
             ConfigProvided NoError config True classes tools
@@ -422,8 +434,8 @@ changeConfig configString state =
         ( ImagesProvided _ drag visible images, Err configError ) ->
             ImagesProvided (ConfigError configError) drag visible images
 
-        ( AllProvided _ drag config classes tools images, Err configError ) ->
-            AllProvided (ConfigError configError) drag config classes tools images
+        ( AllProvided _ drag config sidePanels classes tools images, Err configError ) ->
+            AllProvided (ConfigError configError) drag config sidePanels classes tools images
 
 
 decodeConfig : String -> Result Config.Error ( Config, Classes, Zipper Tool )
@@ -493,7 +505,7 @@ prepareOneLoading setup id { name, file } =
 export : State -> Cmd msg
 export state =
     case state of
-        AllProvided _ _ config _ _ images ->
+        AllProvided _ _ config _ _ _ images ->
             Ports.export <| encode config <| List.map .annotatedImage <| Zipper.getAll images
 
         _ ->

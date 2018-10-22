@@ -172,8 +172,11 @@ view model =
                 Style.base
                 (View.configProvided msgBuilders error config visible classes toolsZipper)
 
-        State.AllProvided error _ config classes toolsZipper annotatedZipper ->
-            Debug.todo "view"
+        State.AllProvided error _ config sidePanels classes toolsZipper annotatedZipper ->
+            -- Element.layout
+            --     Style.base
+            --     (View.allProvided msgBuilders error config sidePanels classes toolsZipper)
+            Debug.todo "allProvided"
 
 
 

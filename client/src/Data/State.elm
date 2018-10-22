@@ -178,6 +178,13 @@ toggleClassesPanel state =
         ConfigProvided error config visible classes tools ->
             ConfigProvided error config (not visible) classes tools
 
+        AllProvided error drag config sidePanels classes tools imgs ->
+            let
+                toggledSidePanels =
+                    { sidePanels | classesVisible = not sidePanels.classesVisible }
+            in
+            AllProvided error drag config toggledSidePanels classes tools imgs
+
         _ ->
             Debug.todo "toggleClassesPanel"
 
@@ -187,6 +194,13 @@ toggleImagesPanel state =
     case state of
         ImagesProvided error drag visible remoteImages ->
             ImagesProvided error drag (not visible) remoteImages
+
+        AllProvided error drag config sidePanels classes tools imgs ->
+            let
+                toggledSidePanels =
+                    { sidePanels | imagesVisible = not sidePanels.imagesVisible }
+            in
+            AllProvided error drag config toggledSidePanels classes tools imgs
 
         _ ->
             Debug.todo "toggleImagesPanel"

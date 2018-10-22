@@ -3,8 +3,9 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.Main exposing (Msg, configProvided, imagesProvided, nothingProvided)
+module View.Main exposing (Msg, allProvided, configProvided, imagesProvided, nothingProvided)
 
+import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.Config as Config exposing (Config)
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.State as State
@@ -290,3 +291,104 @@ imageArea remoteImage viewer =
                     , Html.Attributes.style "width" "100%"
                     ]
                 |> Element.html
+
+
+allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Classes -> Zipper Tool -> State.AnnotatedZipper -> Viewer -> Element msg
+allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
+    let
+        actionBar =
+            ActionBar.configProvided msg.actionBar toolsZipper
+
+        chevronLeft action =
+            Icon.toHtml 64 Icon.chevronLeft
+                |> Element.html
+                |> Element.el
+                    [ Element.Background.color Style.sidebarBG
+                    , Element.Events.onClick action
+                    ]
+
+        chevronRight action =
+            Icon.toHtml 64 Icon.chevronRight
+                |> Element.html
+                |> Element.el
+                    [ Element.Background.color Style.sidebarBG
+                    , Element.Events.onClick action
+                    ]
+
+        classesSidebar =
+            Element.row
+                [ Element.alignLeft
+                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+                ]
+                (if sidePanels.classesVisible then
+                    [ classesList
+                    , chevronLeft msg.toggleClassesPanel
+                    ]
+
+                 else
+                    [ chevronRight msg.toggleClassesPanel ]
+                )
+
+        classesList =
+            ClassesSidebar.column
+                [ Element.width (Element.maximum 600 Element.fill)
+                , Element.height Element.fill
+                , Element.alignLeft
+                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
+                , Element.scrollbarY
+                , Element.Background.color Style.sidebarBG
+                ]
+                msg.classesSidebar
+                classes
+
+        imagesSidebar =
+            Element.row
+                [ Element.alignRight
+                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+                ]
+                (if sidePanels.imagesVisible then
+                    [ chevronRight msg.toggleImagesPanel
+                    , imagesList
+                    ]
+
+                 else
+                    [ chevronLeft msg.toggleImagesPanel ]
+                )
+
+        imagesList =
+            ImagesSidebar.column
+                [ Element.width (Element.maximum 600 Element.shrink)
+                , Element.height Element.fill
+                , Element.alignRight
+                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
+                , Element.scrollbarY
+                , Element.Background.color Style.sidebarBG
+                ]
+                msg.selectImage
+                (Zipper.mapAll annotatedToRemote annotatedImages)
+
+        centerArea =
+            case error of
+                State.NoError ->
+                    imageArea (AnnotatedImage.toRemote <| .annotatedImage (Zipper.getC annotatedImages)) viewer
+
+                State.ConfigError configError ->
+                    configErrorPreformatted configError
+
+        centerAreaWithSidebars =
+            centerArea
+                |> Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.inFront classesSidebar
+                    , Element.inFront imagesSidebar
+                    ]
+    in
+    Element.column
+        [ Element.width Element.fill, Element.height Element.fill ]
+        [ actionBar, centerAreaWithSidebars ]
+
+
+annotatedToRemote : { id : Int, annotatedImage : AnnotatedImage } -> { id : Int, remoteImage : RemoteImage }
+annotatedToRemote { id, annotatedImage } =
+    { id = id, remoteImage = AnnotatedImage.toRemote annotatedImage }

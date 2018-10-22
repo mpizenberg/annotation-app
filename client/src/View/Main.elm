@@ -104,7 +104,7 @@ configProvided msg error config visible classes toolsZipper =
 
         classesList =
             ClassesSidebar.column
-                [ Element.width (Element.maximum 600 Element.shrink)
+                [ Element.width (Element.maximum 600 Element.fill)
                 , Element.height Element.fill
                 , Element.alignLeft
                 , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")

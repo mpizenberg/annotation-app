@@ -148,6 +148,13 @@ selectImage id viewer state =
 toggleCategory : Int -> State -> State
 toggleCategory id state =
     case state of
+        ConfigProvided error config visible classes tools ->
+            FileSystem.findFolderWithId id classes.all
+                |> Maybe.map toggleFocused
+                |> Maybe.map (\all -> { classes | all = all })
+                |> Maybe.map (\newClasses -> ConfigProvided error config visible newClasses tools)
+                |> Maybe.withDefault state
+
         AllProvided error drag config classes tools imgs ->
             FileSystem.findFolderWithId id classes.all
                 |> Maybe.map toggleFocused
@@ -187,6 +194,9 @@ toggleImagesPanel state =
 selectClass : ( Int, Int ) -> State -> State
 selectClass selected state =
     case state of
+        ConfigProvided error config visible classes tools ->
+            ConfigProvided error config visible { classes | selected = Just selected } tools
+
         AllProvided error drag config classes tools images ->
             AllProvided error drag config { classes | selected = Just selected } tools images
 

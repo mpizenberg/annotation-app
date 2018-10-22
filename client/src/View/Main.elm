@@ -37,8 +37,7 @@ import Viewer.Svg
 
 type alias Msg msg =
     { selectImage : Int -> msg
-    , toggleCategory : Int -> msg
-    , selectClass : ( Int, Int ) -> msg
+    , classesSidebar : ClassesSidebar.Msg msg
     , toggleImagesPanel : msg
     , toggleClassesPanel : msg
     , actionBar : ActionBar.Msg msg
@@ -111,8 +110,7 @@ configProvided msg error config visible classes toolsZipper =
                 , Element.scrollbarY
                 , Element.Background.color Style.sidebarBG
                 ]
-                msg.toggleCategory
-                msg.selectClass
+                msg.classesSidebar
                 classes
 
         centerArea =

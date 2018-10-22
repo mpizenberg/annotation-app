@@ -3,7 +3,7 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.ClassesSidebar exposing (column)
+module View.ClassesSidebar exposing (Msg, column)
 
 import Data.State as State
 import Element exposing (Element)
@@ -14,23 +14,29 @@ import Packages.FileSystem as FileSystem exposing (File, FileSystem, Folder)
 import View.Style as Style
 
 
-column : List (Element.Attribute msg) -> (Int -> msg) -> (( Int, Int ) -> msg) -> State.Classes -> Element msg
-column attributes toggleCategoryMsg selectClassMsg classes =
-    foldableContents attributes toggleCategoryMsg selectClassMsg (FileSystem.root classes.all)
+type alias Msg msg =
+    { toggleCategory : Int -> msg
+    , selectClass : ( Int, Int ) -> msg
+    }
+
+
+column : List (Element.Attribute msg) -> Msg msg -> State.Classes -> Element msg
+column attributes msg classes =
+    foldableContents attributes msg (FileSystem.root classes.all)
 
 
 
 -- From FileSystem view code
 
 
-foldable : (Int -> msg) -> (( Int, Int ) -> msg) -> FileSystem -> Element msg
-foldable toggleCategoryMsg selectClassMsg fileSystem =
+foldable : Msg msg -> FileSystem -> Element msg
+foldable msg fileSystem =
     Element.column [ Element.width Element.fill ]
-        [ folder toggleCategoryMsg (FileSystem.currentFolder fileSystem)
+        [ folder msg.toggleCategory (FileSystem.currentFolder fileSystem)
         , Element.row
             [ Element.width Element.fill ]
             [ space 50
-            , foldableContents [ Element.width Element.fill ] toggleCategoryMsg selectClassMsg fileSystem
+            , foldableContents [ Element.width Element.fill ] msg fileSystem
             ]
         ]
 
@@ -40,14 +46,14 @@ space width =
     Element.el [ Element.width <| Element.px width ] Element.none
 
 
-foldableContents : List (Element.Attribute msg) -> (Int -> msg) -> (( Int, Int ) -> msg) -> FileSystem -> Element msg
-foldableContents attributes toggleCategoryMsg selectClassMsg fileSystem =
+foldableContents : List (Element.Attribute msg) -> Msg msg -> FileSystem -> Element msg
+foldableContents attributes msg fileSystem =
     let
         subfoldersElements =
-            subfolders toggleCategoryMsg selectClassMsg fileSystem
+            subfolders msg fileSystem
 
         filesElements =
-            subfiles selectClassMsg (FileSystem.currentFolder fileSystem)
+            subfiles msg.selectClass (FileSystem.currentFolder fileSystem)
     in
     Element.column attributes (subfoldersElements ++ filesElements)
 
@@ -56,11 +62,11 @@ foldableContents attributes toggleCategoryMsg selectClassMsg fileSystem =
 -- Sub folders
 
 
-subfolders : (Int -> msg) -> (( Int, Int ) -> msg) -> FileSystem -> List (Element msg)
-subfolders toggleCategoryMsg selectClassMsg fileSystem =
+subfolders : Msg msg -> FileSystem -> List (Element msg)
+subfolders msg fileSystem =
     if .open (FileSystem.currentFolder fileSystem) then
         FileSystem.subfolders fileSystem
-            |> List.map (foldable toggleCategoryMsg selectClassMsg)
+            |> List.map (foldable msg)
 
     else
         []

@@ -66,8 +66,10 @@ type Msg
 msgBuilders : View.Msg Msg
 msgBuilders =
     { selectImage = SelectImage
-    , toggleCategory = ToggleCategory
-    , selectClass = SelectClass
+    , classesSidebar =
+        { toggleCategory = ToggleCategory
+        , selectClass = SelectClass
+        }
     , toggleImagesPanel = ToggleImagesPanel
     , toggleClassesPanel = ToggleClassesPanel
     , actionBar =

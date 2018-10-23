@@ -1,6 +1,6 @@
 # Configuration
 SERVER_CONFIG_FILE = server/.env
-SERVER_PORT = 8003
+SERVER_PORT = 8004
 DIST_DIR = dist
 BUILD_DIR = server/$(DIST_DIR)
 STATIC_FILES = client/static/* dependencies/elm-pep/elm-pep.js

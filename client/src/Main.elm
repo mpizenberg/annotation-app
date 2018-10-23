@@ -276,6 +276,7 @@ update msg model =
                     in
                     if hasChanged then
                         ( { model | viewer = newViewer, dragState = newDragState }, Cmd.none )
+
                     else
                         ( model, Cmd.none )
 
@@ -310,6 +311,7 @@ update msg model =
                             |> updateAnnotationsWithImage
                         , Cmd.none
                         )
+
                     else
                         ( model, Cmd.none )
 
@@ -405,6 +407,7 @@ update msg model =
                 Zipper.setC { img | status = newStatus } images
                     |> ImagesProvided
                     |> (\state -> ( fitImage { model | state = state }, Cmd.none ))
+
             else
                 Zipper.goTo .id id images
                     |> Zipper.updateC (\img -> { img | status = newStatus })
@@ -427,6 +430,7 @@ update msg model =
                     |> (\state -> fitImage { model | state = state })
                     |> updateAnnotationsWithImage
                     |> (\model -> ( model, Cmd.none ))
+
             else
                 Zipper.goTo .id id images
                     |> Zipper.updateC (\img -> { img | status = newStatus })
@@ -510,6 +514,7 @@ decodeConfig configString =
         selected =
             if List.isEmpty config.classes then
                 0
+
             else
                 1
     in
@@ -551,10 +556,10 @@ updateZoom : ZoomMsg -> Model -> Model
 updateZoom zoomMsg model =
     case zoomMsg of
         ZoomIn ->
-            { model | viewer = Viewer.setZoomCentered (1.5625 * model.viewer.zoom) model.viewer }
+            { model | viewer = Viewer.setZoomCentered ((4.0 / 3.0) * model.viewer.zoom) model.viewer }
 
         ZoomOut ->
-            { model | viewer = Viewer.setZoomCentered (0.64 * model.viewer.zoom) model.viewer }
+            { model | viewer = Viewer.setZoomCentered ((3.0 / 4.0) * model.viewer.zoom) model.viewer }
 
         ZoomFit ->
             fitImage model
@@ -566,7 +571,7 @@ fitImage ({ state } as model) =
         ImagesProvided images ->
             case .status (Zipper.getC images) of
                 RawImage.Loaded img ->
-                    { model | viewer = Viewer.fitImage 0.8 img model.viewer }
+                    { model | viewer = Viewer.fitImage 1.0 img model.viewer }
 
                 _ ->
                     model
@@ -574,7 +579,7 @@ fitImage ({ state } as model) =
         AllProvided _ _ _ images ->
             case .status (Zipper.getC images) of
                 AnnotatedImage.Loaded img _ ->
-                    { model | viewer = Viewer.fitImage 0.8 img model.viewer }
+                    { model | viewer = Viewer.fitImage 1.0 img model.viewer }
 
                 _ ->
                     model

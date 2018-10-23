@@ -3,7 +3,7 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.Style exposing (base, focusedItemBG, hoveredItemBG, sidebarBG)
+module View.Style exposing (base, disabledText, focusedItemBG, hoveredItemBG, sidebarBG)
 
 import Element
 import Element.Font
@@ -28,3 +28,8 @@ hoveredItemBG =
 focusedItemBG : Element.Color
 focusedItemBG =
     Element.rgba255 180 180 180 0.8
+
+
+disabledText : Element.Color
+disabledText =
+    Element.rgb255 150 150 150

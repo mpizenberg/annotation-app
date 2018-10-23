@@ -384,7 +384,7 @@ allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Clas
 allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
     let
         actionBar =
-            ActionBar.configProvided msg.actionBar toolsZipper
+            ActionBar.allProvided msg.actionBar toolsZipper
 
         chevronLeft action =
             Icon.toHtml 64 Icon.chevronLeft

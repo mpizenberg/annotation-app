@@ -3,11 +3,13 @@
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-module View.ActionBar exposing (Msg, configProvided, imagesProvided, nothingProvided)
+module View.ActionBar exposing (Msg, allProvided, configProvided, imagesProvided, nothingProvided)
 
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element)
 import Element.Background
+import Element.Events
+import Element.Font
 import Html exposing (Html)
 import Html.Attributes
 import Json.Encode as Encode exposing (Value)
@@ -43,6 +45,24 @@ nothingProvided msg =
         ]
 
 
+allProvided : Msg msg -> Zipper Tool -> Element msg
+allProvided msg toolsZipper =
+    let
+        toolsButtons =
+            List.concat
+                [ List.map (toolButtonAbled msg.selectTool) (Zipper.getL toolsZipper)
+                , [ toolButtonFocused (Zipper.getC toolsZipper) ]
+                , List.map (toolButtonAbled msg.selectTool) (Zipper.getR toolsZipper)
+                ]
+    in
+    Element.row [ Element.width Element.fill ]
+        [ Element.row [] toolsButtons
+        , filler
+        , loadConfigButton msg.loadConfig
+        , loadImagesButton msg.loadImages
+        ]
+
+
 configProvided : Msg msg -> Zipper Tool -> Element msg
 configProvided msg toolsZipper =
     Element.row [ Element.width Element.fill ]
@@ -53,16 +73,35 @@ configProvided msg toolsZipper =
         ]
 
 
+toolButtonFocused : Tool -> Element msg
+toolButtonFocused tool =
+    Element.el [ Element.Background.color Style.focusedItemBG ] (toolButton tool)
+
+
+toolButtonAbled : (Int -> msg) -> Tool -> Element msg
+toolButtonAbled selectToolMsg tool =
+    toolButton tool
+        |> Element.el
+            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+            , Element.pointer
+            , Element.Events.onClick (selectToolMsg (Tool.toId tool))
+            ]
+
+
 toolButtonDisabled : Tool -> Element msg
 toolButtonDisabled tool =
+    Element.el [ Element.Font.color Style.disabledText ] (toolButton tool)
+
+
+toolButton : Tool -> Element msg
+toolButton tool =
     [ svgToolIcon tool ]
-        |> Html.label
+        |> Html.div
             [ Html.Attributes.style "width" "100px"
             , Html.Attributes.style "height" "100px"
             , Html.Attributes.style "display" "flex"
             , Html.Attributes.style "align-items" "center"
             , Html.Attributes.style "justify-content" "center"
-            , Html.Attributes.style "color" "gray"
             ]
         |> Element.html
 

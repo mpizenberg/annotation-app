@@ -24,8 +24,18 @@
 		const flags = {
 			deviceSize: containerSize(),
 			mturkMode: false,
-			images: [],
-			config: null
+			images:
+				[ { "width": 2103, "height": 1183, "url": "1.jpg" }
+				, { "width": 2103, "height": 1183, "url": "2.jpg" }
+				, { "width": 2103, "height": 1183, "url": "3.jpg" }
+				, { "width": 2103, "height": 1183, "url": "4.jpg" }
+				, { "width": 2103, "height": 1183, "url": "5.jpg" }
+				, { "width": 2103, "height": 1183, "url": "6.jpg" }
+				],
+			config: `
+				{ "classes": [ "person", "tree", "ground" ]
+				, "annotations": [ "point", "bbox", "stroke", "outline", "polygon" ]
+				}`
 		}
 
 		// Start elm app.

@@ -26,7 +26,7 @@ client-install :
 # Copy static files to build dir
 copy-static-to-build :
 	mkdir -p $(BUILD_DIR)
-	cp $(STATIC_FILES) $(BUILD_DIR)
+	cp -r $(STATIC_FILES) $(BUILD_DIR)
 
 # Build elm app
 build : copy-static-to-build

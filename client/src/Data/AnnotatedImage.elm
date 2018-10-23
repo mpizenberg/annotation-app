@@ -11,7 +11,6 @@ module Data.AnnotatedImage exposing
     , hasAnnotations
     , removeAnnotation
     , reset
-    , toRemote
     , updateWithPointer
     )
 
@@ -201,26 +200,6 @@ fromRemote { name, status } =
                     Loaded image
     in
     { name = name, status = annotatedStatus }
-
-
-toRemote : AnnotatedImage -> RemoteImage
-toRemote { name, status } =
-    let
-        remoteStatus =
-            case status of
-                Loading ->
-                    RemoteImage.Loading
-
-                LoadingError error ->
-                    RemoteImage.LoadingError error
-
-                Loaded image ->
-                    RemoteImage.Loaded image
-
-                LoadedWithAnnotations image _ _ ->
-                    RemoteImage.Loaded image
-    in
-    { name = name, status = remoteStatus }
 
 
 

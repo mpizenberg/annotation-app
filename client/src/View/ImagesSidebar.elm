@@ -5,15 +5,15 @@
 
 module View.ImagesSidebar exposing (column)
 
-import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Element exposing (Element)
 import Element.Background
 import Element.Events
 import Packages.Zipper as Zipper exposing (Zipper)
+import View.Data.Image as Image exposing (Image, Status(..))
 import View.Style as Style
 
 
-column : List (Element.Attribute msg) -> (Int -> msg) -> Zipper { id : Int, remoteImage : RemoteImage } -> Element msg
+column : List (Element.Attribute msg) -> (Int -> msg) -> Zipper Image -> Element msg
 column attributes selectImageMsg zipper =
     Element.column attributes <|
         List.concat
@@ -25,8 +25,8 @@ column attributes selectImageMsg zipper =
             ]
 
 
-imageItem : (Int -> msg) -> Element.Color -> { id : Int, remoteImage : RemoteImage } -> Element msg
-imageItem selectImageMsg bgColor { id, remoteImage } =
+imageItem : (Int -> msg) -> Element.Color -> Image -> Element msg
+imageItem selectImageMsg bgColor { id, name, status } =
     Element.row
         [ Element.width Element.fill
         , Element.padding 10
@@ -35,19 +35,22 @@ imageItem selectImageMsg bgColor { id, remoteImage } =
         , Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
         , Element.Background.color bgColor
         ]
-        [ indicator remoteImage.status
-        , Element.text remoteImage.name
+        [ indicator status
+        , Element.text name
         ]
 
 
-indicator : RemoteImage.LoadingStatus -> Element msg
+indicator : Status -> Element msg
 indicator status =
     case status of
-        RemoteImage.Loading ->
+        Loading ->
             Element.el [ Element.width (Element.px 30) ] (Element.text "...")
 
-        RemoteImage.Loaded _ ->
+        LoadingError ->
+            Element.el [ Element.width (Element.px 30) ] (Element.text "X")
+
+        Loaded ->
             Element.el [ Element.width (Element.px 30) ] (Element.text "")
 
-        RemoteImage.LoadingError _ ->
-            Element.el [ Element.width (Element.px 30) ] (Element.text "X")
+        LoadedWithAnnotations ->
+            Element.el [ Element.width (Element.px 30) ] (Element.text "")

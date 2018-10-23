@@ -24,7 +24,9 @@ import Packages.Zipper as Zipper exposing (Zipper)
 import Svg
 import Svg.Attributes
 import View.ActionBar as ActionBar
+import View.Annotation as Annotation
 import View.ClassesSidebar as ClassesSidebar
+import View.Data.Image as Image exposing (Image, Status(..))
 import View.Icon as Icon
 import View.ImagesSidebar as ImagesSidebar
 import View.Style as Style
@@ -182,7 +184,7 @@ imagesProvided msg error visible remoteZipper viewer =
                 , Element.Background.color Style.sidebarBG
                 ]
                 msg.selectImage
-                remoteZipper
+                (Zipper.mapAll remoteToImageData remoteZipper)
 
         centerArea =
             case error of
@@ -203,6 +205,43 @@ imagesProvided msg error visible remoteZipper viewer =
     Element.column
         [ Element.width Element.fill, Element.height Element.fill ]
         [ actionBar, centerAreaWithSidebars ]
+
+
+remoteToImageData : { id : Int, remoteImage : RemoteImage } -> Image
+remoteToImageData { id, remoteImage } =
+    { id = id
+    , name = remoteImage.name
+    , status =
+        case remoteImage.status of
+            RemoteImage.Loading ->
+                Loading
+
+            RemoteImage.LoadingError _ ->
+                LoadingError
+
+            RemoteImage.Loaded _ ->
+                Loaded
+    }
+
+
+annotatedToImageData : { id : Int, annotatedImage : AnnotatedImage } -> Image
+annotatedToImageData { id, annotatedImage } =
+    { id = id
+    , name = annotatedImage.name
+    , status =
+        case annotatedImage.status of
+            AnnotatedImage.Loading ->
+                Loading
+
+            AnnotatedImage.LoadingError _ ->
+                LoadingError
+
+            AnnotatedImage.Loaded _ ->
+                Loaded
+
+            AnnotatedImage.LoadedWithAnnotations _ _ _ ->
+                LoadedWithAnnotations
+    }
 
 
 configErrorPreformatted : Config.Error -> Element msg
@@ -293,6 +332,54 @@ imageArea remoteImage viewer =
                 |> Element.html
 
 
+annotatedImageArea : AnnotatedImage -> Viewer -> Element msg
+annotatedImageArea annotatedImage viewer =
+    case annotatedImage.status of
+        AnnotatedImage.Loading ->
+            Element.text "Image loading ..."
+
+        AnnotatedImage.LoadingError errorMsg ->
+            Element.text errorMsg
+
+        AnnotatedImage.Loaded image ->
+            let
+                svgImage =
+                    Svg.image
+                        [ Svg.Attributes.xlinkHref image.url
+                        , Svg.Attributes.width (String.fromInt image.width)
+                        , Svg.Attributes.height (String.fromInt image.height)
+                        ]
+                        []
+            in
+            [ Viewer.Svg.placeIn viewer [ svgImage ] ]
+                |> Svg.svg
+                    [ Html.Attributes.style "flex" "1"
+                    , Html.Attributes.style "width" "100%"
+                    ]
+                |> Element.html
+
+        AnnotatedImage.LoadedWithAnnotations image _ annotatedZipper ->
+            let
+                svgImage =
+                    Svg.image
+                        [ Svg.Attributes.xlinkHref image.url
+                        , Svg.Attributes.width (String.fromInt image.width)
+                        , Svg.Attributes.height (String.fromInt image.height)
+                        ]
+                        []
+
+                svgAnnotations =
+                    Zipper.getAll annotatedZipper
+                        |> List.map (\{ annotation } -> Annotation.view annotation)
+            in
+            [ Viewer.Svg.placeIn viewer [ svgImage ] ]
+                |> Svg.svg
+                    [ Html.Attributes.style "flex" "1"
+                    , Html.Attributes.style "width" "100%"
+                    ]
+                |> Element.html
+
+
 allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Classes -> Zipper Tool -> State.AnnotatedZipper -> Viewer -> Element msg
 allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
     let
@@ -365,12 +452,12 @@ allProvided msg error config sidePanels classes toolsZipper annotatedImages view
                 , Element.Background.color Style.sidebarBG
                 ]
                 msg.selectImage
-                (Zipper.mapAll annotatedToRemote annotatedImages)
+                (Zipper.mapAll annotatedToImageData annotatedImages)
 
         centerArea =
             case error of
                 State.NoError ->
-                    imageArea (AnnotatedImage.toRemote <| .annotatedImage (Zipper.getC annotatedImages)) viewer
+                    annotatedImageArea (.annotatedImage (Zipper.getC annotatedImages)) viewer
 
                 State.ConfigError configError ->
                     configErrorPreformatted configError
@@ -387,8 +474,3 @@ allProvided msg error config sidePanels classes toolsZipper annotatedImages view
     Element.column
         [ Element.width Element.fill, Element.height Element.fill ]
         [ actionBar, centerAreaWithSidebars ]
-
-
-annotatedToRemote : { id : Int, annotatedImage : AnnotatedImage } -> { id : Int, remoteImage : RemoteImage }
-annotatedToRemote { id, annotatedImage } =
-    { id = id, remoteImage = AnnotatedImage.toRemote annotatedImage }

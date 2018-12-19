@@ -7,6 +7,7 @@ module View.Main exposing (Msg, allProvided, configProvided, imagesProvided, not
 
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.Config as Config exposing (Config)
+import Data.Pointer as Pointer
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.State as State
 import Data.Tool as Tool exposing (Tool)
@@ -17,7 +18,9 @@ import Element.Events
 import Element.Font
 import Html
 import Html.Attributes
-import Json.Decode as Decode
+import Html.Events
+import Html.Events.Extra.Pointer
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Json.Value
 import Packages.Zipper as Zipper exposing (Zipper)
@@ -44,6 +47,8 @@ type alias Msg msg =
     , toggleImagesPanel : msg
     , toggleClassesPanel : msg
     , actionBar : ActionBar.Msg msg
+    , pointer : Pointer.Msg -> msg
+    , rawPointer : Value -> msg
     }
 
 
@@ -332,8 +337,8 @@ imageArea remoteImage viewer =
                 |> Element.html
 
 
-annotatedImageArea : AnnotatedImage -> Viewer -> Element msg
-annotatedImageArea annotatedImage viewer =
+annotatedImageArea : Msg msg -> AnnotatedImage -> Viewer -> Element msg
+annotatedImageArea msg annotatedImage viewer =
     case annotatedImage.status of
         AnnotatedImage.Loading ->
             Element.text "Image loading ..."
@@ -351,10 +356,16 @@ annotatedImageArea annotatedImage viewer =
                         ]
                         []
             in
-            [ Viewer.Svg.placeIn viewer [ svgImage ] ]
+            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage ] ]
                 |> Svg.svg
                     [ Html.Attributes.style "flex" "1"
                     , Html.Attributes.style "width" "100%"
+                    , msgOn "pointerdown" (Decode.map msg.rawPointer Decode.value)
+                    , Html.Events.Extra.Pointer.onUp (.pointer >> .offsetPos >> Pointer.UpAt >> msg.pointer)
+                    , Html.Events.Extra.Pointer.onMove (.pointer >> .offsetPos >> Pointer.MoveAt >> msg.pointer)
+
+                    -- no touch-action (prevent scroll etc.)
+                    , Html.Attributes.style "touch-action" "none"
                     ]
                 |> Element.html
 
@@ -372,12 +383,21 @@ annotatedImageArea annotatedImage viewer =
                     Zipper.getAll annotatedZipper
                         |> List.map (\{ annotation } -> Annotation.view annotation)
             in
-            [ Viewer.Svg.placeIn viewer [ svgImage ] ]
+            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage ] ]
                 |> Svg.svg
                     [ Html.Attributes.style "flex" "1"
                     , Html.Attributes.style "width" "100%"
+                    , msgOn "pointerdown" (Decode.map msg.rawPointer Decode.value)
+                    , Html.Events.Extra.Pointer.onUp (.pointer >> .offsetPos >> Pointer.UpAt >> msg.pointer)
+                    , Html.Events.Extra.Pointer.onMove (.pointer >> .offsetPos >> Pointer.MoveAt >> msg.pointer)
                     ]
                 |> Element.html
+
+
+msgOn : String -> Decoder msg -> Html.Attribute msg
+msgOn event =
+    Decode.map (\msg -> { message = msg, stopPropagation = False, preventDefault = True })
+        >> Html.Events.custom event
 
 
 allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Classes -> Zipper Tool -> State.AnnotatedZipper -> Viewer -> Element msg
@@ -457,7 +477,7 @@ allProvided msg error config sidePanels classes toolsZipper annotatedImages view
         centerArea =
             case error of
                 State.NoError ->
-                    annotatedImageArea (.annotatedImage (Zipper.getC annotatedImages)) viewer
+                    annotatedImageArea msg (.annotatedImage (Zipper.getC annotatedImages)) viewer
 
                 State.ConfigError configError ->
                     configErrorPreformatted configError

@@ -12,6 +12,8 @@ import Data.State as State exposing (State)
 import Element
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Events.Extra.Pointer
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Packages.Device as Device exposing (Device)
 import Ports
@@ -43,6 +45,7 @@ type alias Model =
 type Msg
     = WindowResizes Device.Size
       -- pointer events
+    | RawPointerDownMsg Value
     | PointerMsg Pointer.Msg
       -- select things
     | SelectImage Int
@@ -78,6 +81,8 @@ msgBuilders =
         , selectTool = SelectTool
         , removeAnnotation = RemoveAnnotation
         }
+    , pointer = PointerMsg
+    , rawPointer = RawPointerDownMsg
     }
 
 
@@ -200,6 +205,18 @@ update msg model =
     case msg of
         WindowResizes size ->
             ( { model | viewer = windowResizes size model.viewer }, Cmd.none )
+
+        RawPointerDownMsg value ->
+            case Decode.decodeValue Html.Events.Extra.Pointer.eventDecoder value of
+                Ok event ->
+                    let
+                        ( newModel, newCmd ) =
+                            update (PointerMsg <| Pointer.DownAt event.pointer.offsetPos) model
+                    in
+                    ( newModel, Cmd.batch [ newCmd, Ports.capture value ] )
+
+                Err _ ->
+                    ( model, Cmd.none )
 
         PointerMsg pointerMsg ->
             State.updateWithPointer pointerMsg model.viewer model.state

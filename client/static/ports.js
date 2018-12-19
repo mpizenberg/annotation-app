@@ -32,4 +32,10 @@ activatePorts = (app, utils, containerSize) => {
       "application/json"
     );
   });
+
+  // Pointer capture.
+  app.ports.capture.subscribe(event => {
+    event.target.setPointerCapture(event.pointerId);
+    console.log("captured");
+  });
 };

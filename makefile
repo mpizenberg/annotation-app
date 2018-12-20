@@ -29,8 +29,17 @@ copy-static-to-build :
 	cp $(STATIC_FILES) $(BUILD_DIR)
 
 # Build elm app
-build : copy-static-to-build
+build-elm :
 	cd client && elm-19 make src/Main.elm --output=../$(BUILD_DIR)/Main.js
+
+# Build elm app
+build : build-elm copy-static-to-build
+	cd client && elm-19 make src/Main.elm --output=../$(BUILD_DIR)/Main.js
+
+# Watch and re-build with hot reload
+watch :
+	cd $(BUILD_DIR) && devd -l . &
+	modd
 
 # Start node server
 start : config

@@ -24,7 +24,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Json.Value
 import Packages.Zipper as Zipper exposing (Zipper)
-import Svg
+import Svg exposing (Svg)
 import Svg.Attributes
 import View.ActionBar as ActionBar
 import View.Annotation as Annotation
@@ -79,48 +79,6 @@ configProvided msg error config visible classes toolsZipper =
         actionBar =
             ActionBar.configProvided msg.actionBar toolsZipper
 
-        chevronLeft =
-            Icon.toHtml 64 Icon.chevronLeft
-                |> Element.html
-                |> Element.el
-                    [ Element.Background.color Style.sidebarBG
-                    , Element.Events.onClick msg.toggleClassesPanel
-                    ]
-
-        chevronRight =
-            Icon.toHtml 64 Icon.chevronRight
-                |> Element.html
-                |> Element.el
-                    [ Element.Background.color Style.sidebarBG
-                    , Element.Events.onClick msg.toggleClassesPanel
-                    ]
-
-        classesSidebar =
-            Element.row
-                [ Element.alignLeft
-                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
-                ]
-                (if visible then
-                    [ classesList
-                    , chevronLeft
-                    ]
-
-                 else
-                    [ chevronRight ]
-                )
-
-        classesList =
-            ClassesSidebar.column
-                [ Element.width (Element.maximum 600 Element.fill)
-                , Element.height Element.fill
-                , Element.alignLeft
-                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
-                , Element.scrollbarY
-                , Element.Background.color Style.sidebarBG
-                ]
-                msg.classesSidebar
-                classes
-
         centerArea =
             case error of
                 State.NoError ->
@@ -135,7 +93,7 @@ configProvided msg error config visible classes toolsZipper =
                 |> Element.el
                     [ Element.width Element.fill
                     , Element.height Element.fill
-                    , Element.inFront classesSidebar
+                    , Element.inFront (classesSidebar msg.toggleClassesPanel msg.classesSidebar visible classes)
                     ]
     in
     Element.column
@@ -148,48 +106,6 @@ imagesProvided msg error visible remoteZipper viewer =
     let
         actionBar =
             ActionBar.imagesProvided msg.actionBar
-
-        chevronLeft =
-            Icon.toHtml 64 Icon.chevronLeft
-                |> Element.html
-                |> Element.el
-                    [ Element.Background.color Style.sidebarBG
-                    , Element.Events.onClick msg.toggleImagesPanel
-                    ]
-
-        chevronRight =
-            Icon.toHtml 64 Icon.chevronRight
-                |> Element.html
-                |> Element.el
-                    [ Element.Background.color Style.sidebarBG
-                    , Element.Events.onClick msg.toggleImagesPanel
-                    ]
-
-        imagesSidebar =
-            Element.row
-                [ Element.alignRight
-                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
-                ]
-                (if visible then
-                    [ chevronRight
-                    , imagesList
-                    ]
-
-                 else
-                    [ chevronLeft ]
-                )
-
-        imagesList =
-            ImagesSidebar.column
-                [ Element.width (Element.maximum 600 Element.shrink)
-                , Element.height Element.fill
-                , Element.alignRight
-                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
-                , Element.scrollbarY
-                , Element.Background.color Style.sidebarBG
-                ]
-                msg.selectImage
-                (Zipper.mapAll remoteToImageData remoteZipper)
 
         centerArea =
             case error of
@@ -204,12 +120,114 @@ imagesProvided msg error visible remoteZipper viewer =
                 |> Element.el
                     [ Element.width Element.fill
                     , Element.height Element.fill
-                    , Element.inFront imagesSidebar
+                    , Element.inFront (imagesSidebar msg visible (Zipper.mapAll remoteToImageData remoteZipper))
                     ]
     in
     Element.column
         [ Element.width Element.fill, Element.height Element.fill ]
         [ actionBar, centerAreaWithSidebars ]
+
+
+allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Classes -> Zipper Tool -> State.AnnotatedZipper -> Viewer -> Element msg
+allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
+    let
+        actionBar =
+            ActionBar.allProvided msg.actionBar toolsZipper
+
+        centerArea =
+            case error of
+                State.NoError ->
+                    annotatedImageArea msg (.annotatedImage (Zipper.getC annotatedImages)) viewer
+
+                State.ConfigError configError ->
+                    configErrorPreformatted configError
+
+        centerAreaWithSidebars =
+            centerArea
+                |> Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.inFront (classesSidebar msg.toggleClassesPanel msg.classesSidebar sidePanels.classesVisible classes)
+                    , Element.inFront (imagesSidebar msg sidePanels.imagesVisible (Zipper.mapAll annotatedToImageData annotatedImages))
+                    ]
+    in
+    Element.column
+        [ Element.width Element.fill, Element.height Element.fill ]
+        [ actionBar, centerAreaWithSidebars ]
+
+
+
+-- SIDEBAR HELPERS ###################################################
+
+
+classesSidebar : msg -> ClassesSidebar.Msg msg -> Bool -> State.Classes -> Element msg
+classesSidebar toggleMsg classesSidebarMsg visible classes =
+    Element.el
+        [ Element.alignLeft
+        , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+        , Element.onRight (doubleToggleChevron toggleMsg Icon.chevronLeft Icon.chevronRight visible)
+        ]
+        (if visible then
+            ClassesSidebar.column classesSidebarAttributes classesSidebarMsg classes
+
+         else
+            Element.none
+        )
+
+
+imagesSidebar : Msg msg -> Bool -> Zipper Image -> Element msg
+imagesSidebar msg visible images =
+    Element.el
+        [ Element.alignRight
+        , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
+        , Element.onLeft (doubleToggleChevron msg.toggleImagesPanel Icon.chevronRight Icon.chevronLeft visible)
+        ]
+        (if visible then
+            ImagesSidebar.column imagesSidebarAttributes msg.selectImage images
+
+         else
+            Element.none
+        )
+
+
+classesSidebarAttributes : List (Element.Attribute msg)
+classesSidebarAttributes =
+    Element.alignLeft :: sidebarAttributes
+
+
+imagesSidebarAttributes : List (Element.Attribute msg)
+imagesSidebarAttributes =
+    Element.alignRight :: sidebarAttributes
+
+
+sidebarAttributes : List (Element.Attribute msg)
+sidebarAttributes =
+    [ Element.width (Element.maximum 200 Element.shrink)
+    , Element.height Element.fill
+    , Element.scrollbars
+    , Element.Background.color Style.sidebarBG
+    ]
+
+
+doubleToggleChevron : msg -> List (Svg msg) -> List (Svg msg) -> Bool -> Element msg
+doubleToggleChevron toggleMsg iconWhenOpen iconWhenClosed open =
+    if open then
+        toggleChevron toggleMsg iconWhenOpen
+            |> Element.el [ Element.centerY ]
+
+    else
+        toggleChevron toggleMsg iconWhenClosed
+            |> Element.el [ Element.centerY ]
+
+
+toggleChevron : msg -> List (Svg msg) -> Element msg
+toggleChevron msg icon =
+    Icon.toHtml 64 icon
+        |> Element.html
+        |> Element.el
+            [ Element.Background.color Style.sidebarBG
+            , Element.Events.onClick msg
+            ]
 
 
 remoteToImageData : { id : Int, remoteImage : RemoteImage } -> Image
@@ -249,65 +267,8 @@ annotatedToImageData { id, annotatedImage } =
     }
 
 
-configErrorPreformatted : Config.Error -> Element msg
-configErrorPreformatted configError =
-    case configError of
-        Config.IncorrectClasses ->
-            Element.text "Classes in config are incorrect"
 
-        Config.IncorrectTools ->
-            [ Element.text "You should always have at least one tool. Try adding one in the 'tools' field." ]
-                |> Element.paragraph []
-
-        Config.Incorrect decodeError ->
-            Html.pre [] [ Html.text (Decode.errorToString <| foldValueInError decodeError) ]
-                |> Element.html
-                |> Element.el [ Element.Font.size 12 ]
-
-
-foldValueInError : Decode.Error -> Decode.Error
-foldValueInError error =
-    case error of
-        Decode.Field string err ->
-            Decode.Field string (foldValueInError err)
-
-        Decode.Index int err ->
-            Decode.Index int (foldValueInError err)
-
-        Decode.OneOf list ->
-            Decode.OneOf (List.map foldValueInError list)
-
-        Decode.Failure string value ->
-            Decode.Failure string (foldValue value)
-
-
-foldValue : Value -> Value
-foldValue value =
-    case Json.Value.decodeValue value of
-        Json.Value.ObjectValue list ->
-            List.map (Tuple.mapSecond strictFoldJsonValue) list
-                |> Json.Value.ObjectValue
-                |> Json.Value.encode
-
-        Json.Value.ArrayValue list ->
-            Json.Value.ArrayValue (List.map strictFoldJsonValue list)
-                |> Json.Value.encode
-
-        _ ->
-            value
-
-
-strictFoldJsonValue : Json.Value.JsonValue -> Json.Value.JsonValue
-strictFoldJsonValue jsonValue =
-    case jsonValue of
-        Json.Value.ObjectValue _ ->
-            Json.Value.StringValue "{...}"
-
-        Json.Value.ArrayValue _ ->
-            Json.Value.StringValue "[...]"
-
-        _ ->
-            jsonValue
+-- IMAGE AREA HELPERS ################################################
 
 
 imageArea : RemoteImage -> Viewer -> Element msg
@@ -400,97 +361,66 @@ msgOn event =
         >> Html.Events.custom event
 
 
-allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Classes -> Zipper Tool -> State.AnnotatedZipper -> Viewer -> Element msg
-allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
-    let
-        actionBar =
-            ActionBar.allProvided msg.actionBar toolsZipper
 
-        chevronLeft action =
-            Icon.toHtml 64 Icon.chevronLeft
+-- CONFIG ERRORS HELPERS #############################################
+
+
+configErrorPreformatted : Config.Error -> Element msg
+configErrorPreformatted configError =
+    case configError of
+        Config.IncorrectClasses ->
+            Element.text "Classes in config are incorrect"
+
+        Config.IncorrectTools ->
+            [ Element.text "You should always have at least one tool. Try adding one in the 'tools' field." ]
+                |> Element.paragraph []
+
+        Config.Incorrect decodeError ->
+            Html.pre [] [ Html.text (Decode.errorToString <| foldValueInError decodeError) ]
                 |> Element.html
-                |> Element.el
-                    [ Element.Background.color Style.sidebarBG
-                    , Element.Events.onClick action
-                    ]
+                |> Element.el [ Element.Font.size 12 ]
 
-        chevronRight action =
-            Icon.toHtml 64 Icon.chevronRight
-                |> Element.html
-                |> Element.el
-                    [ Element.Background.color Style.sidebarBG
-                    , Element.Events.onClick action
-                    ]
 
-        classesSidebar =
-            Element.row
-                [ Element.alignLeft
-                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
-                ]
-                (if sidePanels.classesVisible then
-                    [ classesList
-                    , chevronLeft msg.toggleClassesPanel
-                    ]
+foldValueInError : Decode.Error -> Decode.Error
+foldValueInError error =
+    case error of
+        Decode.Field string err ->
+            Decode.Field string (foldValueInError err)
 
-                 else
-                    [ chevronRight msg.toggleClassesPanel ]
-                )
+        Decode.Index int err ->
+            Decode.Index int (foldValueInError err)
 
-        classesList =
-            ClassesSidebar.column
-                [ Element.width (Element.maximum 600 Element.fill)
-                , Element.height Element.fill
-                , Element.alignLeft
-                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
-                , Element.scrollbarY
-                , Element.Background.color Style.sidebarBG
-                ]
-                msg.classesSidebar
-                classes
+        Decode.OneOf list ->
+            Decode.OneOf (List.map foldValueInError list)
 
-        imagesSidebar =
-            Element.row
-                [ Element.alignRight
-                , Element.htmlAttribute (Html.Attributes.style "height" "inherit")
-                ]
-                (if sidePanels.imagesVisible then
-                    [ chevronRight msg.toggleImagesPanel
-                    , imagesList
-                    ]
+        Decode.Failure string value ->
+            Decode.Failure string (foldValue value)
 
-                 else
-                    [ chevronLeft msg.toggleImagesPanel ]
-                )
 
-        imagesList =
-            ImagesSidebar.column
-                [ Element.width (Element.maximum 600 Element.shrink)
-                , Element.height Element.fill
-                , Element.alignRight
-                , Element.htmlAttribute (Html.Attributes.style "overflow-x" "hidden")
-                , Element.scrollbarY
-                , Element.Background.color Style.sidebarBG
-                ]
-                msg.selectImage
-                (Zipper.mapAll annotatedToImageData annotatedImages)
+foldValue : Value -> Value
+foldValue value =
+    case Json.Value.decodeValue value of
+        Json.Value.ObjectValue list ->
+            List.map (Tuple.mapSecond strictFoldJsonValue) list
+                |> Json.Value.ObjectValue
+                |> Json.Value.encode
 
-        centerArea =
-            case error of
-                State.NoError ->
-                    annotatedImageArea msg (.annotatedImage (Zipper.getC annotatedImages)) viewer
+        Json.Value.ArrayValue list ->
+            Json.Value.ArrayValue (List.map strictFoldJsonValue list)
+                |> Json.Value.encode
 
-                State.ConfigError configError ->
-                    configErrorPreformatted configError
+        _ ->
+            value
 
-        centerAreaWithSidebars =
-            centerArea
-                |> Element.el
-                    [ Element.width Element.fill
-                    , Element.height Element.fill
-                    , Element.inFront classesSidebar
-                    , Element.inFront imagesSidebar
-                    ]
-    in
-    Element.column
-        [ Element.width Element.fill, Element.height Element.fill ]
-        [ actionBar, centerAreaWithSidebars ]
+
+strictFoldJsonValue : Json.Value.JsonValue -> Json.Value.JsonValue
+strictFoldJsonValue jsonValue =
+    case jsonValue of
+        Json.Value.ObjectValue _ ->
+            Json.Value.StringValue "{...}"
+
+        Json.Value.ArrayValue _ ->
+            Json.Value.StringValue "[...]"
+
+        _ ->
+            jsonValue

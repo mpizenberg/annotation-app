@@ -5,6 +5,7 @@
 
 module View.ActionBar exposing (Msg, allProvided, configProvided, imagesProvided, nothingProvided)
 
+import Data.AnnotatedImage exposing (AnnotatedImage)
 import Data.Feature as Feature exposing (Feature)
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element)
@@ -31,6 +32,7 @@ type alias Msg msg =
     , removeAnnotation : msg
     , zoomIn : msg
     , zoomOut : msg
+    , zoomFit : ( Float, Float ) -> msg
 
     -- below are only for AllProvided state
     }
@@ -48,9 +50,20 @@ nothingProvided msg =
         ]
 
 
-allProvided : Msg msg -> List Feature -> Zipper Tool -> Element msg
-allProvided msg features toolsZipper =
+allProvided : Msg msg -> AnnotatedImage -> List Feature -> Zipper Tool -> Element msg
+allProvided msg annotatedImage features toolsZipper =
     let
+        imageSize =
+            case annotatedImage.status of
+                Data.AnnotatedImage.Loaded image ->
+                    ( image.width, image.height )
+
+                Data.AnnotatedImage.LoadedWithAnnotations image _ _ ->
+                    ( image.width, image.height )
+
+                _ ->
+                    ( 0, 0 )
+
         toolsButtons =
             List.concat
                 [ List.map (toolButtonAbled msg.selectTool) (Zipper.getL toolsZipper)
@@ -61,7 +74,7 @@ allProvided msg features toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] toolsButtons
         , filler
-        , zoomButtons msg features
+        , zoomButtons msg imageSize features
         , removeAnnotationButton msg.removeAnnotation features
         , filler
         , loadConfigButton msg.loadConfig
@@ -74,7 +87,7 @@ configProvided msg features toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
         , filler
-        , zoomButtons msg features
+        , zoomButtons msg ( 0, 0 ) features
         , removeAnnotationButton msg.removeAnnotation features
         , filler
         , loadConfigButton msg.loadConfig
@@ -82,10 +95,14 @@ configProvided msg features toolsZipper =
         ]
 
 
-zoomButtons : Msg msg -> List Feature -> Element msg
-zoomButtons msg features =
+zoomButtons : Msg msg -> ( Int, Int ) -> List Feature -> Element msg
+zoomButtons msg imageSize features =
     if List.member Feature.CanZoom features then
-        Element.row [] [ zoomInButton msg.zoomIn, zoomOutButton msg.zoomOut ]
+        Element.row []
+            [ zoomInButton msg.zoomIn
+            , zoomOutButton msg.zoomOut
+            , zoomFitButton (msg.zoomFit (Tuple.mapBoth toFloat toFloat imageSize))
+            ]
 
     else
         Element.none
@@ -112,6 +129,18 @@ zoomOutButton zoomOutMsg =
             [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
             , Element.pointer
             , Element.Events.onClick zoomOutMsg
+            ]
+
+
+zoomFitButton : msg -> Element msg
+zoomFitButton zoomFitMsg =
+    [ Icon.toHtml 60 Icon.zoomFit ]
+        |> Html.div centerFlexAttributes
+        |> Element.html
+        |> Element.el
+            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+            , Element.pointer
+            , Element.Events.onClick zoomFitMsg
             ]
 
 

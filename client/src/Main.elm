@@ -82,6 +82,7 @@ msgBuilders =
         , removeAnnotation = RemoveAnnotation
         , zoomIn = ZoomMsg ZoomIn
         , zoomOut = ZoomMsg ZoomOut
+        , zoomFit = ZoomMsg << ZoomFit
         }
     , pointer = PointerMsg
     , rawPointer = RawPointerDownMsg

@@ -132,13 +132,16 @@ imagesProvided msg error visible remoteZipper viewer =
 allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Classes -> Zipper Tool -> State.AnnotatedZipper -> Viewer -> Element msg
 allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
     let
+        currentImage =
+            .annotatedImage (Zipper.getC annotatedImages)
+
         actionBar =
-            ActionBar.allProvided msg.actionBar config.features toolsZipper
+            ActionBar.allProvided msg.actionBar currentImage config.features toolsZipper
 
         centerArea =
             case error of
                 State.NoError ->
-                    annotatedImageArea msg (.annotatedImage (Zipper.getC annotatedImages)) viewer
+                    annotatedImageArea msg currentImage viewer
 
                 State.ConfigError configError ->
                     configErrorPreformatted configError

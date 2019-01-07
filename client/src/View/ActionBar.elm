@@ -50,6 +50,28 @@ nothingProvided msg =
         ]
 
 
+imagesProvided : Msg msg -> Element msg
+imagesProvided msg =
+    Element.row [ Element.alignRight ]
+        [ Element.text "Load config →"
+        , loadConfigButton msg.loadConfig
+        , loadImagesButton msg.loadImages
+        ]
+
+
+configProvided : Msg msg -> List Feature -> Zipper Tool -> Element msg
+configProvided msg features toolsZipper =
+    Element.row [ Element.width Element.fill ]
+        [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
+        , filler
+        , zoomButtonsDisabled features
+        , removeAnnotationButtonDisabled features
+        , filler
+        , loadConfigButton msg.loadConfig
+        , loadImagesButton msg.loadImages
+        ]
+
+
 allProvided : Msg msg -> AnnotatedImage -> List Feature -> Zipper Tool -> Element msg
 allProvided msg annotatedImage features toolsZipper =
     let
@@ -74,117 +96,114 @@ allProvided msg annotatedImage features toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] toolsButtons
         , filler
-        , zoomButtons msg imageSize features
-        , removeAnnotationButton msg.removeAnnotation features
+        , zoomButtonsAbled msg imageSize features
+        , removeAnnotationButtonAbled msg.removeAnnotation features
         , filler
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
 
 
-configProvided : Msg msg -> List Feature -> Zipper Tool -> Element msg
-configProvided msg features toolsZipper =
-    Element.row [ Element.width Element.fill ]
-        [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
-        , filler
-        , zoomButtons msg ( 0, 0 ) features
-        , removeAnnotationButton msg.removeAnnotation features
-        , filler
-        , loadConfigButton msg.loadConfig
-        , loadImagesButton msg.loadImages
-        ]
+
+--
 
 
-zoomButtons : Msg msg -> ( Int, Int ) -> List Feature -> Element msg
-zoomButtons msg imageSize features =
-    if List.member Feature.CanZoom features then
+zoomButtonsAbled : Msg msg -> ( Int, Int ) -> List Feature -> Element msg
+zoomButtonsAbled msg imageSize features =
+    featureElement Feature.CanZoom features <|
         Element.row []
-            [ zoomInButton msg.zoomIn
-            , zoomOutButton msg.zoomOut
-            , zoomFitButton (msg.zoomFit (Tuple.mapBoth toFloat toFloat imageSize))
+            [ zoomInButtonAbled msg.zoomIn
+            , zoomOutButtonAbled msg.zoomOut
+            , zoomFitButtonAbled (msg.zoomFit (Tuple.mapBoth toFloat toFloat imageSize))
             ]
+
+
+zoomButtonsDisabled : List Feature -> Element msg
+zoomButtonsDisabled features =
+    featureElement Feature.CanZoom features <|
+        Element.row []
+            [ zoomInButtonDisabled
+            , zoomOutButtonDisabled
+            , zoomFitButtonDisabled
+            ]
+
+
+zoomInButtonAbled : msg -> Element msg
+zoomInButtonAbled zoomInMsg =
+    abledButton zoomInMsg (Icon.toHtml 60 Icon.zoomIn)
+
+
+zoomInButtonDisabled : Element msg
+zoomInButtonDisabled =
+    disabledButton (Icon.toHtml 60 Icon.zoomIn)
+
+
+zoomOutButtonAbled : msg -> Element msg
+zoomOutButtonAbled zoomOutMsg =
+    abledButton zoomOutMsg (Icon.toHtml 60 Icon.zoomOut)
+
+
+zoomOutButtonDisabled : Element msg
+zoomOutButtonDisabled =
+    disabledButton (Icon.toHtml 60 Icon.zoomOut)
+
+
+zoomFitButtonAbled : msg -> Element msg
+zoomFitButtonAbled zoomFitMsg =
+    abledButton zoomFitMsg (Icon.toHtml 60 Icon.zoomFit)
+
+
+zoomFitButtonDisabled : Element msg
+zoomFitButtonDisabled =
+    disabledButton (Icon.toHtml 60 Icon.zoomFit)
+
+
+
+--
+
+
+removeAnnotationButtonAbled : msg -> List Feature -> Element msg
+removeAnnotationButtonAbled removeAnnotationMsg features =
+    abledButton removeAnnotationMsg (Icon.toHtml 60 Icon.trash2)
+        |> featureElement Feature.CanRemoveAnnotation features
+
+
+removeAnnotationButtonDisabled : List Feature -> Element msg
+removeAnnotationButtonDisabled features =
+    disabledButton (Icon.toHtml 60 Icon.trash2)
+        |> featureElement Feature.CanRemoveAnnotation features
+
+
+
+--
+
+
+featureElement : Feature -> List Feature -> Element msg -> Element msg
+featureElement feature features element =
+    if List.member feature features then
+        element
 
     else
         Element.none
 
 
-zoomInButton : msg -> Element msg
-zoomInButton zoomInMsg =
-    [ Icon.toHtml 60 Icon.zoomIn ]
-        |> Html.div centerFlexAttributes
-        |> Element.html
-        |> Element.el
-            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
-            , Element.pointer
-            , Element.Events.onClick zoomInMsg
-            ]
 
-
-zoomOutButton : msg -> Element msg
-zoomOutButton zoomOutMsg =
-    [ Icon.toHtml 60 Icon.zoomOut ]
-        |> Html.div centerFlexAttributes
-        |> Element.html
-        |> Element.el
-            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
-            , Element.pointer
-            , Element.Events.onClick zoomOutMsg
-            ]
-
-
-zoomFitButton : msg -> Element msg
-zoomFitButton zoomFitMsg =
-    [ Icon.toHtml 60 Icon.zoomFit ]
-        |> Html.div centerFlexAttributes
-        |> Element.html
-        |> Element.el
-            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
-            , Element.pointer
-            , Element.Events.onClick zoomFitMsg
-            ]
-
-
-removeAnnotationButton : msg -> List Feature -> Element msg
-removeAnnotationButton removeAnnotationMsg features =
-    if List.member Feature.CanRemoveAnnotation features then
-        [ Icon.toHtml 60 Icon.trash2 ]
-            |> Html.div centerFlexAttributes
-            |> Element.html
-            |> Element.el
-                [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
-                , Element.pointer
-                , Element.Events.onClick removeAnnotationMsg
-                ]
-
-    else
-        Element.none
+--
 
 
 toolButtonFocused : Tool -> Element msg
 toolButtonFocused tool =
-    Element.el [ Element.Background.color Style.focusedItemBG ] (toolButton tool)
+    focusedButton (svgToolIcon tool)
 
 
 toolButtonAbled : (Int -> msg) -> Tool -> Element msg
 toolButtonAbled selectToolMsg tool =
-    toolButton tool
-        |> Element.el
-            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
-            , Element.pointer
-            , Element.Events.onClick (selectToolMsg (Tool.toId tool))
-            ]
+    abledButton (selectToolMsg (Tool.toId tool)) (svgToolIcon tool)
 
 
 toolButtonDisabled : Tool -> Element msg
 toolButtonDisabled tool =
-    Element.el [ Element.Font.color Style.disabledText ] (toolButton tool)
-
-
-toolButton : Tool -> Element msg
-toolButton tool =
-    [ svgToolIcon tool ]
-        |> Html.div centerFlexAttributes
-        |> Element.html
+    disabledButton (svgToolIcon tool)
 
 
 svgToolIcon : Tool -> Html msg
@@ -209,18 +228,46 @@ svgToolIcon tool =
             Icon.toHtml 60 Icon.polygon
 
 
+
+--
+
+
+abledButton : msg -> Html msg -> Element msg
+abledButton msg icon =
+    Html.div centerFlexAttributes [ icon ]
+        |> Element.html
+        |> Element.el
+            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+            , Element.pointer
+            , Element.Events.onClick msg
+            ]
+
+
+disabledButton : Html msg -> Element msg
+disabledButton icon =
+    Html.div centerFlexAttributes [ icon ]
+        |> Element.html
+        |> Element.el [ Element.Font.color Style.disabledText ]
+
+
+focusedButton : Html msg -> Element msg
+focusedButton icon =
+    Html.div centerFlexAttributes [ icon ]
+        |> Element.html
+        |> Element.el [ Element.Background.color Style.focusedItemBG ]
+
+
+
+--
+
+
 filler : Element msg
 filler =
     Element.el [ Element.width Element.fill ] Element.none
 
 
-imagesProvided : Msg msg -> Element msg
-imagesProvided msg =
-    Element.row [ Element.alignRight ]
-        [ Element.text "Load config →"
-        , loadConfigButton msg.loadConfig
-        , loadImagesButton msg.loadImages
-        ]
+
+--
 
 
 loadConfigButton : (Value -> msg) -> Element msg

@@ -251,7 +251,7 @@ updateWithPointer pointerMsg viewer state =
                             Pointer.mapMsg (\pos -> Viewer.coordinatesAt pos viewer) pointerMsg
 
                         newDrag =
-                            Pointer.update pointerMsg drag
+                            Pointer.update scaledPointerMsg drag
 
                         updateAnnotated =
                             AnnotatedImage.updateWithPointer scaledPointerMsg newDrag tool classId viewer.scale

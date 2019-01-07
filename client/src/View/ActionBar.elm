@@ -5,6 +5,7 @@
 
 module View.ActionBar exposing (Msg, allProvided, configProvided, imagesProvided, nothingProvided)
 
+import Data.Feature as Feature exposing (Feature)
 import Data.Tool as Tool exposing (Tool)
 import Element exposing (Element)
 import Element.Background
@@ -47,8 +48,8 @@ nothingProvided msg =
         ]
 
 
-allProvided : Msg msg -> Zipper Tool -> Element msg
-allProvided msg toolsZipper =
+allProvided : Msg msg -> List Feature -> Zipper Tool -> Element msg
+allProvided msg features toolsZipper =
     let
         toolsButtons =
             List.concat
@@ -60,27 +61,34 @@ allProvided msg toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] toolsButtons
         , filler
-        , zoomInButton msg.zoomIn
-        , zoomOutButton msg.zoomOut
-        , removeAnnotationButton msg.removeAnnotation
+        , zoomButtons msg features
+        , removeAnnotationButton msg.removeAnnotation features
         , filler
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
 
 
-configProvided : Msg msg -> Zipper Tool -> Element msg
-configProvided msg toolsZipper =
+configProvided : Msg msg -> List Feature -> Zipper Tool -> Element msg
+configProvided msg features toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
         , filler
-        , zoomInButton msg.zoomIn
-        , zoomOutButton msg.zoomOut
-        , removeAnnotationButton msg.removeAnnotation
+        , zoomButtons msg features
+        , removeAnnotationButton msg.removeAnnotation features
         , filler
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
+
+
+zoomButtons : Msg msg -> List Feature -> Element msg
+zoomButtons msg features =
+    if List.member Feature.CanZoom features then
+        Element.row [] [ zoomInButton msg.zoomIn, zoomOutButton msg.zoomOut ]
+
+    else
+        Element.none
 
 
 zoomInButton : msg -> Element msg
@@ -107,16 +115,20 @@ zoomOutButton zoomOutMsg =
             ]
 
 
-removeAnnotationButton : msg -> Element msg
-removeAnnotationButton removeAnnotationMsg =
-    [ Icon.toHtml 60 Icon.trash2 ]
-        |> Html.div centerFlexAttributes
-        |> Element.html
-        |> Element.el
-            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
-            , Element.pointer
-            , Element.Events.onClick removeAnnotationMsg
-            ]
+removeAnnotationButton : msg -> List Feature -> Element msg
+removeAnnotationButton removeAnnotationMsg features =
+    if List.member Feature.CanRemoveAnnotation features then
+        [ Icon.toHtml 60 Icon.trash2 ]
+            |> Html.div centerFlexAttributes
+            |> Element.html
+            |> Element.el
+                [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+                , Element.pointer
+                , Element.Events.onClick removeAnnotationMsg
+                ]
+
+    else
+        Element.none
 
 
 toolButtonFocused : Tool -> Element msg

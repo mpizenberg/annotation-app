@@ -78,7 +78,7 @@ configProvided : Msg msg -> State.Error -> Config -> Bool -> State.Classes -> Zi
 configProvided msg error config visible classes toolsZipper =
     let
         actionBar =
-            ActionBar.configProvided msg.actionBar toolsZipper
+            ActionBar.configProvided msg.actionBar config.features toolsZipper
 
         centerArea =
             case error of
@@ -133,7 +133,7 @@ allProvided : Msg msg -> State.Error -> Config -> State.SidePanels -> State.Clas
 allProvided msg error config sidePanels classes toolsZipper annotatedImages viewer =
     let
         actionBar =
-            ActionBar.allProvided msg.actionBar toolsZipper
+            ActionBar.allProvided msg.actionBar config.features toolsZipper
 
         centerArea =
             case error of

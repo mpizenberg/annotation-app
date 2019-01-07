@@ -75,16 +75,16 @@ configProvided msg features toolsZipper =
 allProvided : Msg msg -> AnnotatedImage -> List Feature -> Zipper Tool -> Element msg
 allProvided msg annotatedImage features toolsZipper =
     let
-        imageSize =
+        zoomButtons =
             case annotatedImage.status of
                 Data.AnnotatedImage.Loaded image ->
-                    ( image.width, image.height )
+                    zoomButtonsAbled msg ( image.width, image.height ) features
 
                 Data.AnnotatedImage.LoadedWithAnnotations image _ _ ->
-                    ( image.width, image.height )
+                    zoomButtonsAbled msg ( image.width, image.height ) features
 
                 _ ->
-                    ( 0, 0 )
+                    zoomButtonsDisabled features
 
         toolsButtons =
             List.concat
@@ -96,7 +96,7 @@ allProvided msg annotatedImage features toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] toolsButtons
         , filler
-        , zoomButtonsAbled msg imageSize features
+        , zoomButtons
         , removeAnnotationButtonAbled msg.removeAnnotation features
         , filler
         , loadConfigButton msg.loadConfig

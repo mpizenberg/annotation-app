@@ -114,7 +114,15 @@ updateWithPointerDownAt coordinates tool classId annotatedImage =
                         |> (\status -> { annotatedImage | status = status })
 
                 _ ->
-                    annotatedImage
+                    -- Same as branch ( _, LoadedWithAnnotations img count zipper ) ->
+                    case Annotation.init tool coordinates of
+                        Just annotation ->
+                            appendAnnotation (count + 1) classId annotation zipper
+                                |> LoadedWithAnnotations img (count + 1)
+                                |> (\status -> { annotatedImage | status = status })
+
+                        Nothing ->
+                            annotatedImage
 
         ( _, Loaded img ) ->
             case Annotation.init tool coordinates of

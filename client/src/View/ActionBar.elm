@@ -58,6 +58,8 @@ allProvided msg toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] toolsButtons
         , filler
+        , removeAnnotationButton msg.removeAnnotation
+        , filler
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
@@ -68,9 +70,23 @@ configProvided msg toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
         , filler
+        , removeAnnotationButton msg.removeAnnotation
+        , filler
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
+
+
+removeAnnotationButton : msg -> Element msg
+removeAnnotationButton removeAnnotationMsg =
+    [ Icon.toHtml 60 Icon.trash2 ]
+        |> Html.div centerFlexAttributes
+        |> Element.html
+        |> Element.el
+            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+            , Element.pointer
+            , Element.Events.onClick removeAnnotationMsg
+            ]
 
 
 toolButtonFocused : Tool -> Element msg

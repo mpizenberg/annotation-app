@@ -7,6 +7,7 @@ module View.Main exposing (Msg, allProvided, configProvided, imagesProvided, not
 
 import Data.AnnotatedImage as AnnotatedImage exposing (AnnotatedImage)
 import Data.Config as Config exposing (Config)
+import Data.Image
 import Data.Pointer as Pointer
 import Data.RemoteImage as RemoteImage exposing (RemoteImage)
 import Data.State as State
@@ -281,16 +282,7 @@ imageArea remoteImage viewer =
             Element.text errorMsg
 
         RemoteImage.Loaded image ->
-            let
-                svgImage =
-                    Svg.image
-                        [ Svg.Attributes.xlinkHref image.url
-                        , Svg.Attributes.width (String.fromInt image.width)
-                        , Svg.Attributes.height (String.fromInt image.height)
-                        ]
-                        []
-            in
-            [ Viewer.Svg.placeIn viewer [ svgImage ] ]
+            [ Viewer.Svg.placeIn viewer [ svgImage image ] ]
                 |> Svg.svg
                     [ Html.Attributes.style "flex" "1"
                     , Html.Attributes.style "width" "100%"
@@ -308,51 +300,42 @@ annotatedImageArea msg annotatedImage viewer =
             Element.text errorMsg
 
         AnnotatedImage.Loaded image ->
-            let
-                svgImage =
-                    Svg.image
-                        [ Svg.Attributes.xlinkHref image.url
-                        , Svg.Attributes.width (String.fromInt image.width)
-                        , Svg.Attributes.height (String.fromInt image.height)
-                        ]
-                        []
-            in
-            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage ] ]
-                |> Svg.svg
-                    [ Html.Attributes.style "flex" "1"
-                    , Html.Attributes.style "width" "100%"
-                    , msgOn "pointerdown" (Decode.map msg.rawPointer Decode.value)
-                    , Html.Events.Extra.Pointer.onUp (.pointer >> .offsetPos >> Pointer.UpAt >> msg.pointer)
-                    , Html.Events.Extra.Pointer.onMove (.pointer >> .offsetPos >> Pointer.MoveAt >> msg.pointer)
-
-                    -- no touch-action (prevent scroll etc.)
-                    , Html.Attributes.style "touch-action" "none"
-                    ]
+            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage image ] ]
+                |> Svg.svg (annotationsAreaAttributes msg)
                 |> Element.html
 
         AnnotatedImage.LoadedWithAnnotations image _ annotatedZipper ->
             let
-                svgImage =
-                    Svg.image
-                        [ Svg.Attributes.xlinkHref image.url
-                        , Svg.Attributes.width (String.fromInt image.width)
-                        , Svg.Attributes.height (String.fromInt image.height)
-                        ]
-                        []
-
                 svgAnnotations =
                     Zipper.getAll annotatedZipper
                         |> List.map (\{ annotation } -> Annotation.view annotation)
             in
-            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage ] ]
-                |> Svg.svg
-                    [ Html.Attributes.style "flex" "1"
-                    , Html.Attributes.style "width" "100%"
-                    , msgOn "pointerdown" (Decode.map msg.rawPointer Decode.value)
-                    , Html.Events.Extra.Pointer.onUp (.pointer >> .offsetPos >> Pointer.UpAt >> msg.pointer)
-                    , Html.Events.Extra.Pointer.onMove (.pointer >> .offsetPos >> Pointer.MoveAt >> msg.pointer)
-                    ]
+            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage image ] ]
+                |> Svg.svg (annotationsAreaAttributes msg)
                 |> Element.html
+
+
+svgImage : Data.Image.Image -> Svg msg
+svgImage image =
+    Svg.image
+        [ Svg.Attributes.xlinkHref image.url
+        , Svg.Attributes.width (String.fromInt image.width)
+        , Svg.Attributes.height (String.fromInt image.height)
+        ]
+        []
+
+
+annotationsAreaAttributes : Msg msg -> List (Html.Attribute msg)
+annotationsAreaAttributes msg =
+    [ Html.Attributes.style "flex" "1"
+    , Html.Attributes.style "width" "100%"
+    , msgOn "pointerdown" (Decode.map msg.rawPointer Decode.value)
+    , Html.Events.Extra.Pointer.onUp (.pointer >> .offsetPos >> Pointer.UpAt >> msg.pointer)
+    , Html.Events.Extra.Pointer.onMove (.pointer >> .offsetPos >> Pointer.MoveAt >> msg.pointer)
+
+    -- no touch-action (prevent scroll etc.)
+    , Html.Attributes.style "touch-action" "none"
+    ]
 
 
 msgOn : String -> Decoder msg -> Html.Attribute msg

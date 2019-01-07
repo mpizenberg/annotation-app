@@ -96,13 +96,7 @@ toolButtonDisabled tool =
 toolButton : Tool -> Element msg
 toolButton tool =
     [ svgToolIcon tool ]
-        |> Html.div
-            [ Html.Attributes.style "width" "100px"
-            , Html.Attributes.style "height" "100px"
-            , Html.Attributes.style "display" "flex"
-            , Html.Attributes.style "align-items" "center"
-            , Html.Attributes.style "justify-content" "center"
-            ]
+        |> Html.div centerFlexAttributes
         |> Element.html
 
 
@@ -150,18 +144,7 @@ loadConfigButton loadConfigMsg =
 
         icon =
             [ Icon.toHtml 60 Icon.settings ]
-                |> Html.label
-                    [ Html.Attributes.style "width" "100px"
-                    , Html.Attributes.style "height" "100px"
-                    , Html.Attributes.style "display" "flex"
-                    , Html.Attributes.style "align-items" "center"
-                    , Html.Attributes.style "justify-content" "center"
-                    , Html.Attributes.for uniqueId
-
-                    -- need to manually add a cursor because the class given by elm-ui
-                    -- gets overwritten by user agent stylesheet for a label
-                    , Html.Attributes.style "cursor" "pointer"
-                    ]
+                |> Html.label (iconLabelAttributes uniqueId)
                 |> Element.html
                 |> Element.el
                     [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ] ]
@@ -184,18 +167,7 @@ loadImagesButton loadImagesMsg =
 
         icon =
             [ Icon.toHtml 60 Icon.image ]
-                |> Html.label
-                    [ Html.Attributes.style "width" "100px"
-                    , Html.Attributes.style "height" "100px"
-                    , Html.Attributes.style "display" "flex"
-                    , Html.Attributes.style "align-items" "center"
-                    , Html.Attributes.style "justify-content" "center"
-                    , Html.Attributes.for uniqueId
-
-                    -- need to manually add a cursor because the class given by elm-ui
-                    -- gets overwritten by user agent stylesheet for a label
-                    , Html.Attributes.style "cursor" "pointer"
-                    ]
+                |> Html.label (iconLabelAttributes uniqueId)
                 |> Element.html
                 |> Element.el
                     [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ] ]
@@ -208,3 +180,22 @@ loadImagesButton loadImagesMsg =
                 }
     in
     Element.row [] [ icon, Element.html invisibleInput ]
+
+
+iconLabelAttributes : String -> List (Html.Attribute msg)
+iconLabelAttributes uniqueId =
+    -- need to manually add a cursor because the class given by elm-ui
+    -- gets overwritten by user agent stylesheet for a label
+    Html.Attributes.for uniqueId
+        :: Html.Attributes.style "cursor" "pointer"
+        :: centerFlexAttributes
+
+
+centerFlexAttributes : List (Html.Attribute msg)
+centerFlexAttributes =
+    [ Html.Attributes.style "width" "100px"
+    , Html.Attributes.style "height" "100px"
+    , Html.Attributes.style "display" "flex"
+    , Html.Attributes.style "align-items" "center"
+    , Html.Attributes.style "justify-content" "center"
+    ]

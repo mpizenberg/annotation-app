@@ -28,6 +28,8 @@ type alias Msg msg =
     , loadConfig : Value -> msg
     , selectTool : Int -> msg
     , removeAnnotation : msg
+    , zoomIn : msg
+    , zoomOut : msg
 
     -- below are only for AllProvided state
     }
@@ -58,6 +60,8 @@ allProvided msg toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] toolsButtons
         , filler
+        , zoomInButton msg.zoomIn
+        , zoomOutButton msg.zoomOut
         , removeAnnotationButton msg.removeAnnotation
         , filler
         , loadConfigButton msg.loadConfig
@@ -70,11 +74,37 @@ configProvided msg toolsZipper =
     Element.row [ Element.width Element.fill ]
         [ Element.row [] (List.map toolButtonDisabled (Zipper.getAll toolsZipper))
         , filler
+        , zoomInButton msg.zoomIn
+        , zoomOutButton msg.zoomOut
         , removeAnnotationButton msg.removeAnnotation
         , filler
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
+
+
+zoomInButton : msg -> Element msg
+zoomInButton zoomInMsg =
+    [ Icon.toHtml 60 Icon.zoomIn ]
+        |> Html.div centerFlexAttributes
+        |> Element.html
+        |> Element.el
+            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+            , Element.pointer
+            , Element.Events.onClick zoomInMsg
+            ]
+
+
+zoomOutButton : msg -> Element msg
+zoomOutButton zoomOutMsg =
+    [ Icon.toHtml 60 Icon.zoomOut ]
+        |> Html.div centerFlexAttributes
+        |> Element.html
+        |> Element.el
+            [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+            , Element.pointer
+            , Element.Events.onClick zoomOutMsg
+            ]
 
 
 removeAnnotationButton : msg -> Element msg

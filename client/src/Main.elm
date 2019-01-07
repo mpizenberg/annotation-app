@@ -80,6 +80,8 @@ msgBuilders =
         , loadConfig = LoadConfig
         , selectTool = SelectTool
         , removeAnnotation = RemoveAnnotation
+        , zoomIn = ZoomMsg ZoomIn
+        , zoomOut = ZoomMsg ZoomOut
         }
     , pointer = PointerMsg
     , rawPointer = RawPointerDownMsg

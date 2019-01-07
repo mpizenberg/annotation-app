@@ -19,6 +19,7 @@ module Data.Config exposing
 
 -}
 
+import Data.Feature as Feature exposing (Feature)
 import Data.Tool as Tool exposing (Tool)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -35,6 +36,7 @@ import Tree.Zipper
 type alias Config =
     { classes : List Class
     , tools : List Tool
+    , features : List Feature
     }
 
 
@@ -58,7 +60,7 @@ type Error
 {-| -}
 empty : Config
 empty =
-    Config [] []
+    Config [] [] []
 
 
 {-| -}
@@ -99,6 +101,7 @@ pascal =
         , Tool.Outline
         , Tool.Polygon
         ]
+    , features = []
     }
 
 
@@ -157,9 +160,10 @@ accumClass class ( count, parentFileSystem ) =
 {-| -}
 decoder : Decoder Config
 decoder =
-    Decode.map2 Config
+    Decode.map3 Config
         (Decode.field "classes" <| Decode.list classDecoder)
         (Decode.field "tools" <| Decode.list Tool.decoder)
+        (Decode.field "features" <| Decode.list Feature.decoder)
 
 
 classDecoder : Decoder Class
@@ -182,6 +186,7 @@ encode config =
     Encode.object
         [ ( "classes", Encode.list encodeClass config.classes )
         , ( "tools", Encode.list Tool.encode config.tools )
+        , ( "features", Encode.list Feature.encode config.features )
         ]
 
 

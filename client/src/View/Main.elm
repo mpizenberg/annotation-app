@@ -310,7 +310,7 @@ annotatedImageArea msg annotatedImage viewer =
                     Zipper.getAll annotatedZipper
                         |> List.map (\{ annotation } -> Annotation.view annotation)
             in
-            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage image ] ]
+            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer (svgImage image :: svgAnnotations) ]
                 |> Svg.svg (annotationsAreaAttributes msg)
                 |> Element.html
 

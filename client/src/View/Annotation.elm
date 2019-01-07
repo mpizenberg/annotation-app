@@ -22,13 +22,13 @@ view annotation =
             Annotation.Svg.lineStyled (Just lineStyle) line
 
         Outline line ->
-            Annotation.Svg.lineStyled (Just lineStyle) line
+            Annotation.Svg.polygonStyled (Just lineStyle) (Just fillColor) line
 
         UnfinishedPolygon line ->
             Annotation.Svg.lineStyled (Just lineStyle) line
 
         Polygon line ->
-            Annotation.Svg.lineStyled (Just lineStyle) line
+            Annotation.Svg.polygonStyled (Just lineStyle) (Just fillColor) line
 
 
 fillColor : Color

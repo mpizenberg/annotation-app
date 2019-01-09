@@ -60,7 +60,7 @@ type Msg
     | ImageLoaded { id : Int, url : String, width : Int, height : Int }
     | LoadConfig Value
     | ConfigLoaded String
-    | Export
+    | SaveAnnotations
       -- other actions
     | ZoomMsg ZoomMsg
     | RemoveAnnotation
@@ -83,6 +83,7 @@ msgBuilders =
         , zoomIn = ZoomMsg ZoomIn
         , zoomOut = ZoomMsg ZoomOut
         , zoomFit = ZoomMsg << ZoomFit
+        , saveAnnotations = SaveAnnotations
         }
     , pointer = PointerMsg
     , rawPointer = RawPointerDownMsg
@@ -273,8 +274,8 @@ update msg model =
         ConfigLoaded configString ->
             ( { model | state = State.changeConfig configString model.state }, Cmd.none )
 
-        -- Export annotations
-        Export ->
+        -- Save annotations
+        SaveAnnotations ->
             ( model, State.export model.state )
 
         -- Remove annotation

@@ -28,13 +28,16 @@ import View.Style as Style
 type alias Msg msg =
     { loadImages : List { name : String, file : Value } -> msg
     , loadConfig : Value -> msg
-    , selectTool : Int -> msg
-    , removeAnnotation : msg
+
+    -- messages available when an image is provided
     , zoomIn : msg
     , zoomOut : msg
     , zoomFit : ( Float, Float ) -> msg
 
     -- below are only for AllProvided state
+    , selectTool : Int -> msg
+    , removeAnnotation : msg
+    , saveAnnotations : msg
     }
 
 
@@ -75,21 +78,24 @@ configProvided msg features toolsZipper =
 allProvided : Msg msg -> AnnotatedImage -> List Feature -> Zipper Tool -> Element msg
 allProvided msg annotatedImage features toolsZipper =
     let
-        ( zoomButtons, removeButton ) =
+        ( zoomButtons, removeButton, saveButton ) =
             case annotatedImage.status of
                 Data.AnnotatedImage.Loaded image ->
                     ( zoomButtonsAbled msg ( image.width, image.height ) features
                     , removeAnnotationButtonDisabled features
+                    , saveAnnotationsButtonDisabled
                     )
 
                 Data.AnnotatedImage.LoadedWithAnnotations image _ _ ->
                     ( zoomButtonsAbled msg ( image.width, image.height ) features
                     , removeAnnotationButtonAbled msg.removeAnnotation features
+                    , saveAnnotationsButtonAbled msg.saveAnnotations
                     )
 
                 _ ->
                     ( zoomButtonsDisabled features
                     , removeAnnotationButtonDisabled features
+                    , saveAnnotationsButtonDisabled
                     )
 
         toolsButtons =
@@ -105,6 +111,7 @@ allProvided msg annotatedImage features toolsZipper =
         , zoomButtons
         , removeButton
         , filler
+        , saveButton
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
@@ -162,6 +169,20 @@ zoomFitButtonAbled zoomFitMsg =
 zoomFitButtonDisabled : Element msg
 zoomFitButtonDisabled =
     disabledButton (Icon.toHtml 60 Icon.zoomFit)
+
+
+
+--
+
+
+saveAnnotationsButtonAbled : msg -> Element msg
+saveAnnotationsButtonAbled saveAnnotationsMsg =
+    abledButton saveAnnotationsMsg (Icon.toHtml 60 Icon.download)
+
+
+saveAnnotationsButtonDisabled : Element msg
+saveAnnotationsButtonDisabled =
+    disabledButton (Icon.toHtml 60 Icon.download)
 
 
 

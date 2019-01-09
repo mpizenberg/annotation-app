@@ -70,6 +70,7 @@ configProvided msg features toolsZipper =
         , zoomButtonsDisabled features
         , removeAnnotationButtonDisabled features
         , filler
+        , saveAnnotationsButtonDisabled
         , loadConfigButton msg.loadConfig
         , loadImagesButton msg.loadImages
         ]
@@ -143,32 +144,32 @@ zoomButtonsDisabled features =
 
 zoomInButtonAbled : msg -> Element msg
 zoomInButtonAbled zoomInMsg =
-    abledButton zoomInMsg (Icon.toHtml 60 Icon.zoomIn)
+    abledButton zoomInMsg "Zoom in" (Icon.toHtml 60 Icon.zoomIn)
 
 
 zoomInButtonDisabled : Element msg
 zoomInButtonDisabled =
-    disabledButton (Icon.toHtml 60 Icon.zoomIn)
+    disabledButton "Zoom in" (Icon.toHtml 60 Icon.zoomIn)
 
 
 zoomOutButtonAbled : msg -> Element msg
 zoomOutButtonAbled zoomOutMsg =
-    abledButton zoomOutMsg (Icon.toHtml 60 Icon.zoomOut)
+    abledButton zoomOutMsg "Zoom out" (Icon.toHtml 60 Icon.zoomOut)
 
 
 zoomOutButtonDisabled : Element msg
 zoomOutButtonDisabled =
-    disabledButton (Icon.toHtml 60 Icon.zoomOut)
+    disabledButton "Zoom out" (Icon.toHtml 60 Icon.zoomOut)
 
 
 zoomFitButtonAbled : msg -> Element msg
 zoomFitButtonAbled zoomFitMsg =
-    abledButton zoomFitMsg (Icon.toHtml 60 Icon.zoomFit)
+    abledButton zoomFitMsg "Fit image" (Icon.toHtml 60 Icon.zoomFit)
 
 
 zoomFitButtonDisabled : Element msg
 zoomFitButtonDisabled =
-    disabledButton (Icon.toHtml 60 Icon.zoomFit)
+    disabledButton "Fit image" (Icon.toHtml 60 Icon.zoomFit)
 
 
 
@@ -177,12 +178,12 @@ zoomFitButtonDisabled =
 
 saveAnnotationsButtonAbled : msg -> Element msg
 saveAnnotationsButtonAbled saveAnnotationsMsg =
-    abledButton saveAnnotationsMsg (Icon.toHtml 60 Icon.download)
+    abledButton saveAnnotationsMsg "Save annotations" (Icon.toHtml 60 Icon.download)
 
 
 saveAnnotationsButtonDisabled : Element msg
 saveAnnotationsButtonDisabled =
-    disabledButton (Icon.toHtml 60 Icon.download)
+    disabledButton "Save annotations" (Icon.toHtml 60 Icon.download)
 
 
 
@@ -191,13 +192,13 @@ saveAnnotationsButtonDisabled =
 
 removeAnnotationButtonAbled : msg -> List Feature -> Element msg
 removeAnnotationButtonAbled removeAnnotationMsg features =
-    abledButton removeAnnotationMsg (Icon.toHtml 60 Icon.trash2)
+    abledButton removeAnnotationMsg "Remove this annotation" (Icon.toHtml 60 Icon.trash2)
         |> featureElement Feature.CanRemoveAnnotation features
 
 
 removeAnnotationButtonDisabled : List Feature -> Element msg
 removeAnnotationButtonDisabled features =
-    disabledButton (Icon.toHtml 60 Icon.trash2)
+    disabledButton "Remove this annotation" (Icon.toHtml 60 Icon.trash2)
         |> featureElement Feature.CanRemoveAnnotation features
 
 
@@ -220,17 +221,39 @@ featureElement feature features element =
 
 toolButtonFocused : Tool -> Element msg
 toolButtonFocused tool =
-    focusedButton (svgToolIcon tool)
+    focusedButton (toolTitle tool) (svgToolIcon tool)
 
 
 toolButtonAbled : (Int -> msg) -> Tool -> Element msg
 toolButtonAbled selectToolMsg tool =
-    abledButton (selectToolMsg (Tool.toId tool)) (svgToolIcon tool)
+    abledButton (selectToolMsg (Tool.toId tool)) (toolTitle tool) (svgToolIcon tool)
 
 
 toolButtonDisabled : Tool -> Element msg
 toolButtonDisabled tool =
-    disabledButton (svgToolIcon tool)
+    disabledButton (toolTitle tool) (svgToolIcon tool)
+
+
+toolTitle : Tool -> String
+toolTitle tool =
+    case tool of
+        Tool.Move ->
+            "Grab and move the image"
+
+        Tool.Point ->
+            "Points"
+
+        Tool.BBox ->
+            "Bounding boxes"
+
+        Tool.Line ->
+            "Free lines"
+
+        Tool.Outline ->
+            "Outlines"
+
+        Tool.Polygon ->
+            "Polygons"
 
 
 svgToolIcon : Tool -> Html msg
@@ -259,29 +282,36 @@ svgToolIcon tool =
 --
 
 
-abledButton : msg -> Html msg -> Element msg
-abledButton msg icon =
+abledButton : msg -> String -> Html msg -> Element msg
+abledButton msg title icon =
     Html.div centerFlexAttributes [ icon ]
         |> Element.html
         |> Element.el
             [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
             , Element.pointer
             , Element.Events.onClick msg
+            , Element.htmlAttribute (Html.Attributes.title title)
             ]
 
 
-disabledButton : Html msg -> Element msg
-disabledButton icon =
+disabledButton : String -> Html msg -> Element msg
+disabledButton title icon =
     Html.div centerFlexAttributes [ icon ]
         |> Element.html
-        |> Element.el [ Element.Font.color Style.disabledText ]
+        |> Element.el
+            [ Element.Font.color Style.disabledText
+            , Element.htmlAttribute (Html.Attributes.title title)
+            ]
 
 
-focusedButton : Html msg -> Element msg
-focusedButton icon =
+focusedButton : String -> Html msg -> Element msg
+focusedButton title icon =
     Html.div centerFlexAttributes [ icon ]
         |> Element.html
-        |> Element.el [ Element.Background.color Style.focusedItemBG ]
+        |> Element.el
+            [ Element.Background.color Style.focusedItemBG
+            , Element.htmlAttribute (Html.Attributes.title title)
+            ]
 
 
 
@@ -308,7 +338,9 @@ loadConfigButton loadConfigMsg =
                 |> Html.label (iconLabelAttributes uniqueId)
                 |> Element.html
                 |> Element.el
-                    [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ] ]
+                    [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+                    , Element.htmlAttribute (Html.Attributes.title "Load JSON file configuration")
+                    ]
 
         invisibleInput =
             FileInput.invisible
@@ -331,7 +363,9 @@ loadImagesButton loadImagesMsg =
                 |> Html.label (iconLabelAttributes uniqueId)
                 |> Element.html
                 |> Element.el
-                    [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ] ]
+                    [ Element.mouseOver [ Element.Background.color Style.hoveredItemBG ]
+                    , Element.htmlAttribute (Html.Attributes.title "Load images")
+                    ]
 
         invisibleInput =
             FileInput.invisible

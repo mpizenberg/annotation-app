@@ -285,7 +285,7 @@ imageArea remoteImage viewer =
             Element.text errorMsg
 
         RemoteImage.Loaded image ->
-            [ Viewer.Svg.placeIn viewer [ svgImage image ] ]
+            [ Svg.g [ Viewer.Svg.transform viewer ] [ svgImage image ] ]
                 |> Svg.svg
                     [ Html.Attributes.style "flex" "1"
                     , Html.Attributes.style "width" "100%"
@@ -303,7 +303,12 @@ annotatedImageArea msg annotatedImage viewer =
             Element.text errorMsg
 
         AnnotatedImage.Loaded image ->
-            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer [ svgImage image ] ]
+            [ Svg.g
+                [ Viewer.Svg.transform viewer
+                , Html.Attributes.style "pointer-events" "none"
+                ]
+                [ svgImage image ]
+            ]
                 |> Svg.svg (annotationsAreaAttributes msg)
                 |> Element.html
 
@@ -313,7 +318,12 @@ annotatedImageArea msg annotatedImage viewer =
                     Zipper.getAll annotatedZipper
                         |> List.map (\{ annotation } -> Annotation.view annotation)
             in
-            [ Viewer.Svg.placeInWithDetails [ Html.Attributes.style "pointer-events" "none" ] viewer (svgImage image :: svgAnnotations) ]
+            [ Svg.g
+                [ Viewer.Svg.transform viewer
+                , Html.Attributes.style "pointer-events" "none"
+                ]
+                (svgImage image :: svgAnnotations)
+            ]
                 |> Svg.svg (annotationsAreaAttributes msg)
                 |> Element.html
 

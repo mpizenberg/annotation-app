@@ -13,13 +13,10 @@ all : install run
 
 # INSTALLATION #############################################
 
-install : server-install client-install
+install : server-install
 
 server-install :
 	cd server && npm install
-
-client-install :
-	cd client && elm-19 install
 
 # BUILD ####################################################
 
@@ -30,11 +27,11 @@ copy-static-to-build :
 
 # Build elm app
 build-elm :
-	cd client && elm-19 make src/Main.elm --output=../$(BUILD_DIR)/Main.js
+	cd client && elm make src/Main.elm --output=../$(BUILD_DIR)/Main.js
 
 # Build elm app
 build : build-elm copy-static-to-build
-	cd client && elm-19 make src/Main.elm --output=../$(BUILD_DIR)/Main.js
+	cd client && elm make src/Main.elm --output=../$(BUILD_DIR)/Main.js
 
 # Watch and re-build with hot reload
 watch :
